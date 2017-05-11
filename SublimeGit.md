@@ -11,7 +11,7 @@
     - cd /home/william/Documents/myCTP
     - git add . -A
     - git commit -m "updates"
-    - git push origin gh-pages
+    - git push
 
 4. 如果想要 `push` 的时候不需要输入密码,可以在当前的 `project` **根目录** 下面执行命令:
         
@@ -19,4 +19,6 @@
     - https://{username}:{password}@github.com
     - git config --global credential.helper store
 
-5. 关于 `Sublime Text 3` 的相关信息,请参考:   
+5. 当然,也最保险的方法,是把 `SSH keys` 的 `id_rsa.pub` 的密钥复制到 `Github` 的 `SSH and GPG keys`,就可以实现无密码推送了.
+
+6. 关于 `Sublime Text 3` 的相关信息,请参考:   
