@@ -21,9 +21,19 @@
 
 5. 当然,也最保险的方法,是把 `SSH keys` 的 `id_rsa.pub` 的密钥复制到 `Github` 的 `SSH and GPG keys`,就可以实现无密码推送了.
 
-6. 关于 `Sublime Text 3` 的相关信息,请参考:
+6. 在 `Sublime Text3` 使用 `git`,需要做如下步骤的设置(参考步骤4,需要开启密码):
 
-    [我的 Sublime Text3 设置]() 
+    - vim .git-credentials: 把帐号,密码输入到以下:https://{username}:{password}@github.com
+    - 设置: git config --global credential.helper store
+    - 在 `Sublime Text3` 的 `Package Control` 安装插件: 
+        
+        - `Sublime Git`: 把 `git` 融合到 `Sublime`
+        - `Sublime GitGutter`: 可以在左边显示修改的标记
+    - 使用步骤,通过调用 `Shift+Control+P` 来调用命令行:
+        
+        - git add: 添加文件
+        - git commit: 在弹出的文件里面输入需要提交的信息,写好后直接关闭就可以了,不需要保存. `Sublime` 会自动标记好.
+        - git push: 就可以推送了.
 
 ================================================================================
 
