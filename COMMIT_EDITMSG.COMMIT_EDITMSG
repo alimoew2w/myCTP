@@ -1,0 +1,47 @@
+@williamlfang
+
+# --------------
+# Please enter the commit message for your changes. Everything below
+# this paragraph is ignored, and an empty message aborts the commit.
+# Just close the window to accept your message.
+diff --git a/COMMIT_EDITMSG.COMMIT_EDITMSG b/COMMIT_EDITMSG.COMMIT_EDITMSG
+new file mode 100644
+index 0000000..f7b7b86
+--- /dev/null
++++ b/COMMIT_EDITMSG.COMMIT_EDITMSG
+@@ -0,0 +1,20 @@
++增加个人签名
++# --------------
++# Please enter the commit message for your changes. Everything below
++# this paragraph is ignored, and an empty message aborts the commit.
++# Just close the window to accept your message.
++diff --git a/SublimeGit.md b/SublimeGit.md
++index f8af349..37dc838 100644
++--- a/SublimeGit.md
+++++ b/SublimeGit.md
++@@ -21,4 +21,9 @@
++ 
++ 5. 当然,也最保险的方法,是把 `SSH keys` 的 `id_rsa.pub` 的密钥复制到 `Github` 的 `SSH and GPG keys`,就可以实现无密码推送了.
++ 
++-6. 关于 `Sublime Text 3` 的相关信息,请参考:   
+++6. 关于 `Sublime Text 3` 的相关信息,请参考:
+++
+++    [我的 Sublime Text3 设置]() 
+++
+++================================================================================
+++@williamlfang
+diff --git a/SublimeGit.md b/SublimeGit.md
+index f8af349..37dc838 100644
+--- a/SublimeGit.md
++++ b/SublimeGit.md
+@@ -21,4 +21,9 @@
+ 
+ 5. 当然,也最保险的方法,是把 `SSH keys` 的 `id_rsa.pub` 的密钥复制到 `Github` 的 `SSH and GPG keys`,就可以实现无密码推送了.
+ 
+-6. 关于 `Sublime Text 3` 的相关信息,请参考:   
++6. 关于 `Sublime Text 3` 的相关信息,请参考:
++
++    [我的 Sublime Text3 设置]() 
++
++================================================================================
++@williamlfang
