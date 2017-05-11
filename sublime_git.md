@@ -13,3 +13,10 @@
     - git commit -m "updates"
     - git push origin gh-pages
 
+4. 如果想要 `push` 的时候不需要输入密码,可以在当前的 `project` **根目录** 下面执行命令:
+        
+    - vim .git-credentials
+    - https://{username}:{password}@github.com
+    - git config --global credential.helper store
+
+5. 关于 `Sublime Text 3` 的相关信息,请参考:   
