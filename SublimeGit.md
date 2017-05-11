@@ -1,4 +1,4 @@
-# 使用 `Sublime_git` 管理项目
+# 使用 `Sublime Git` 管理项目
 
 1. 在 `www.github.com` 建立一个 `repository`,并克隆到本地的文件路径下面:
  
