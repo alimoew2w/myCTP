@@ -54,24 +54,42 @@ class DrTickData(object):
 
     #----------------------------------------------------------------------
     def __init__(self):
-        """Constructor"""       
-        self.vtSymbol = EMPTY_STRING            # vt系统代码
-        self.symbol = EMPTY_STRING              # 合约代码
-        self.exchange = EMPTY_STRING            # 交易所代码
-
-        # 成交数据
-        self.lastPrice = EMPTY_FLOAT            # 最新成交价
-        self.volume = EMPTY_INT                 # 最新成交量
-        self.openInterest = EMPTY_INT           # 持仓量
-        
-        self.upperLimit = EMPTY_FLOAT           # 涨停价
-        self.lowerLimit = EMPTY_FLOAT           # 跌停价
-        
-        # tick的时间
+        """Constructor"""
+        ## tick的时间
         self.date = EMPTY_STRING            # 日期
         self.time = EMPTY_STRING            # 时间
         self.datetime = None                # python的datetime时间对象
+
+        ## 代码
+        self.vtSymbol   = EMPTY_STRING          # vt系统代码
+        self.symbol     = EMPTY_STRING          # 合约代码
+        self.exchange   = EMPTY_STRING          # 交易所代码
+
+        ## 价格信息
+        self.lastPrice          = EMPTY_FLOAT           # 最新成交价
+        self.presettlementprice = EMPTY_FLOAT 
+        self.preClosePrice      = EMPTY_FLOAT 
+        self.openPrice          = EMPTY_FLOAT
+        self.highestPrice       = EMPTY_FLOAT
+        self.lowesrPrice        = EMPTY_FLOAT
+        self.ClosePrice         = EMPTY_FLOAT
         
+        self.upperLimit = EMPTY_FLOAT           # 涨停价
+        self.lowerLimit = EMPTY_FLOAT           # 跌停价
+
+        ## 成交量, 成交额
+        self.volume             = EMPTY_INT             # 最新成交量
+        self.turnover           = EMPTY_INT             # 成交额
+
+        ## 持仓数据
+        self.preOpenInterest    = EMPTY_FLOAT 
+        self.openInterest       = EMPTY_INT           # 持仓量
+
+        ## 期权数据
+
+        self.preDelta           = EMPTY_FLOAT
+        self.currDelta          = EMPTY_FLOAT
+
         # 五档行情
         self.bidPrice1 = EMPTY_FLOAT
         self.bidPrice2 = EMPTY_FLOAT
@@ -98,11 +116,4 @@ class DrTickData(object):
         self.askVolume5 = EMPTY_INT    
 
         ########################################################################
-        ## william
-        ## presettlementprice
-        ## settlementprice
-        ## averageprice
-        
-        self.presettlementprice = EMPTY_FLOAT
-        self.settlementprice    = EMPTY_FLOAT
         self.averageprice       = EMPTY_FLOAT
