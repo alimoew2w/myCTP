@@ -6,6 +6,7 @@
 import os, os.path
 import sys
 import time
+import csv
 ################################################################################
 
 
@@ -13,7 +14,11 @@ import time
 ## william
 ##　增加路径
 data_recorder_path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.data/TickData/'
+
+data_path   = '/home/william/Documents/myCTP/vnpy1.6.1/vn.data/'
 trader_path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/'
+
+sys.path.append(data_path) 
 sys.path.append(trader_path)
 ################################################################################
 
@@ -65,14 +70,24 @@ print "#######################################################################\n
 
 ## /////////////////////////////////////////////////////////////////////////////
 ## 保存 Tick Data 为 /data/csv
-import os.path      
 
 dataFile = os.path.join(data_recorder_path,(mainEngine.todayDate + '.csv'))  
 
 if not os.path.exists(dataFile): 
-    myHeader = "tradingDay,time,instrumentID,exchangeID,lastPrice,volume,openInterest,upperLimit,lowerLimit,bidPrice1,bidPrice2,bidPrice3,bidPrice4,bidPrice5,askPrice1,askPrice2,askPrice3,askPrice4,askPrice5,bidVolume1,bidVolume2,bidVolume3,bidVolume4,bidVolume5,askVolume1,askVolume2,askVolume3,askVolume4,askVolume5,preSettlementPrice,settlementPrice,averagePrice"   
+    myHeader = ['timeStamp','date','time','symbol','exchange',\
+                'lastPrice','preSettlementPrice','preClosePrice',\
+                'openPrice','highestPrice','lowestPrice','closePrice',\
+                'upperLimit','lowerLimit','settlementPrice','volume','turnover',\
+                'preOpenInterest','openInterest','preDelta','currDelta',\
+                'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
+                'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
+                'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',\
+                'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',\
+                'averagePrice']   
     with open(dataFile, 'w') as f:
-        f.write(myHeader + '\n')
+        wr = csv.writer(f)
+        wr.writerow(myHeader)
+    f.close()
 ## /////////////////////////////////////////////////////////////////////////////
 
 

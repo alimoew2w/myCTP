@@ -37,7 +37,7 @@ saveTickData = True
 ################################################################################
 ##　william
 import MySQLdb
-
+import csv
 ################################################################################
 
 
@@ -50,8 +50,14 @@ from Queue import Queue
 from threading import Thread
 
 from eventEngine import *
-from vtGateway import VtSubscribeReq, VtLogData
-from drBase import *
+
+################################################################################
+## william
+## from vtGateway import VtSubscribeReq, VtLogData
+## from drBase import *
+
+from vtGatewaySaveTickData import VtSubscribeReq, VtLogData
+from drBaseSaveTickData import *
 
 ## /////////////////////////////////////////////////////////////////////////////
 ## william
@@ -274,12 +280,15 @@ class DrEngine(object):
             if key != 'datetime':
                 d[key] = tick.__getattribute__(key)
         drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
-        tempFields = ['bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
+
+        tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',\
+                      'upperLimit','lowerLimit','openInterest','preDelta','currDelta',\
+                      'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
                       'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
-                      'settlementprice']   
+                      'settlementPrice','averagePrice']   
         for i in tempFields:
             if d[i] > 1.79e+99:
-                d[i] = 0  
+                d[i] = 0
         ########################################################################
         ## william 
         ## 在这里获取 Tick Data
@@ -289,6 +298,10 @@ class DrEngine(object):
         # print drTick.__dict__
         print '在这里获取 Tick Data !!!==>', d['symbol']
         print d
+        ########################################################################
+        ## william
+        ## 保存到 csv
+        ## Ref: /vn.trader/vtEngine/def dbWriteCSV(self,d)
         self.mainEngine.dbWriteCSV(d)
         print "#######################################################################\n"
         ## /////////////////////////////////////////////////////////////////////////////
@@ -433,10 +446,12 @@ class DrEngine(object):
         self.eventEngine.put(event)   
     ################################################################################
     ## william
-    ## 增加 dataRecorder.dbW
+    ## 增加 dataRecorder.db
     def exitfun(self,event):
         if self.exittime():
-            print 'exit0'
+            print "\n#######################################################################"
+            print u"亲, 赌场已经收摊打烊啦......!!!"
+            print "#######################################################################\n"
             os._exit(0)
     #----------------------------------------------------------------------
     def exittime(self):

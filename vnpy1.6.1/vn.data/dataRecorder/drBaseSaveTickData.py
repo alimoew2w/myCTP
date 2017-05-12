@@ -10,7 +10,7 @@ from __future__ import division
 
 # 把vn.trader根目录添加到python环境变量中
 import sys
-sys.path.append('..')
+# sys.path.append('..')
 
 
 # 数据库名称
@@ -48,45 +48,45 @@ class DrBarData(object):
         self.openInterest = EMPTY_INT       # 持仓量
 
 
-########################################################################
+################################################################################
 class DrTickData(object):
     """Tick数据"""
-
-    #----------------------------------------------------------------------
+    ## 数据从 `gateway/ctpGateway/def onRtnDepthMarketData(self, data):` 来
+    #---------------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
         ## tick的时间
-        self.date = EMPTY_STRING            # 日期
-        self.time = EMPTY_STRING            # 时间
-        self.datetime = None                # python的datetime时间对象
+        self.timeStamp  = EMPTY_STRING              # 本地时间戳
+        self.date       = EMPTY_STRING              # 日期
+        self.time       = EMPTY_STRING              # 时间
+        self.datetime   = None                      # python的datetime时间对象
 
         ## 代码
-        self.vtSymbol   = EMPTY_STRING          # vt系统代码
-        self.symbol     = EMPTY_STRING          # 合约代码
-        self.exchange   = EMPTY_STRING          # 交易所代码
+        self.symbol     = EMPTY_STRING              # 合约代码
+        self.exchange   = EMPTY_STRING              # 交易所代码
+        self.vtSymbol   = EMPTY_STRING              # vt系统代码
 
         ## 价格信息
-        self.lastPrice          = EMPTY_FLOAT           # 最新成交价
-        self.presettlementprice = EMPTY_FLOAT 
+        self.lastPrice          = EMPTY_FLOAT       # 最新成交价
+        self.preSettlementPrice = EMPTY_FLOAT 
         self.preClosePrice      = EMPTY_FLOAT 
         self.openPrice          = EMPTY_FLOAT
         self.highestPrice       = EMPTY_FLOAT
-        self.lowesrPrice        = EMPTY_FLOAT
-        self.ClosePrice         = EMPTY_FLOAT
+        self.lowestPrice        = EMPTY_FLOAT
+        self.closePrice         = EMPTY_FLOAT
         
-        self.upperLimit = EMPTY_FLOAT           # 涨停价
-        self.lowerLimit = EMPTY_FLOAT           # 跌停价
+        self.upperLimit = EMPTY_FLOAT               # 涨停价
+        self.lowerLimit = EMPTY_FLOAT               # 跌停价
 
         ## 成交量, 成交额
-        self.volume             = EMPTY_INT             # 最新成交量
-        self.turnover           = EMPTY_INT             # 成交额
+        self.volume             = EMPTY_INT         # 最新成交量
+        self.turnover           = EMPTY_INT         # 成交额
 
         ## 持仓数据
         self.preOpenInterest    = EMPTY_FLOAT 
-        self.openInterest       = EMPTY_INT           # 持仓量
+        self.openInterest       = EMPTY_INT         # 持仓量
 
         ## 期权数据
-
         self.preDelta           = EMPTY_FLOAT
         self.currDelta          = EMPTY_FLOAT
 
@@ -116,4 +116,6 @@ class DrTickData(object):
         self.askVolume5 = EMPTY_INT    
 
         ########################################################################
-        self.averageprice       = EMPTY_FLOAT
+        self.settlementPrice    = EMPTY_FLOAT
+        self.averagePrice       = EMPTY_FLOAT 
+        

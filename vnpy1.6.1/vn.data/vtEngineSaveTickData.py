@@ -6,6 +6,7 @@
 
 import os
 import shelve
+import csv
 from collections import OrderedDict
 from datetime import datetime
 
@@ -38,7 +39,12 @@ saveTickData = True
 
 
 from eventEngine import *
-from vtGateway import *
+
+################################################################################
+## william
+## from vtGateway import *
+from vtGatewaySaveTickData import *
+
 import vtFunctionSaveTickData
 from vtFunctionSaveTickData import loadMongoSetting
 ################################################################################
@@ -289,92 +295,6 @@ class MainEngine(object):
     ##> Beginnings
     ############################################################################
 
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    '''
-    def dbConnect(self):
-        """连接MongoDB数据库"""
-        if not self.dbClient:
-            # 读取MongoDB的设置
-            host, port, logging = loadMongoSetting()
-                
-            try:
-                # 设置MongoDB操作的超时时间为0.5秒
-                self.dbClient = MongoClient(host, port, connectTimeoutMS=500)
-                
-                # 调用server_info查询服务器状态，防止服务器异常并未连接成功
-                self.dbClient.server_info()
-                self.writeLog(text.DATABASE_CONNECTING_COMPLETED)
-                
-                # 如果启动日志记录，则注册日志事件监听函数
-                if logging:
-                    self.eventEngine.register(EVENT_LOG, self.dbLogging)
-                    
-            except ConnectionFailure:
-                self.writeLog(text.DATABASE_CONNECTING_FAILED)
-    '''
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    '''
-    #---------------------------------------------------------------------------
-    def dbInsert(self, dbName, collectionName, d):
-        """向MongoDB中插入数据，d是具体数据"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
-            collection = db[collectionName]
-            collection.insert_one(d)
-        else:
-            self.writeLog(text.DATA_INSERT_FAILED)
-    '''
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    '''    
-    #---------------------------------------------------------------------------
-    def dbQuery(self, dbName, collectionName, d):
-        """从MongoDB中读取数据，d是查询要求，返回的是数据库查询的指针"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
-            collection = db[collectionName]
-            cursor = collection.find(d)
-            if cursor:
-                return list(cursor)
-            else:
-                return []
-        else:
-            self.writeLog(text.DATA_QUERY_FAILED)   
-            return []
-    '''
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    '''
-    #---------------------------------------------------------------------------
-    def dbUpdate(self, dbName, collectionName, d, flt, upsert=False):
-        """向MongoDB中更新数据，d是具体数据，flt是过滤条件，upsert代表若无是否要插入"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
-            collection = db[collectionName]
-            collection.replace_one(flt, d, upsert)
-        else:
-            self.writeLog(text.DATA_UPDATE_FAILED)        
-    '''
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    '''   
-    #---------------------------------------------------------------------------
-    def dbLogging(self, event):
-        """向MongoDB中插入日志"""
-        log = event.dict_['data']
-        d = {
-            'content': log.logContent,
-            'time': log.logTime,
-            'gateway': log.gatewayName
-        }
-        self.dbInsert(LOG_DB_NAME, self.todayDate, d)
-    '''
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     ############################################################################
     ## william
@@ -524,36 +444,26 @@ class MainEngine(object):
         ## william
         ## d 从 /vn.trader/gateway/ctpGateway/ctpGateway.py 获取
         ########################################################################
-        myFields = "date,time,symbol,exchange,lastPrice,volume,openInterest,upperLimit,lowerLimit,bidPrice1,bidPrice2,bidPrice3,bidPrice4,bidPrice5,askPrice1,askPrice2,askPrice3,askPrice4,askPrice5,bidVolume1,bidVolume2,bidVolume3,bidVolume4,bidVolume5,askVolume1,askVolume2,askVolume3,askVolume4,askVolume5,presettlementprice,settlementprice,averageprice" 
-        #values = '('')'
-        values = ''
-        #for f in fields.split(','):
-        for f in myFields.split(','):
-            values =  values +'{0},'.format(d[f])
-        values = values[0:-1] + "\n"
-        ########################################################################
-        ## william
-        ## 
-        #print "#######################################################################"
-        #print u"数据写入 csv ......
-        '''
-        if printTickData:
-            temp = "date,time,symbol,lastPrice,volume,upperLimit,lowerLimit,bidPrice1,askPrice1,bidVolume1,askVolume1,averageprice"
-            tempFields = str(myFields).split(',')
-            tempValues = str(values).replace('\n', '').split(',')
-            tempRes = pd.DataFrame([tempValues], columns = tempFields)
-            print tempRes[temp.split(',')]
-        '''
-        #print myFields
-        #print values
-        data_recorder_path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.data/TickData/'
-        # dataFile = os.path.join(data_recorder_path,(mainEngine.todayDate + '.csv'))  
-        dataFile = os.path.join(data_recorder_path,(str(self.todayDate) + '.csv'))
-        with open(dataFile, 'a') as f:
-            f.write(values)
-        #print "#######################################################################"
-        ########################################################################
+        myFields = ['timeStamp','date','time','symbol','exchange',\
+                    'lastPrice','preSettlementPrice','preClosePrice',\
+                    'openPrice','highestPrice','lowestPrice','closePrice',\
+                    'upperLimit','lowerLimit','settlementPrice','volume','turnover',\
+                    'preOpenInterest','openInterest','preDelta','currDelta',\
+                    'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
+                    'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
+                    'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',\
+                    'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',\
+                    'averagePrice']
+        values = [d[k] for k in myFields]
 
+        #print d
+
+        data_recorder_path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.data/TickData/' 
+        dataFile = os.path.join(data_recorder_path,(str(self.todayDate) + '.csv'))
+
+        with open(dataFile, 'a') as f:
+            wr = csv.writer(f)
+            wr.writerow(values)
     ############################################################################
     ## william
     ## DataBase setting
@@ -601,6 +511,9 @@ class MainEngine(object):
 ################################################################################
 class DataEngine(object):
     """数据引擎"""
+    ############################################################################
+    ## william
+    ## 'ContractData.vt': 每天的合约信息
     contractFileName = 'ContractData.vt'
 
     ############################################################################
@@ -619,6 +532,9 @@ class DataEngine(object):
         """Constructor"""
         self.eventEngine = eventEngine
         
+        ########################################################################
+        ## william
+        ## 保存合约信息的文件
         # 保存合约详细信息的字典
         self.contractDict = {}
         
@@ -644,6 +560,9 @@ class DataEngine(object):
     ## 更新 Tick Data 的数据
     ############################################################################
     #---------------------------------------------------------------------------
+    ############################################################################
+    ## william
+    ## 每日更新合约信息的文件
     def updateContract(self, event):
         """更新合约数据"""
         contract = event.dict_['data']
@@ -663,7 +582,10 @@ class DataEngine(object):
         """查询所有合约对象（返回列表）"""
         return self.contractDict.values()
     
-    #----------------------------------------------------------------------
+    ############################################################################
+    ## william
+    ## 保存的合约信息在这个文件
+    #---------------------------------------------------------------------------
     def saveContracts(self):
         """保存所有合约对象到硬盘"""
         f = shelve.open(self.contractFileName)

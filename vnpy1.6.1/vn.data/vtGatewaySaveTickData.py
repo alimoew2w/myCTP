@@ -170,37 +170,47 @@ class VtBaseData(object):
 ########################################################################
 class VtTickData(VtBaseData):
     """Tick行情数据类"""
-
+    ## 参考 `dataRecorder/drBase/class DrTickData`
     #----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
         super(VtTickData, self).__init__()
-        
-        ## 时间数据
-        self.time = EMPTY_STRING                # 时间 11:20:56.5
-        self.date = EMPTY_STRING                # 日期 20151009
+
+        ## tick的时间
+        self.timeStamp  = EMPTY_STRING              # 本地时间戳
+        self.date       = EMPTY_STRING              # 日期
+        self.time       = EMPTY_STRING              # 时间
+        self.datetime   = None                      # python的datetime时间对象
 
         # 代码相关
-        self.symbol = EMPTY_STRING              # 合约代码
-        self.exchange = EMPTY_STRING            # 交易所代码
-        self.vtSymbol = EMPTY_STRING            # 合约在vt系统中的唯一代码，通常是 合约代码.交易所代码
+        self.symbol     = EMPTY_STRING              # 合约代码
+        self.exchange   = EMPTY_STRING              # 交易所代码
+        self.vtSymbol   = EMPTY_STRING              # 合约在vt系统中的唯一代码，通常是 合约代码.交易所代码
         
-        # 成交数据
-        self.lastPrice  = EMPTY_FLOAT           # 最新成交价
-        self.lastVolume = EMPTY_INT             # 最新成交量
-        self.volume     = EMPTY_INT             # 今天总成交量
-        self.turnover   = EMPTY_INT             # 今天总成交额
-        self.openInterest = EMPTY_INT           # 持仓量
+        ## 价格信息
+        self.lastPrice          = EMPTY_FLOAT       # 最新成交价
+        self.preSettlementPrice = EMPTY_FLOAT 
+        self.preClosePrice      = EMPTY_FLOAT 
+        self.openPrice          = EMPTY_FLOAT
+        self.highestPrice       = EMPTY_FLOAT
+        self.lowestPrice        = EMPTY_FLOAT
+        self.closePrice         = EMPTY_FLOAT
         
-        # 常规行情
-        self.openPrice = EMPTY_FLOAT            # 今日开盘价
-        self.highPrice = EMPTY_FLOAT            # 今日最高价
-        self.lowPrice = EMPTY_FLOAT             # 今日最低价
-        self.preClosePrice = EMPTY_FLOAT
-        
-        self.upperLimit = EMPTY_FLOAT           # 涨停价
-        self.lowerLimit = EMPTY_FLOAT           # 跌停价
-        
+        self.upperLimit = EMPTY_FLOAT               # 涨停价
+        self.lowerLimit = EMPTY_FLOAT               # 跌停价
+
+        ## 成交量, 成交额
+        self.volume             = EMPTY_INT         # 最新成交量
+        self.turnover           = EMPTY_INT         # 成交额
+
+        ## 持仓数据
+        self.preOpenInterest    = EMPTY_FLOAT 
+        self.openInterest       = EMPTY_INT         # 持仓量
+
+        ## 期权数据
+        self.preDelta           = EMPTY_FLOAT
+        self.currDelta          = EMPTY_FLOAT
+
         # 五档行情
         self.bidPrice1 = EMPTY_FLOAT
         self.bidPrice2 = EMPTY_FLOAT
@@ -224,20 +234,11 @@ class VtTickData(VtBaseData):
         self.askVolume2 = EMPTY_INT
         self.askVolume3 = EMPTY_INT
         self.askVolume4 = EMPTY_INT
-        self.askVolume5 = EMPTY_INT   
-
-        ########################################################################
-        ## william
-        ## presettlementprice
-        ## settlementprice
-        ## averageprice
+        self.askVolume5 = EMPTY_INT    
         
-        self.presettlementprice = EMPTY_FLOAT
-        self.settlementprice    = EMPTY_FLOAT
-        self.averageprice       = EMPTY_FLOAT
-
-        ########################################################################      
-    
+        ########################################################################
+        #self.settlementPrice    = EMPTY_FLOAT
+        #self.averagePrice       = EMPTY_FLOAT    
     
 ########################################################################
 class VtTradeData(VtBaseData):

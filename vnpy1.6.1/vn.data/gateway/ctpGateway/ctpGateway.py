@@ -16,7 +16,12 @@ from datetime import datetime
 from vnctpmd import MdApi
 from vnctptd import TdApi
 from ctpDataType import *
-from vtGateway import *
+
+################################################################################
+## william
+## from vtGateway import *
+from vtGatewaySaveTickData import *
+
 from language import text
 
 import pandas as pd
@@ -381,8 +386,13 @@ class CtpMdApi(MdApi):
         tick = VtTickData()
         tick.gatewayName = self.gatewayName
         
-        tick.symbol = data['InstrumentID']
+        # 这里由于交易所夜盘时段的交易日数据有误，所以选择本地获取
+        #tick.date = data['TradingDay']
+        tick.timeStamp  = str(datetime.now().strftime('%Y%m%d %H:%M:%S.%f'))
+        tick.date       = datetime.now().strftime('%Y%m%d') 
+        tick.time       = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
 
+        tick.symbol     = data['InstrumentID']
         ########################################################################
         ## william
         ## 添加交易所代码
@@ -393,80 +403,63 @@ class CtpMdApi(MdApi):
         tick.exchange = data['ExchangeID']
         tick.vtSymbol = tick.symbol #'.'.join([tick.symbol, EXCHANGE_UNKNOWN])
         
-        tick.lastPrice = data['LastPrice']
+        ## 价格信息
+        tick.lastPrice          = data['LastPrice']
+        tick.preSettlementPrice = data['PreSettlementPrice'] 
+        tick.preClosePrice      = data['PreClosePrice'] 
+        tick.openPrice          = data['OpenPrice']
+        tick.highestPrice       = data['HighestPrice']
+        tick.lowestPrice        = data['LowestPrice']
+        tick.closePrice         = data['ClosePrice']
+
+        tick.upperLimit         = data['UpperLimitPrice']
+        tick.lowerLimit         = data['LowerLimitPrice']
+
+        ## 成交量, 成交额
         tick.volume = data['Volume']
         tick.turnover = data['Turnover']
-        tick.openInterest = data['OpenInterest']
-        tick.time = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
+
+        ## 持仓数据
+        tick.preOpenInterest    = data['PreOpenInterest']
+        tick.openInterest       = data['OpenInterest']
+
+        ## 期权数据
+        tick.preDelta           = data['PreDelta']
+        tick.currDelta          = data['CurrDelta']
         
-        # 这里由于交易所夜盘时段的交易日数据有误，所以选择本地获取
-        #tick.date = data['TradingDay']
-        tick.date = datetime.now().strftime('%Y%m%d')   
-        
-        tick.openPrice = data['OpenPrice']
-        tick.highPrice = data['HighestPrice']
-        tick.lowPrice = data['LowestPrice']
-        tick.preClosePrice = data['PreClosePrice']
-        
-        tick.upperLimit = data['UpperLimitPrice']
-        tick.lowerLimit = data['LowerLimitPrice']
-        
-        # CTP只有一档行情
-        tick.bidPrice1 = data['BidPrice1']
+        #! CTP只有一档行情
+        tick.bidPrice1  = data['BidPrice1']
         tick.bidVolume1 = data['BidVolume1']
-        tick.askPrice1 = data['AskPrice1']
+        tick.askPrice1  = data['AskPrice1']
         tick.askVolume1 = data['AskVolume1']
 
-        tick.bidPrice2 = data['BidPrice2']
+        tick.bidPrice2  = data['BidPrice2']
         tick.bidVolume2 = data['BidVolume2']
-        tick.askPrice2 = data['AskPrice2']
+        tick.askPrice2  = data['AskPrice2']
         tick.askVolume2 = data['AskVolume2']
 
-        tick.bidPrice3 = data['BidPrice3']
+        tick.bidPrice3  = data['BidPrice3']
         tick.bidVolume3 = data['BidVolume3']
-        tick.askPrice3 = data['AskPrice3']
+        tick.askPrice3  = data['AskPrice3']
         tick.askVolume3 = data['AskVolume3']
 
-        tick.bidPrice4 = data['BidPrice4']
+        tick.bidPrice4  = data['BidPrice4']
         tick.bidVolume4 = data['BidVolume4']
-        tick.askPrice4 = data['AskPrice4']
+        tick.AskPrice4  = data['AskPrice4']
         tick.askVolume4 = data['AskVolume4']
 
-        tick.bidPrice5 = data['BidPrice5']
+        tick.bidPrice5  = data['BidPrice5']
         tick.bidVolume5 = data['BidVolume5']
-        tick.askPrice5 = data['AskPrice5']
+        tick.askPrice5  = data['AskPrice5']
         tick.askVolume5 = data['AskVolume5']
 
         ########################################################################
-        ## william
-        ## presettlementprice
-        ## settlementprice
-        ## averageprice
-        
-        tick.presettlementprice = data['PreSettlementPrice']
-        tick.settlementprice    = data['SettlementPrice']
-        tick.averageprice       = data['AveragePrice']
-        
-        ## tick.averageprice       = data["AveragePrice"]
-        '''
-        print "#######################################################################"
-        print u'tick :==> ', tick.presettlementprice,tick.settlementprice,tick.averageprice
-        print "#######################################################################"
-        '''
-        ########################################################################
+        tick.settlementPrice    = data['SettlementPrice']
+        tick.averagePrice       = data['AveragePrice']
 
-
-        ########################################################################
-        ## william
-        
-        '''
-        print "#######################################################################"
-        print u"ctpGateway, tick"
-        print tick.gatewayName, tick.symbol, tick.exchange, tick.lastPrice
-        print "#######################################################################"
-        '''
-        ########################################################################
-
+        #print tick
+        # print u"tick.__dict__:-->", tick.__dict__['symbol']
+        # print tick.__dict__
         ########################################################################
         ## william
         ## tick 数据返回到 /vn.trader/vtEngine.onTick()
@@ -909,8 +902,11 @@ class CtpTdApi(TdApi):
     def onRspQryProduct(self, data, error, n, last):
         """"""
         pass
-        
-    #----------------------------------------------------------------------
+    
+    ############################################################################
+    ## william
+    ## 查询合约信息    
+    #---------------------------------------------------------------------------
     def onRspQryInstrument(self, data, error, n, last):
         """合约查询回报"""
         contract = VtContractData()

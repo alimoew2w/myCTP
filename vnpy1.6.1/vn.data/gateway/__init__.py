@@ -16,8 +16,9 @@ GATEWAY_DICT = {}
 #### path = os.path.abspath(os.path.dirname(__file__))
 ################################################################################
 ##　william
+## recordData
 ################################################################################
-path = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/"
+
 
 moduleName = 'gateway.' + "ctpGateway"
 module = importlib.import_module(moduleName)
