@@ -5,5 +5,8 @@
 *.pyc
 
 # 不想要同步的文件夹
-/vnpy1.6.1/vn.data/TickData
+/vnpy1.6.1/vn.data/TickData/*
 *.temp
+*.vt
+*.dat
+*.local
