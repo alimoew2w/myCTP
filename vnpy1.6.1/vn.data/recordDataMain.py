@@ -34,11 +34,12 @@ SETTING_FILENAME = os.path.join(trader_path, SETTING_FILENAME)
 ## william 
 ## 开始调用定制模块
 
-
 ## /////////////////////////////////////////////////////////////////////////////
 ## SaveTickData
 from vtEngineSaveTickData import MainEngine
 import vtFunctionSaveTickData
+
+
 
 print "\n#######################################################################"
 print u"vtEngine 启动成功！！！"

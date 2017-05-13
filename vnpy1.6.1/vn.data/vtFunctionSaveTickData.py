@@ -35,6 +35,12 @@ MAX_DECIMAL = 4
 
 import vtEngineSaveTickData
 
+################################################################################
+## william
+import sys
+sys.path.append('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/')
+
+
 #----------------------------------------------------------------------
 def safeUnicode(value):
     """检查接口数据潜在的错误，保证转化为的字符串正确"""
@@ -120,14 +126,14 @@ def refreshDatarecodeSymbol():
     contractDict = {}
     ############################################################################
     ## william
-    jfile = os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/dataRecorder/','DR_settingSaveTickData.json')
+    jfile = os.path.join('/home/william/Documents/myCTP/vnpy1.6.1/vn.data/dataRecorder/','DR_settingSaveTickData.json')
     jf    = open(jfile,'w')
 
     drSetting            = {}
     drSetting['tick']    = []
     drSetting['working'] = True
 
-    f = shelve.open(os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/',contractFileName))
+    f = shelve.open(os.path.join('/home/william/Documents/myCTP/vnpy1.6.1/vn.data/',contractFileName))
     if 'data' in f:
         d = f['data']
         print "全部期货与期权合约数量为:==> ",len(d)
@@ -145,3 +151,4 @@ def refreshDatarecodeSymbol():
 if __name__ == '__main__':
     ## 保存合约信息到 DR_setting.json
     refreshDatarecodeSymbol()
+
