@@ -1,17 +1,14 @@
 {
-	"fontFamily"    : "微软雅黑",
-	"fontSize"      : 10,
-
-	"mongoHost"     : "localhost",
-	"mongoPort"     : 27017,
-	"mongoLogging"  : true,
-
+    "fontFamily"    : "微软雅黑",
+    "fontSize"      : 10,
+    "mongoHost"     : "localhost",
+    "mongoPort"     : 27017,
+    "mongoLogging"  : true,
     "mysqlHost"     : "192.168.1.106",
     "mysqlPort"     : 3306,
     "mysqlDB"       : "china_futures_bar",
     "mysqlUser"     : "fl",
     "mysqlPassword" : "abc@123",
-
-	"darkStyle"     : true,
-	"language"      : "chinese"
+    "darkStyle"     : true,
+    "language"      : "chinese"
 }
