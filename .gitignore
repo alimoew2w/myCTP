@@ -9,4 +9,6 @@
 *.temp
 *.vt
 *.dat
+*.bak
+*.dir
 *.local
