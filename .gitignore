@@ -1,1 +1,9 @@
+# github credentials
 .git-credentials
+
+# Python编译文件
+*.pyc
+
+# 不想要同步的文件夹
+/vnpy1.6.1/vn.data/TickData
+*.temp
