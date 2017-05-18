@@ -18,6 +18,8 @@
 
 2. pip 安装
 
+        sudo apt-get install python-setuptools
+
         pip install --upgrade pip
         pip install pymongo qdarkstyle zmq msgpack-python websocket
         pip install MySQL-python
