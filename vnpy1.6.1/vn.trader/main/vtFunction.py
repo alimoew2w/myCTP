@@ -11,13 +11,9 @@
 ## 2. vtFunction.tradingDay()
 ##    获取当前时间对应的交易所交易日历
 ## 3. 
-
 ################################################################################
 
-"""
-包含一些开发中常用的函数
-"""
-
+## =============================================================================
 import os
 import decimal
 import json
@@ -34,15 +30,10 @@ from datetime import datetime
 
 MAX_NUMBER = 10000000000000
 MAX_DECIMAL = 4
+## =============================================================================
 
-################################################################################
-## william
-## 这里需要注意是不是会报错
-'''
-import vtEngine
-'''
 
-#----------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def safeUnicode(value):
     """检查接口数据潜在的错误，保证转化为的字符串正确"""
     # 检查是数字接近0时会出现的浮点数上限
@@ -58,7 +49,8 @@ def safeUnicode(value):
     
     return unicode(value)
 
-#----------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
 def loadMongoSetting():
     """载入MongoDB数据库的配置"""
     fileName = 'VT_setting.json'
@@ -85,6 +77,7 @@ def loadMongoSetting():
         
     return host, port, logging
 
+
 ################################################################################
 ## william
 ## MySQL setting
@@ -110,26 +103,27 @@ def loadMySQLSetting():
         setting = json.load(f)
         host    = setting['mysqlHost']
         port    = setting['mysqlPort']
-    #   db      = setting['mysqlDB']
         user    = setting['mysqlUser']
         passwd  = setting['mysqlPassword']
     except:
         host    = '192.168.1.106'
         port    = 3306
-    #   db      = 'china_futures_bar'
         user    = 'fl'
         passwd  = 'abc@123'
         
     return host, port, user, passwd
 
-#----------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
 def todayDate():
     """获取当前本机电脑时间的日期"""
     return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)    
 
+
 ################################################################################
 ## william
-## TradingDay
+## 当前日期所对应的交易所的交易日历: tradingDay
+################################################################################
 def tradingDay():
     """ 交易日 """
     ChinaFuturesCalendar = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ChinaFuturesCalendar.csv'
