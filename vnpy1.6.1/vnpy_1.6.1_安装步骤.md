@@ -19,6 +19,10 @@
 2. pip 安装
 
         sudo apt-get install python-setuptools
+        sudo apt-get install build-essential python-dev libmysqlclient-dev
+        sudo apt-get install python-mysqldb
+
+        sudo apt-install cmake libblkid-dev libboost-all-dev libaudit-dev e2fslibs-dev
 
         pip install --upgrade pip
         pip install pymongo qdarkstyle zmq msgpack-python websocket
