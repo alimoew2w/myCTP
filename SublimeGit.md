@@ -49,6 +49,8 @@
 
     - The * line tells git to ignore all files in the folder, but !.gitignore tells git to still include the .gitignore file. This way, your local repository and any other clones of the repository all get both the empty folder and the .gitignore it needs.
 
+8. `Sublime Text 3` 的设置, 可以参考我的[配置方案](https://github.com/williamlfang/myCTP/tree/master/SublimeText-3/Packages).
+
 ================================================================================
 
 @williamlfang
