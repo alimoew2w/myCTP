@@ -126,7 +126,7 @@ def todayDate():
 ################################################################################
 def tradingDay():
     """ 交易日 """
-    ChinaFuturesCalendar = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ChinaFuturesCalendar.csv'
+    ChinaFuturesCalendar = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main/ChinaFuturesCalendar.csv'
     
     ChinaFuturesCalendar = pd.read_csv(ChinaFuturesCalendar)
     ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)    
