@@ -7,28 +7,9 @@
 '''
 
 ################################################################################
-## william
-## 用于收集 CTP Tick Data
-"""
-import os
-path = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/dataRecorder/'
-os.chdir(path)
-print os.getcwd()
-"""
-################################################################################
-
-
-################################################################################
-
-
-################################################################################
-
-################################################################################
 ##　william
 import MySQLdb
-
 ################################################################################
-
 
 import json
 import os
@@ -47,12 +28,9 @@ from language import text
 
 import pandas as pd
 ################################################################################
-## william
-# import vtEngine
-# from vtEngine import *
-################################################################################
 
-########################################################################
+
+################################################################################
 class DrEngine(object):
     """数据记录引擎"""
 
@@ -60,7 +38,7 @@ class DrEngine(object):
     path = os.path.abspath(os.path.dirname(__file__))
     settingFileName = os.path.join(path, settingFileName)    
 
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
         """Constructor"""
         self.mainEngine = mainEngine
@@ -104,13 +82,6 @@ class DrEngine(object):
         ## william
         ## DrEngine 关闭,则不再保存数据到 CSV 文件
         ########################################################################
-        
-        # 载入设置，订阅行情
-        '''
-        print "#######################################################################"
-        print u"class DrEngine.loadSetting()"
-        print "#######################################################################"
-        '''
         self.loadSetting()
         
     #----------------------------------------------------------------------
@@ -126,27 +97,11 @@ class DrEngine(object):
             
             if 'tick' in drSetting:
                 l = drSetting['tick']
-                """
-                print "#######################################################################"
-                print u"l = drSetting['tick']:==>"
-                print l[0:2]
-                print "#######################################################################"
-                """
+
                 for setting in l:
-                    
-                    #print "#######################################################################"
-                    #print 'setting:==>'
-                    #print setting
 
                     symbol = setting[0]
                     vtSymbol = symbol
-
-                    #print 'symbol = setting[0]:==>'
-                    #print symbol
-                    #print 'setting[1]:==>', setting[1]
-                    #print setting[0]
-                    #print setting[1]
-                    
 
                     req = VtSubscribeReq()
                     req.symbol = setting[0]
@@ -190,13 +145,6 @@ class DrEngine(object):
                     ## william
                     ## 
                     ############################################################
-                    # self.mainEngine.subscribe(req, setting[1])
-                    '''
-                    print "#######################################################################"
-                    print 'req = VtSubscribeReq()', req
-                    print 'setting[1]:==>', setting[1]
-                    print "#######################################################################"
-                    '''
                     drTick = DrTickData()           # 该tick实例可以用于缓存部分数据（目前未使用）
                     self.tickDict[vtSymbol] = drTick
                     
@@ -252,16 +200,6 @@ class DrEngine(object):
         """处理行情推送"""
         tick = event.dict_['data']
         vtSymbol = tick.vtSymbol
-        """
-        print "#######################################################################"
-        print u"tick = event.dict['data']:", tick
-        print u"tick.keys()"
-        temp = vars(tick).keys()
-        print temp
-        print u"tick.values()"
-        print vars(tick).values()
-        print "#######################################################################\n"
-        """
         ########################################################################
         ## william
         ## Tick Data
@@ -550,51 +488,6 @@ class DrEngine(object):
             except Empty:
                 pass     
 
-    '''
-    #----------------------------------------------------------------------
-    def runSaveTickData(self):
-        """运行插入线程"""
-        ########################################################################
-        ## william
-        ## 获取 CTP 行情 mdApi 推送的 Tick Data
-        ## 并保存到 vtEngine.dbWriterCSV()
-        ## 当持仓中的合约被点击后,开始运行 mainEngine.dbInsert()
-        ########################################################################
-        """
-        while self.active:
-            try:
-                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                self.mainEngine.dbInsert(dbName, collectionName, d)
-            except Empty:
-                pass
-        """
-        ########################################################################
-        ## william
-        ## 这里,当持仓的合约被鼠标激活后,
-        ## 把合约的信息打印到终端
-        ########################################################################
-        while self.active:
-            ## 如果需要保存到 csv 文件
-            """
-            if saveTickData:
-                try:
-                    dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                    ## print d
-                    self.mainEngine.dbWriteCSV(d)
-                except Empty:
-                    pass
-            """
-            try:
-                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                ## print d
-                ############################################################
-                ## william
-                ## 是不是要保存数据到 csv 文件
-                self.mainEngine.dbWriteCSV(d)
-                ############################################################
-            except Empty:
-                pass  
-    '''
     #---------------------------------------------------------------------------
     def start(self):
         """启动"""
@@ -616,14 +509,14 @@ class DrEngine(object):
         event = Event(type_=EVENT_DATARECORDER_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)   
-    ################################################################################
+    ############################################################################
     ## william
     ## 增加 dataRecorder.dbW
     def exitfun(self,event):
         if self.exittime():
             print 'exit0'
             os._exit(0)
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def exittime(self):
         """退出标志"""
         re = False
@@ -634,4 +527,4 @@ class DrEngine(object):
             re = True
             print h,m,re
         return re
-    ################################################################################
+    ############################################################################
