@@ -389,7 +389,7 @@ class BBStrategy(CtaTemplate):
                 vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'short','volume'].values)
                 self.vtOrderIDList.append(vtOrderID)
             elif posInfo[posInfo.direction == 'long'].shape[0] == 0:
-                vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 10)
+                vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
@@ -410,7 +410,7 @@ class BBStrategy(CtaTemplate):
                 vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'long','volume'].values)
                 self.vtOrderIDList.append(vtOrderID)  
             elif posInfo[posInfo.direction == 'short'].shape[0] == 0:
-                vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 10)
+                vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass

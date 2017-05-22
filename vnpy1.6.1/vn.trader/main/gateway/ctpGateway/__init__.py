@@ -7,4 +7,3 @@ gatewayName = 'CTP'
 gatewayDisplayName = gatewayName
 gatewayType = vtConstant.GATEWAYTYPE_FUTURES
 gatewayQryEnabled = True
-

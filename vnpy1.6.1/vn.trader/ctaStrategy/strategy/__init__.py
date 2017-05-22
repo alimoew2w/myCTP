@@ -7,7 +7,6 @@
 import os
 import importlib
 
-
 # 用来保存策略类的字典
 STRATEGY_CLASS = {}
 

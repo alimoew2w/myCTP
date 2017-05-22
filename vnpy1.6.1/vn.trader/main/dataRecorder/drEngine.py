@@ -20,7 +20,6 @@ from Queue import Queue
 from threading import Thread
 
 from eventEngine import *
-# from vtGateway import VtSubscribeReq, VtLogData
 from vtGateway import * 
 from drBase import *
 from vtFunction import todayDate
