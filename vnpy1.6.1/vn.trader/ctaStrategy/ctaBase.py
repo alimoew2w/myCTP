@@ -48,11 +48,11 @@ ENGINETYPE_TRADING = 'trading'          # 实盘
 from vtConstant import EMPTY_UNICODE, EMPTY_STRING, EMPTY_FLOAT, EMPTY_INT
 
 
-########################################################################
+################################################################################
 class StopOrder(object):
     """本地停止单"""
 
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
         self.vtSymbol = EMPTY_STRING
@@ -71,7 +71,7 @@ class StopOrder(object):
 class CtaBarData(object):
     """K线数据"""
 
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
         self.vtSymbol = EMPTY_STRING        # vt系统代码
@@ -226,4 +226,3 @@ class CtaTickData(object):
         ########################################################################
         self.settlementPrice    = EMPTY_FLOAT
         self.averagePrice       = EMPTY_FLOAT   
-
