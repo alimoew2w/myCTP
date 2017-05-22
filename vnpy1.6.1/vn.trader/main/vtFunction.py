@@ -56,11 +56,7 @@ def loadMongoSetting():
     fileName = 'VT_setting.json'
     ############################################################################
     ## william
-    ''' 
     path     = os.path.abspath(os.path.dirname(__file__))
-    fileName = os.path.join(path, fileName)
-    '''
-    path     = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/'
     fileName = os.path.join(path, fileName)
     ############################################################################
     
@@ -90,11 +86,7 @@ def loadMySQLSetting():
     fileName = 'VT_setting.json'
     ############################################################################
     ## william
-    ''' 
     path     = os.path.abspath(os.path.dirname(__file__))
-    fileName = os.path.join(path, fileName)
-    '''
-    path     = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/'
     fileName = os.path.join(path, fileName)
     ############################################################################ 
     
@@ -126,12 +118,14 @@ def todayDate():
 ################################################################################
 def tradingDay():
     """ 交易日 """
-    ChinaFuturesCalendar = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main/ChinaFuturesCalendar.csv'
-    
+    fileName = 'ChinaFuturesCalendar.csv'
+    ############################################################################
+    ## william
+    path     = os.path.abspath(os.path.dirname(__file__))
+    ChinaFuturesCalendar = os.path.join(path, fileName)
+    ############################################################################ 
     ChinaFuturesCalendar = pd.read_csv(ChinaFuturesCalendar)
     ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)    
-
-    # print ChinaFuturesCalendar
     # print ChinaFuturesCalendar.dtypes
     ChinaFuturesCalendar.days = ChinaFuturesCalendar.days.apply(str)
     ChinaFuturesCalendar.nights = ChinaFuturesCalendar.nights.apply(str)
