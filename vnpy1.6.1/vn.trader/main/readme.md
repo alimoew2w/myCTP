@@ -17,4 +17,6 @@
 - [X] `/main/language/`: 语言模块, **不需要更改**
 - [ ] `/main/riskManager/`: 风控模块
 - [ ] `/main/dataRecorder/`: 数据接收与处理, 参考 `/vn.data/`, 主要负责处理从 `CTP` 相关的 `MdApi` 和 `TdApi` 回调数据
-- [ ] `/main/gateway/`: 对各种数据接口 `API` 的封装与暴露 
+- [ ] `/main/gateway/`: 对各种数据接口 `API` 的封装与暴露:
+    
+    - [X] `ctpGateway`: 上期所 `CTP API` 
