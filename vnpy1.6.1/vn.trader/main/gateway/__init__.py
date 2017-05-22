@@ -11,13 +11,11 @@ import traceback
 # 用来保存Gateway类的字典
 GATEWAY_DICT = {}
 
-
-# 获取目录路径
-#### path = os.path.abspath(os.path.dirname(__file__))
 ################################################################################
 ##　william
+# 获取目录路径
+path = os.path.abspath(os.path.dirname(__file__))
 ################################################################################
-path = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/"
 
 moduleName = 'gateway.' + "ctpGateway"
 module = importlib.import_module(moduleName)
