@@ -401,14 +401,6 @@ class MainEngine(object):
         # 来自 vtFunction,
         # 信息存储于 VT_setting
         # 读取 MySQL 的设置
-        ## Usage:
-        # conn = mainEngine.dbMySQLConnect()
-        # cursor = conn.cursor()
-        # cursor.execute('show databases;')
-        # databases = cursor.fetchall()       
-        # for db in databases:
-        #     print db
-        # conn.close()
 
         if not self.dbMySQLClient:
             """ 连接 MySQL 数据库 """
@@ -420,32 +412,8 @@ class MainEngine(object):
                 # cursor = conn.cursor()  
                 # return cursor
                 self.writeLog(text.DATABASE_MySQL_CONNECTING_COMPLETED)
-                '''                
-                # 如果启动日志记录，则注册日志事件监听函数
-                if logging:
-                    self.eventEngine.register(EVENT_LOG, self.dbLogging)
-                '''
                 print text.DATABASE_MySQL_CONNECTING_COMPLETED
                 self.dbMySQLClient = True
-                # try:
-                #     #conn = MySQLdb.connect(host = host, port = port, user = user, passwd = passwd)
-                #     #cursor = conn.cursor()
-                #     cursor.execute("show databases")
-                #     databases = cursor.fetchall()
-                #     ## conn.close()
-                #     ############################################################
-                #     ## william
-                #     ## 打印数据库列表
-                #     print u"#-------------------------------------------------------"
-                #     print u"MySQL 目前共有以下数据库"
-                #     print u"#-------------------------------------------------------"   
-
-                #     for db in databases:
-                #         print db
-                #     ############################################################
-                # except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
-                #     print(e)
-                #     self.writeLog(text.DATA_MySQL_NOT_CONNECTED)
             except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
                 print text.DATABASE_MySQL_CONNECTING_FAILED
                 print e
@@ -457,7 +425,7 @@ class MainEngine(object):
     ## william
     ## 从 MySQL 数据库查询数据
     ############################################################################
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def dbMySQLQuery(self, dbName, query):
         """ 从 MySQL 中读取数据 """
         """
@@ -494,7 +462,7 @@ class MainEngine(object):
         # else:
         #     self.writeLog(text.DATA_MySQL_NOT_CONNECTED)   
         #     return None
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
 
     ############################################################################
     ## william
@@ -504,25 +472,14 @@ class MainEngine(object):
         """向 csv 文件写入数据，d是具体数据"""
 
         myFields = "date,time,symbol,exchange,lastPrice,volume,openInterest,upperLimit,lowerLimit,bidPrice1,bidPrice2,bidPrice3,bidPrice4,bidPrice5,askPrice1,askPrice2,askPrice3,askPrice4,askPrice5,bidVolume1,bidVolume2,bidVolume3,bidVolume4,bidVolume5,askVolume1,askVolume2,askVolume3,askVolume4,askVolume5,presettlementprice,settlementprice,averageprice" 
-        #values = '('')'
+
         values = ''
-        #for f in fields.split(','):
         for f in myFields.split(','):
             values =  values +'{0},'.format(d[f])
         values = values[0:-1] + "\n"
         ########################################################################
         ## william
-        ## 
-        #print "#######################################################################"
-        #print u"数据写入 csv ......
-        '''
-        if printTickData:
-            temp = "date,time,symbol,lastPrice,volume,upperLimit,lowerLimit,bidPrice1,askPrice1,bidVolume1,askVolume1,averageprice"
-            tempFields = str(myFields).split(',')
-            tempValues = str(values).replace('\n', '').split(',')
-            tempRes = pd.DataFrame([tempValues], columns = tempFields)
-            print tempRes[temp.split(',')]
-        '''
+        ## 数据写入 csv
         dataFile = os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/data/',(str(self.todayDate) + '.csv'))
         with open(dataFile, 'a') as f:
             f.write(values)
@@ -571,8 +528,6 @@ class MainEngine(object):
         """查询所有的活跃的委托（返回列表）"""
         return self.dataEngine.getAllOrders()
     ############################################################################
-
-
 
     #---------------------------------------------------------------------------
     def getAllGatewayNames(self):
@@ -688,27 +643,8 @@ class DataEngine(object):
         # 否则则更新字典中的数据        
         else:
             self.workingOrderDict[order.vtOrderID] = order
-
-    ############################################################################
-    ## william
-    ## 通知成交订单
-    ## alertTradedOrders()
-    '''
-    def alertTradedOrders(self):
-        order = event.dict_['data']        
-        self.orderDict[order.vtOrderID] = order
         
-        # 
-        if order.status == STATUS_ALLTRADED:
-            if order.vtOrderID in self.workingOrderDict:
-                del self.workingOrderDict[order.vtOrderID]
-        # 否则则更新字典中的数据        
-        else:
-            self.workingOrderDict[order.vtOrderID] = order
-    '''
-    ############################################################################
-        
-    #----------------------------------------------------------------------
+    #--------------------=====--------------------------------------------------
     def getOrder(self, vtOrderID):
         """查询委托"""
         try:
@@ -716,7 +652,7 @@ class DataEngine(object):
         except KeyError:
             return None
     
-    #----------------------------------------------------------------------
+    #----------------------------------------=====------------------------------
     def getAllWorkingOrders(self):
         """查询所有活动委托（返回列表）"""
         return self.workingOrderDict.values()
@@ -730,7 +666,6 @@ class DataEngine(object):
         """查询所有委托（返回列表）"""
         ########################################################################
         ## william
-        ## print
         ########################################################################
         allOrders = self.orderDict.values()
 
@@ -749,10 +684,8 @@ class DataEngine(object):
             return None
 
         #return self.orderDict.values()
-        
 
-
-    #----------------------------------------------------------------------
+    #------------------------------------------=====----------------------------
     def registerEvent(self):
         """注册事件监听"""
         self.eventEngine.register(EVENT_CONTRACT, self.updateContract)
