@@ -69,8 +69,10 @@ print "\n#######################################################################
 print u"gateway 测试成功！！！"
 print "#######################################################################"
 
-
-from ctaStrategy.ctaEngine import CtaEngine
+################################################################################
+## william
+# from ctaStrategy.ctaEngine import CtaEngine
+from ctaEngine import CtaEngine
 from dataRecorder.drEngine import DrEngine
 from riskManager.rmEngine import RmEngine
 
