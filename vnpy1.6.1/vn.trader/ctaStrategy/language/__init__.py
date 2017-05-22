@@ -7,8 +7,10 @@ import traceback
 # 默认设置
 from chinese import text
 
+################################################################################
+## william
 # 获取目录上级路径
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'main'))
 SETTING_FILENAME = 'VT_setting.json'
 SETTING_FILENAME = os.path.join(path, SETTING_FILENAME)
 
