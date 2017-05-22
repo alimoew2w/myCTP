@@ -12,16 +12,15 @@ import sys
 ################################################################################
 ## william:
 ################################################################################
-ROOT_PATH = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader"
-
+ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main"
 sys.path.append(ROOT_PATH)
 
 # 将功能模块的目录路径添加到环境变量中
 # 若各目录下存在同名文件可能导致异常，请注意测试
 MODULE_PATH = {}
-MODULE_PATH['CTA'] = os.path.join(ROOT_PATH, 'ctaStrategy')
-MODULE_PATH['RM'] = os.path.join(ROOT_PATH, 'riskManager')
-MODULE_PATH['DR'] = os.path.join(ROOT_PATH, 'dataRecorder')
+MODULE_PATH['CTA'] = os.path.normpath(os.path.join(ROOT_PATH, "../", 'ctaStrategy'))
+MODULE_PATH['RM'] = os.path.normpath(os.path.join(ROOT_PATH, "../", 'riskManager'))
+MODULE_PATH['DR'] = os.path.normpath(os.path.join(ROOT_PATH, "../", 'dataRecorder'))
 
 # 添加到环境变量中
 for path in MODULE_PATH.values():
