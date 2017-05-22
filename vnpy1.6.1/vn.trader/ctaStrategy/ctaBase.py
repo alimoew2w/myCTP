@@ -6,18 +6,15 @@
 
 from __future__ import division
 
-
 # 把vn.trader根目录添加到python环境变量中
 import sys
+import os
+sys.path.append('..')
 
 ################################################################################
 ## william
-
-'''
-sys.path.append('..')
-'''
-sys.path.append('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/')
-sys.path.append('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ctaStrategy/')
+path = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.normpath(os.path.join(path, '..', 'main')))
 ################################################################################
 
 # 常量定义
