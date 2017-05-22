@@ -162,6 +162,8 @@ class MainEngine(object):
     #----------------------------------------------------------------------
     def sendOrder(self, orderReq, gatewayName):
         """对特定接口发单"""
+        ########################################################################
+        ## william
         # 如果风控检查失败则不发单
         if not self.rmEngine.checkRisk(orderReq):
             return ''
