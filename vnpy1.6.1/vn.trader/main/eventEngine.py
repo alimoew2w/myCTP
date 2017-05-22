@@ -1,10 +1,5 @@
 # encoding: UTF-8
 
-""" william
-import os
-os.chdir("/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/")
-"""
-
 # 系统模块
 from Queue import Queue, Empty
 from threading import Thread

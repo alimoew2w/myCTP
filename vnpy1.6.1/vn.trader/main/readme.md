@@ -6,5 +6,6 @@
 - [X] `vtPath.py`: 加载路径
 - [X] `vtFunction.py`: 基本的常用函数定义
 - [X] `vtConstant.py`: 常用的变量名称, 参考 `/main/language/chinese/text.py`
+- [X] `vtText.py`: 将常量定义添加到 `vtText.py` 的局部字典中
 - [ ] `vtEngine.py`: 主引擎
 - [ ] `vtGateway.py`: 主要接口封装

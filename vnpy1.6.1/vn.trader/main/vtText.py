@@ -1,16 +1,5 @@
 # encoding: UTF-8
 
-################################################################################
-## william
-## 
-"""
-import os
-path = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader"
-os.chdir(path)
-print os.getcwd()
-"""
-################################################################################
-
 from language import text
 
 # 将常量定义添加到vtText.py的局部字典中
