@@ -63,6 +63,9 @@ class RmEngine(object):
         with open(self.settingFileName) as f:
             d = json.load(f)
 
+            ####################################################################
+            ## william
+            ## 把风控模块设置为激活状态
             # 设置风控参数
             self.active = d['active']
 
@@ -154,44 +157,69 @@ class RmEngine(object):
         event.dict_['data'] = log
         self.eventEngine.put(event)
 
-    #----------------------------------------------------------------------
+    ############################################################################
+    ## william
+    ## 当策略下单时, 需要优先检查是否符合风控政策.
+    ############################################################################
+    #---------------------------------------------------------------------------
     def checkRisk(self, orderReq):
         """检查风险"""
         # 如果没有启动风控检查，则直接返回成功
         if not self.active:
             return True
 
+        ## =====================================================================
         # 检查委托数量
         if orderReq.volume > self.orderSizeLimit:
+            print "\n#######################################################################"
+            print u'单笔委托数量%s，超过限制%s' %(orderReq.volume, self.orderSizeLimit)
             self.writeRiskLog(u'单笔委托数量%s，超过限制%s'
                               %(orderReq.volume, self.orderSizeLimit))
+            print "#######################################################################\n"
             return False
 
+        ## =====================================================================
         # 检查成交合约量
         if self.tradeCount >= self.tradeLimit:
+            print "\n#######################################################################"
+            print u'今日总成交合约数量%s，超过限制%s' %(self.tradeCount, self.tradeLimit)
             self.writeRiskLog(u'今日总成交合约数量%s，超过限制%s'
                               %(self.tradeCount, self.tradeLimit))
+            print "#######################################################################\n"
             return False
 
+        ## =====================================================================
         # 检查流控
         if self.orderFlowCount >= self.orderFlowLimit:
+            print "\n#######################################################################"
+            print u'委托流数量%s，超过限制每%s秒%s' %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit)
             self.writeRiskLog(u'委托流数量%s，超过限制每%s秒%s'
                               %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit))
+            print "#######################################################################\n"
             return False
 
+        ## =====================================================================
         # 检查总活动合约
         workingOrderCount = len(self.mainEngine.getAllWorkingOrders())
         if workingOrderCount >= self.workingOrderLimit:
+            print "\n#######################################################################"
+            print u'当前活动委托数量%s，超过限制%s' %(workingOrderCount, self.workingOrderLimit)
             self.writeRiskLog(u'当前活动委托数量%s，超过限制%s'
                               %(workingOrderCount, self.workingOrderLimit))
+            print "#######################################################################\n"
             return False
 
+        ## =====================================================================
         # 检查撤单次数
         if orderReq.symbol in self.orderCancelDict and self.orderCancelDict[orderReq.symbol] >= self.orderCancelLimit:
+            print "\n#######################################################################"
+            print u'当日%s撤单次数%s，超过限制%s' %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit)
             self.writeRiskLog(u'当日%s撤单次数%s，超过限制%s'
                               %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit))
+            print "#######################################################################\n"
             return False
         
+        ## =====================================================================
         # 对于通过风控的委托，增加流控计数
         self.orderFlowCount += 1
 
