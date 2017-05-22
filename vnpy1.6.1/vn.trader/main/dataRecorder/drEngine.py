@@ -125,11 +125,7 @@ class DrEngine(object):
                     ## 针对所有的 DR_setting.json
                     ############################################################
                     contract = self.mainEngine.getContract(vtSymbol)
-                    '''
-                    print contract
-                    print vars(contract)
-                    print contract.__dict__
-                    '''
+
                     if contract:
                         gateway = contract.gatewayName
                         ## req = VtSubscribeReq()
@@ -196,8 +192,8 @@ class DrEngine(object):
     ## def procecssTickEvent(self, event):
     ############################################################################
     def processTickEvent(self, event):
-        
         """处理行情推送"""
+
         tick = event.dict_['data']
         vtSymbol = tick.vtSymbol
         ########################################################################
@@ -292,24 +288,15 @@ class DrEngine(object):
                 bar.low = min(bar.low, drTick.lastPrice)
                 bar.close = drTick.lastPrice            
 
-
-
     ############################################################################
     ## william
     ## 获取账户信息
     ## def processAccountEvent(self, event):
     ############################################################################
-    
     def processAccountInfoEvent(self, event):
         """处理账户推送"""
         account = event.dict_['data']
-        
-        #print "\n#######################################################################"
-        #print u"def processAccountEvent(self, event):", account
-        #print u"account.__dict__:", account.__dict__
-        #print "#######################################################################"
-        
-        
+
         ########################################################################
         # 转化 VtAccount 格式
         # self.VtAccountInfo = VtAccountData()
@@ -511,7 +498,8 @@ class DrEngine(object):
         self.eventEngine.put(event)   
     ############################################################################
     ## william
-    ## 增加 dataRecorder.dbW
+    ## 增加程序退出的设定
+    ## exitfun()
     def exitfun(self,event):
         if self.exittime():
             print 'exit0'
