@@ -1,0 +1,43 @@
+[
+     {
+        "id": "tools",
+        "children":
+        [{
+            "caption": "SublimeREPL",
+            "mnemonic": "",
+            "id": "SublimeREPL",
+            "children":
+            [
+                {"command": "repl_open",
+                 "caption": "Rssh_SH",
+                 "id": "repl_rssh_SH",
+                 "mnemonic": "rssh_SH",
+                 "args": {
+                    "type": "subprocess",
+                    "external_id": "r",
+                    "additional_scopes": ["tex.latex.knitr"],
+                    "encoding": {
+                        "windows": "$win_cmd_encoding",
+                        "linux": "utf8",
+                        "osx": "utf8"
+                        },
+                    "soft_quit": "\nquit(save=\"no\")\n",
+                    "cmd": {"linux": ["ssh","fl@192.168.1.106","-p22","R","--interactive", "--no-readline"],
+                            "osx": ["ssh","fl@gczhang.imwork.net", "-p58873","R","--interactive", "--no-readline"],
+                            "windows": ["Rterm.exe", "--ess", "--encoding=$win_cmd_encoding"]},
+                    "cwd": "$file_path",
+                    "extend_env": {"osx": {"PATH": "{PATH}:/usr/local/bin"},
+                                   "linux": {"PATH": "{PATH}:/usr/local/bin"},
+                                   "windows": {}},
+                    "cmd_postfix": "\n",
+                    "suppress_echo": {"osx": true,
+                                      "linux": true,
+                                      "windows": false},
+                    "syntax": "Packages/R/R Console.tmLanguage"
+                    }
+                }
+            ]
+        }]
+    }
+]
+

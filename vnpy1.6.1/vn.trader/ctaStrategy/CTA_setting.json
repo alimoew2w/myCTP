@@ -1,0 +1,7 @@
+[
+    {
+        "name": "Bollinger Band",
+        "className": "BBStrategy",
+        "vtSymbol": "i1709, rb1710, cu1707, MA709, SR709, FG709, J1709"
+    }
+]

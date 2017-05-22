@@ -14,7 +14,7 @@ import re
 ################################################################################
 ##　增加路径说明
 ################################################################################
-os.chdir("/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader")
+os.chdir("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
 
 import vtPath
 ################################################################################
@@ -41,7 +41,8 @@ from uiMainWindow import *
 
 # 文件路径名
 #### path = os.path.abspath(os.path.dirname(__file__))    
-path = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader"
+# path = "/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader"
+path = os.getcwd()
 
 ICON_FILENAME = 'vnpy.ico'
 ICON_FILENAME = os.path.join(path, ICON_FILENAME)  

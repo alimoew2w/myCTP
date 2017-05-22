@@ -1,0 +1,20 @@
+// These settings override both User and Default settings for the Markdown Extended syntax
+{
+    "color_scheme": "Packages/Material Theme/schemes/Material-Theme.tmTheme",
+    
+    /*
+        Enable or not mathjax support.
+    */
+    "enable_mathjax": true,
+
+    /*
+        Enable or not highlight.js support for syntax highlighting.
+    */
+    "enable_highlight": true,
+
+//    "show_menus": false,
+//    "show_tabs": false,
+    "show_minimap": false,
+//    "gutter": false,
+//    "word_wrap": true
+}
