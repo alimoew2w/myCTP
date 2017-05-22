@@ -1,5 +1,9 @@
 # `riskManager` 模块
 
+## 设置
+
+风控的设置文件位于 `/main/riskManager/RM_setting.json`.
+
 ## 风控功能
 
 1. `流量上限`: 在限定时间内允许下单的最大数量
