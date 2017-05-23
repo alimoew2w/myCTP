@@ -57,6 +57,7 @@ class RmEngine(object):
 
         ########################################################################
         ## william
+        self.marginRatio = EMPTY_FLOAT
         self.marginRatioLimit = EMPTY_FLOAT # 保证金与可用资金的比例上限
 
         self.loadSetting()
@@ -235,10 +236,10 @@ class RmEngine(object):
         ## =====================================================================
         ## william
         ## 保证金与可用资金的比例上限
-        tempRatio = self.mainEngine.drEngine.accountInfo.margin / mainEngine.drEngine.accountInfo.available
-        if tempRatio > self.marginRatioLimit:
+        self.marginRatio = self.mainEngine.drEngine.accountInfo.margin / self.mainEngine.drEngine.accountInfo.available
+        if self.marginRatio > self.marginRatioLimit:
             print "\n#######################################################################"
-            print u'当前账户保证金比例 %0.2f 超过 %0.2f' %(tempRatio, self.marginRatioLimit)
+            print u'当前账户 %s 保证金比例 %0.2f 超过 %0.2f' %(self.name, self.marginRatio, self.marginRatioLimit)
             self.writeRiskLog(u'当前账户保证金比例 %0.2f 超过 %0.2f' %(tempRatio, self.marginRatioLimit))
             print "#######################################################################\n"
             return False
