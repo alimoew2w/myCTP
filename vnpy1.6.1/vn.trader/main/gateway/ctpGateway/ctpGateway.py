@@ -582,6 +582,9 @@ class CtpTdApi(TdApi):
         self.symbolSizeDict = {}            # 保存合约代码和合约大小的印射关系
 
         self.requireAuthentication = False
+
+        ########################################################################
+        ## william
         
     #----------------------------------------------------------------------
     def onFrontConnected(self):
@@ -797,6 +800,13 @@ class CtpTdApi(TdApi):
         if not data['InstrumentID']:
             return
         
+        # ########################################################################
+        # ## william
+        # print "\n#######################################################################"
+        # print data
+        # print "#######################################################################\n"
+        # ########################################################################
+
         # 获取持仓缓存对象
         posName = '.'.join([data['InstrumentID'], data['PosiDirection']])
         if posName in self.posDict:
@@ -821,10 +831,28 @@ class CtpTdApi(TdApi):
         # 汇总总仓
         pos.position += data['Position']
         pos.positionProfit += data['PositionProfit']
-        
+
         # 计算持仓均价
         if pos.position:
             pos.price = (cost + data['PositionCost']) / pos.position
+        
+        ########################################################################
+        ## william
+        ## 计算持仓均价
+        ## vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == 'cu1709', 'VolumeMultiple'].values
+        # exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
+        # volumeMultiple = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values
+
+        # if pos.position:
+        #     if exchangeID != 'SHFE':
+        #         pos.price = (cost + data['PositionCost']) / pos.position / volumeMultiple
+        #     else:
+        #         pos.price = (cost * volumeMultiple  + data['PositionCost']) / pos.position
+        #         print pos.price
+        #         print volumeMultiple
+        #         pos.price = pos.price / volumeMultiple
+        #     pos.price = round(pos.price, 3)
+
         
         # 读取冻结
         if pos.direction is DIRECTION_LONG: 
