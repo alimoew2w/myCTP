@@ -12,11 +12,8 @@
 ## @william
 import os
 import sys
-## cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-## trader_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-cta_strategy_path = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ctaStrategy'
-trader_path       = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader'
+# cta_strategy_path = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ctaStrategy'
+cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
 ################################################################################
 
@@ -351,37 +348,6 @@ class BBStrategy(CtaTemplate):
         if self.signalValue:
             for orderID in self.vtOrderIDList:
                 self.cancelOrder(orderID)
-
-        # # ################################################################################
-        # if self.signalValue == 'long':
-        #     if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-        #         ## 有多有空 + 无多有空
-        #         ## cover
-        #         vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['lastPrice'], volume = 1)
-        #         self.vtOrderIDList.append(vtOrderID)
-        #     elif posInfo[posInfo.direction == 'long'].shape[0] == 0:
-        #         ## 无多无空
-        #         ## buy
-        #         vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['lastPrice'], volume = 1)
-        #         self.vtOrderIDList.append(vtOrderID)
-        #     else:
-        #         ## 有多无空
-        #         pass
-        # else:
-        #     if posInfo[posInfo.direction == 'long'].shape[0] != 0:
-        #         ## 有多有空 + 有多无空
-        #         ## sell
-        #         vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['lastPrice'], volume = 1)
-        #         self.vtOrderIDList.append(vtOrderID)
-        #     elif posInfo[posInfo.direction == 'short'].shape[0] == 0:
-        #         ## 无多无空
-        #         ## short
-        #         vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['lastPrice'], volume = 1)
-        #         self.vtOrderIDList.append(vtOrderID)
-        #     else:
-        #         ## 无多有空
-        #         pass
-        # # ################################################################################
 
         # # ################################################################################
         if signalValue == 'buy':
