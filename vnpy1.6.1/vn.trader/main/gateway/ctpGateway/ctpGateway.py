@@ -840,19 +840,21 @@ class CtpTdApi(TdApi):
         ## william
         ## 计算持仓均价
         ## vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == 'cu1709', 'VolumeMultiple'].values
-        # exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
-        # volumeMultiple = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values
+        exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
+        volumeMultiple = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values
 
-        # if pos.position:
-        #     if exchangeID != 'SHFE':
-        #         pos.price = (cost + data['PositionCost']) / pos.position / volumeMultiple
-        #     else:
-        #         pos.price = (cost * volumeMultiple  + data['PositionCost']) / pos.position
-        #         print pos.price
-        #         print volumeMultiple
-        #         pos.price = pos.price / volumeMultiple
-        #     pos.price = round(pos.price, 3)
+        if pos.position:
+            if exchangeID != 'SHFE':
+                pos.price = (cost + data['PositionCost']) / pos.position / volumeMultiple
+            else:
+                pos.price = (cost * volumeMultiple  + data['PositionCost']) / pos.position
+                pos.price = pos.price / volumeMultiple
+            pos.price = round(pos.price, 3)
 
+        ########################################################################
+        ## william
+        ## 合约乘数大小
+        pos.size = volumeMultiple
         
         # 读取冻结
         if pos.direction is DIRECTION_LONG: 
