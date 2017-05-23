@@ -6,6 +6,7 @@
 2. 总成交限制（每日总成交数量限制）
 3. 单笔委托的委托数量控制
 '''
+from __future__ import division
 
 import json
 import os
@@ -54,6 +55,10 @@ class RmEngine(object):
         # 活动合约相关
         self.workingOrderLimit = EMPTY_INT  # 活动合约最大限制
 
+        ########################################################################
+        ## william
+        self.marginRatioLimit = EMPTY_FLOAT # 保证金与可用资金的比例上限
+
         self.loadSetting()
         self.registerEvent()
 
@@ -80,6 +85,8 @@ class RmEngine(object):
 
             self.orderCancelLimit = d['orderCancelLimit']
 
+            self.marginRatioLimit = d['marginRatioLimit']
+
     #----------------------------------------------------------------------
     def saveSetting(self):
         """保存风控参数"""
@@ -100,18 +107,20 @@ class RmEngine(object):
 
             d['orderCancelLimit'] = self.orderCancelLimit
 
+            d['marginRatioLimit'] = self.marginRatioLimit
+
             # 写入json
             jsonD = json.dumps(d, indent=4)
             f.write(jsonD)
 
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
         self.eventEngine.register(EVENT_TRADE, self.updateTrade)
         self.eventEngine.register(EVENT_TIMER, self.updateTimer)
         self.eventEngine.register(EVENT_ORDER, self.updateOrder)
         
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def updateOrder(self, event):
         """更新成交数据"""
         # 只需要统计撤单成功的委托
@@ -223,6 +232,17 @@ class RmEngine(object):
         # 对于通过风控的委托，增加流控计数
         self.orderFlowCount += 1
 
+        ## =====================================================================
+        ## william
+        ## 保证金与可用资金的比例上限
+        tempRatio = self.mainEngine.drEngine.accountInfo.margin / mainEngine.drEngine.accountInfo.available
+        if tempRatio > self.marginRatioLimit:
+            print "\n#######################################################################"
+            print u'当前账户保证金比例 %0.2f 超过 %0.2f' %(tempRatio, self.marginRatioLimit)
+            self.writeRiskLog(u'当前账户保证金比例 %0.2f 超过 %0.2f' %(tempRatio, self.marginRatioLimit))
+            print "#######################################################################\n"
+            return False
+
         return True
 
     #----------------------------------------------------------------------
@@ -266,6 +286,13 @@ class RmEngine(object):
     def setOrderCancelLimit(self, n):
         """设置单合约撤单次数上限"""
         self.orderCancelLimit = n
+
+    #---------------------------------------------------------------------------
+    ############################################################################
+    ## william
+    def setMarginRatioLimit(self, n):
+        """账户保证金比例上限"""
+        self.marginRatioLimit = n
 
     #----------------------------------------------------------------------
     def switchEngineStatus(self):

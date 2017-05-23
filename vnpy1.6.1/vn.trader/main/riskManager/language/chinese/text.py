@@ -15,3 +15,5 @@ ORDER_SIZE_LIMIT = u'单笔委托上限'
 TOTAL_TRADE_LIMIT = u'总成交上限'
 WORKING_ORDER_LIMIT = u'活动订单上限'
 CONTRACT_CANCEL_LIMIT = u'单合约撤单上限'
+
+MARGAIN_RATIO_LIMIT = u'保证金比例上限'

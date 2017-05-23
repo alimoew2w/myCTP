@@ -416,7 +416,7 @@ print strat.ctaEngine.today.date()
 md = strat.minuteData
 print md[md['TradingDay'] == strat.ctaEngine.today.date()]
 
-vtSymbole = 'i1709'
+vtSymbol = 'i1709'
 u = md[md['InstrumentID'] == vtSymbole][md['TradingDay'] == strat.ctaEngine.today.date()]['Minute']
 print u
 '''

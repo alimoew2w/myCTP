@@ -38,8 +38,6 @@ class RmLine(QtGui.QFrame):
         self.setFrameShape(self.HLine)
         self.setFrameShadow(self.Sunken)
     
-    
-  
 
 ########################################################################
 class RmEngineManager(QtGui.QWidget):
@@ -70,6 +68,10 @@ class RmEngineManager(QtGui.QWidget):
         self.spinTradeLimit = RmSpinBox(self.rmEngine.tradeLimit)
         self.spinWorkingOrderLimit = RmSpinBox(self.rmEngine.workingOrderLimit)
         self.spinOrderCancelLimit = RmSpinBox(self.rmEngine.orderCancelLimit)
+
+        ########################################################################
+        ## willam
+        self.spinMarginRatioLimit = RmSpinBox(self.rmEngine.marginRatioLimit)
         
         buttonClearOrderFlowCount = QtGui.QPushButton(text.CLEAR_ORDER_FLOW_COUNT)
         buttonClearTradeCount = QtGui.QPushButton(text.CLEAR_TOTAL_FILL_COUNT)
@@ -96,6 +98,11 @@ class RmEngineManager(QtGui.QWidget):
         grid.addWidget(RmLine(), 10, 0, 1, 2)
         grid.addWidget(Label(text.CONTRACT_CANCEL_LIMIT), 11, 0)
         grid.addWidget(self.spinOrderCancelLimit, 11, 1)
+        ########################################################################
+        ## william
+        grid.addWidget(RmLine(), 12, 0, 1, 2)
+        grid.addWidget(Label(text.MARGAIN_RATIO_LIMIT), 13, 0)
+        grid.addWidget(self.spinMarginRatioLimit, 13, 1)
         
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(buttonClearOrderFlowCount)
@@ -115,6 +122,10 @@ class RmEngineManager(QtGui.QWidget):
         self.spinTradeLimit.valueChanged.connect(self.rmEngine.setTradeLimit)
         self.spinWorkingOrderLimit.valueChanged.connect(self.rmEngine.setWorkingOrderLimit)
         self.spinOrderCancelLimit.valueChanged.connect(self.rmEngine.setOrderCancelLimit)
+
+        ########################################################################
+        ## william
+        self.spinMarginRatioLimit.valueChanged.connect(self.rmEngine.setMarginRatioLimit)
 
         self.buttonSwitchEngineStatus.clicked.connect(self.switchEngineSatus)
         buttonClearOrderFlowCount.clicked.connect(self.rmEngine.clearOrderFlowCount)
