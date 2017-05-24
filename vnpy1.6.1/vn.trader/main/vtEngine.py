@@ -466,28 +466,6 @@ class MainEngine(object):
 
     ############################################################################
     ## william
-    ## 向 csv 文件写入数据
-    ############################################################################   
-    def dbWriteCSV(self, d):
-        """向 csv 文件写入数据，d是具体数据"""
-
-        myFields = "date,time,symbol,exchange,lastPrice,volume,openInterest,upperLimit,lowerLimit,bidPrice1,bidPrice2,bidPrice3,bidPrice4,bidPrice5,askPrice1,askPrice2,askPrice3,askPrice4,askPrice5,bidVolume1,bidVolume2,bidVolume3,bidVolume4,bidVolume5,askVolume1,askVolume2,askVolume3,askVolume4,askVolume5,presettlementprice,settlementprice,averageprice" 
-
-        values = ''
-        for f in myFields.split(','):
-            values =  values +'{0},'.format(d[f])
-        values = values[0:-1] + "\n"
-        ########################################################################
-        ## william
-        ## 数据写入 csv
-        dataFile = os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/data/',(str(self.todayDate) + '.csv'))
-        with open(dataFile, 'a') as f:
-            f.write(values)
-        #print "#######################################################################"
-        ########################################################################
-
-    ############################################################################
-    ## william
     ## DataBase setting
     ##< Endings
     ############################################################################
@@ -548,12 +526,6 @@ class DataEngine(object):
     ############################################################################
     ## william
     ## 用于显示当前路经
-    '''
-    print u"#######################################################################"
-    print u"DataEngine 的路径为:"
-    print os.getcwd()
-    print u"#######################################################################"
-    '''
     ############################################################################
 
     #----------------------------------------------------------------------

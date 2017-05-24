@@ -291,6 +291,9 @@ class BasicMonitor(QtGui.QTableWidget):
     #---------------------------------------------------------------------------
     def updateEvent(self, event):
         """收到事件更新"""
+        ########################################################################
+        ## william
+        ## 从这里收到数据, 然后处理数据
         data = event.dict_['data']
         self.updateData(data)
     
@@ -456,10 +459,10 @@ class MarketMonitor(BasicMonitor):
         d['openPrice'] = {'chinese':vtText.OPEN_PRICE, 'cellType':BasicCell}
 
         ## 最高价
-        d['highPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':BasicCell}
+        d['highestPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':BasicCell}
 
         ## 最低价
-        d['lowPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':BasicCell}
+        d['lowestPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':BasicCell}
 
         ## 买一价
         d['bidPrice1'] = {'chinese':vtText.BID_PRICE_1, 'cellType':BidCell}
@@ -636,6 +639,10 @@ class OrderMonitor(BasicMonitor):
         
         self.initTable()
         self.registerEvent()
+
+        ########################################################################
+        ## william
+        ## 双击单元格撤单
         self.connectSignal()
         
     #----------------------------------------------------------------------
@@ -677,6 +684,7 @@ class PositionMonitor(BasicMonitor):
         d['ydPosition'] = {'chinese':vtText.YD_POSITION, 'cellType':BasicCell}
         d['frozen'] = {'chinese':vtText.FROZEN, 'cellType':BasicCell}
         d['price'] = {'chinese':vtText.PRICE, 'cellType':BasicCell}
+        d['size'] = {'chinese':vtText.SIZE, 'cellType':BasicCell}
         d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
         d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
@@ -1068,7 +1076,7 @@ class TradingWidget(QtGui.QFrame):
             ####################################################################
             ## william
             ## 排除 CTP 传送的无效字段 1.7e+308
-            if tick.bidPrice2 and tick.bidPrice2 < 1e+12:
+            if tick.bidPrice2 and tick.bidPrice2 < 1e+99:
                 self.labelBidPrice2.setText(str(tick.bidPrice2))
                 self.labelBidPrice3.setText(str(tick.bidPrice3))
                 self.labelBidPrice4.setText(str(tick.bidPrice4))

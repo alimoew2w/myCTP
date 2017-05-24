@@ -647,8 +647,3 @@ class BarEngineManager(QtGui.QWidget):
         """注册事件监听"""
         self.signal.connect(self.updateMarketData)
         self.__eventEngine.register(EVENT_MARKETDATA, self.signal.emit)
-
-
-
-    
-    

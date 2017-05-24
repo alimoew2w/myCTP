@@ -53,7 +53,7 @@ class BBStrategy(CtaTemplate):
     ## william
     # 策略参数 -----------------------------------------------------------------#
     nDay  = 1                           # 提前 2 日移动平均
-    nMinute = 10                        # 20 分钟
+    nMinute = 20                        # 20 分钟
     nSD   = 2                           # 2 个标准差
     nLag  = 0                           # 时间滞后 0 天
  
@@ -183,6 +183,8 @@ class BBStrategy(CtaTemplate):
             except:
                 pass
         ## =====================================================================
+        ## william
+        ## 策略启动的时候需要从 MySQL 的数据库 fl.positionInfo 载入各个策略的持仓情况
         self.dbMySQLStratPosInfo()
 
         print '#################################################################'
@@ -210,6 +212,7 @@ class BBStrategy(CtaTemplate):
         # 计算K线
         tickDate = tick.datetime.strftime('%Y%m%d')    
         tickMinute = tick.datetime.strftime('%H:%M:00') 
+        tickSecond = int(tick.datetime.strftime("%S"))
         # print tickMinute
 
         if 0 <= tick.datetime.hour < 20:
@@ -244,7 +247,7 @@ class BBStrategy(CtaTemplate):
             
             if tick.askVolume1 > 10 and tick.bidVolume1 > 10:    ###### 出于流动性的考虑
                 self.minuteBar[tick.vtSymbol] = md[md.TradingDay == tickDate][md.InstrumentID == tick.vtSymbol].sort_values(by = ['TradingDay','NumericExchTime'], ascending = [1,1]).reset_index(drop = True)
-                if len(self.minuteBar[tick.vtSymbol]) > self.nMinute:
+                if len(self.minuteBar[tick.vtSymbol]) > self.nMinute and tickSecond >= 58:
                     self.minuteBar[tick.vtSymbol] = self.minuteBar[tick.vtSymbol][-self.nMinute:].reset_index(drop = True)
                     # print self.minuteBar[tick.vtSymbol]
                     self.onBar(self.minuteBar[tick.vtSymbol])
@@ -334,15 +337,15 @@ class BBStrategy(CtaTemplate):
         # print signalBuy, signalSell     
 
         if instrumentTick['lastPrice'] > signalSell:
-            signalValue = 'sell'
+            signalValue = 'short'
         elif  signalBuy <= instrumentTick['lastPrice'] <= signalSell:
-            signalValue = 'buy'
+            signalValue = 'cover'
         elif signalCover <= instrumentTick['lastPrice'] <= signalBuy:
             signalValue = None
         elif signalShort <= instrumentTick['lastPrice'] <= signalCover:
-            signalValue = 'short'
+            signalValue = 'sell'
         else:
-            signalValue = 'cover'
+            signalValue = 'buy'
 
         # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
         if self.signalValue:
@@ -352,7 +355,7 @@ class BBStrategy(CtaTemplate):
         # # ################################################################################
         if signalValue == 'buy':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'short','volume'].values)
+                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)
             elif posInfo[posInfo.direction == 'long'].shape[0] == 0:
                 vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
@@ -361,19 +364,19 @@ class BBStrategy(CtaTemplate):
                 pass
         elif signalValue == 'sell':
             if posInfo[posInfo.direction == 'long'].shape[0] != 0:
-                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'long','volume'].values)
+                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
         elif signalValue == 'cover':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'short','volume'].values)
+                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)      
             else:
                 pass      
         elif signalValue == 'short':
             if posInfo[posInfo.direction == 'long'].shape[0] != 0:
-                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = posInfo.loc[posInfo.direction == 'long','volume'].values)
+                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)  
             elif posInfo[posInfo.direction == 'short'].shape[0] == 0:
                 vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
