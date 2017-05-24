@@ -177,7 +177,7 @@ class CtaTickData(object):
         ## 价格信息
         self.lastPrice          = EMPTY_FLOAT       # 最新成交价
         # self.preSettlementPrice = EMPTY_FLOAT 
-        # self.preClosePrice      = EMPTY_FLOAT 
+        self.preClosePrice      = EMPTY_FLOAT 
         self.openPrice          = EMPTY_FLOAT
         self.highestPrice       = EMPTY_FLOAT
         self.lowestPrice        = EMPTY_FLOAT

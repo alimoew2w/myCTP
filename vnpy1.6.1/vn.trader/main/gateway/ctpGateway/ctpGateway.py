@@ -417,7 +417,7 @@ class CtpMdApi(MdApi):
         ## 价格信息
         tick.lastPrice          = data['LastPrice']
         # tick.preSettlementPrice = data['PreSettlementPrice'] 
-        # tick.preClosePrice      = data['PreClosePrice'] 
+        tick.preClosePrice      = data['PreClosePrice'] 
         tick.openPrice          = data['OpenPrice']
         tick.highestPrice       = data['HighestPrice']
         tick.lowestPrice        = data['LowestPrice']
