@@ -355,7 +355,7 @@ class BBStrategy(CtaTemplate):
         # # ################################################################################
         if signalValue == 'buy':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
+                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['askrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)
             elif posInfo[posInfo.direction == 'long'].shape[0] == 0:
                 vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
@@ -370,7 +370,7 @@ class BBStrategy(CtaTemplate):
                 pass
         elif signalValue == 'cover':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
+                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)      
             else:
                 pass      
@@ -379,7 +379,7 @@ class BBStrategy(CtaTemplate):
                 vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)  
             elif posInfo[posInfo.direction == 'short'].shape[0] == 0:
-                vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
+                vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = 5)
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
