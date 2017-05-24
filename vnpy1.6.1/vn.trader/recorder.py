@@ -126,7 +126,7 @@ for contract in contractInfo:
     dfData.append([contract.__dict__[k] for k in dfHeader])
 
 df = pd.DataFrame(dfData, columns = dfHeader)
-df.to_csv(os.path.join(data_recorder_path,'contractInfo', ('contractInfo_' + vtFunction.tradingDay() + '.csv')), index = False)
+df.to_csv(os.path.join(data_recorder_path,'ContractInfo', ('ContractInfo_' + vtFunction.tradingDay() + '.csv')), index = False)
 ################################################################################
 
 
