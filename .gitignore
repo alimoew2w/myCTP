@@ -12,3 +12,5 @@
 *.bak
 *.dir
 *.local
+
+*.csv
