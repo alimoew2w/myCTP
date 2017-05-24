@@ -106,12 +106,12 @@ class DrEngine(object):
                     req.symbol = setting[0]
                     
                     # 针对LTS和IB接口，订阅行情需要交易所代码
-                    if len(setting)>=3:
+                    if len(setting) >= 3:
                         req.exchange = setting[2]
                         vtSymbol = '.'.join([symbol, req.exchange])
                     
                     # 针对IB接口，订阅行情需要货币和产品类型
-                    if len(setting)>=5:
+                    if len(setting) >= 5:
                         req.currency = setting[3]
                         req.productClass = setting[4]
                     
@@ -184,6 +184,18 @@ class DrEngine(object):
             # 注册事件监听
             self.registerEvent()    
 
+    ############################################################################
+    ## william
+    ## 处理合约信息
+    ## -------------------------------------------------------------------------
+    # def processContractEvent(self, event):
+        
+
+
+
+
+
+    ############################################################################
     #---------------------------------------------------------------------------
     ############################################################################
     ## william
@@ -389,7 +401,6 @@ class DrEngine(object):
         print "\n#######################################################################"
         print u"当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
-        print temp
         print "-----------------------------------------------------------------------"
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
         print tempRes[['symbol','exchange','price','direction','offset','tradeStatus','tradeTime','orderID']]
