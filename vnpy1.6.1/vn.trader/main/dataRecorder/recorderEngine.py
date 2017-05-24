@@ -188,16 +188,11 @@ class DrEngine(object):
         ## william
         ## 注册保存 Tick Data 的事件,
         ## 如果满足条件,自动退出程序的运行
-        ## Ref: /vn.trader/dataRecorder/drEngine.py/ def exitfun()
+        ## Ref: /vn.trader/dataRecorder/drEngine.py/ def exitFun()
         ########################################################################
         """ 退出 DataRecorder 的程序"""
-        self.eventEngine.register(EVENT_TIMER,self.exitfun)
+        self.eventEngine.register(EVENT_TIMER,self.exitFun)
  
-    # #----------------------------------------------------------------------
-    # def insertData(self, dbName, collectionName, data):
-    #     """插入数据到数据库（这里的data可以是CtaTickData或者CtaBarData）"""
-    #     self.queue.put((dbName, collectionName, data.__dict__))
-        
     #----------------------------------------------------------------------
     def run(self):
         """运行插入线程"""
@@ -227,9 +222,13 @@ class DrEngine(object):
     ## william
     ## 增加程序退出的设定
     ## exitfun()
-    def exitfun(self,event):
+    def exitFun(self,event):
         if self.exittime():
-            print 'exit0'
+            print u"亲, 赌场已经收摊打烊啦......!!!"
+            ####################################################################
+            ## william
+            ## 退出程序
+            self.mainEngine.exit()
             os._exit(0)
     #---------------------------------------------------------------------------
     def exittime(self):
