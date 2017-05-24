@@ -141,41 +141,6 @@ def tradingDay():
 
     return tempRes
 
-
-################################################################################
-## william
-## 保存 CTP md 的数据为 csv
-## Ref: http://www.vnpie.com/forum.php?mod=viewthread&tid=964&highlight=%E6%95%B0%E6%8D%AE
-################################################################################
-'''
-'''
-def refreshDatarecodeSymbol():
-    """ 保存合约信息到 dataRecorder/DR_setting.json """
-    contractFileName = 'ContractData.vt'
-
-    contractDict = {}
-    jfile = os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/dataRecorder/','DR_setting.json')
-    jf    = open(jfile,'w')
-
-    drSetting            = {}
-    drSetting['tick']    = []
-    drSetting['working'] = True
-
-    f = shelve.open(os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/',contractFileName))
-    if 'data' in f:
-        d = f['data']
-        print "全部期货与期权合约数量为:==> ",len(d)
-        for key, value in d.items():
-            contractDict[key] = value
-            # print value.symbol, value.name, value.productClass, value.exchange, value.size, value.priceTick
-            drSetting['tick'].append([value.symbol,value.exchange])
-    f.close()
-
-    ## print drSetting
-    json.dump(drSetting,jf)
-    jf.close()
-
-
 ################################################################################
 ## wiliam
 ## getContractInfo()
@@ -186,8 +151,7 @@ def getContractInfo():
     """ 获取合约信息 """
     contractFileName='ContractData.vt'
 
-    f = shelve.open(os.path.join('/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/',contractFileName))
-    #print f 
+    f = shelve.open(os.path.join('/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main',contractFileName))
 
     """
     InstrumentID    :合约代码

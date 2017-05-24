@@ -440,11 +440,6 @@ class MainEngine(object):
         try:
             conn = MySQLdb.connect(host = host, port = port, db = db, user = user, passwd = passwd)
             mysqlData = pd.read_sql(query, conn)
-            '''
-            for dt in mysqlData:
-                print dt
-            '''
-            ####################################################################
             ## william
             ## 打印数据库列表
             print u"#-------------------------------------------------------"

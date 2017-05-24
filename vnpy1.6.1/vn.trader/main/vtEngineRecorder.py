@@ -116,13 +116,6 @@ class MainEngine(object):
             gateway.subscribe(subscribeReq)
         else:
             print text.GATEWAY_NOT_EXIST.format(gateway=gatewayName)     
-
-    ############################################################################
-    ## william
-    ## 一键全部撤单
-    ## ref: /vn.trader/uiBasicWidget.py
-    ##      cancelOrderAll()
-    ############################################################################
     #----------------------------------------------------------------------
 
     #----------------------------------------------------------------------
@@ -199,12 +192,7 @@ class DataEngine(object):
         
         # 保存合约详细信息的字典
         self.contractDict = {}
-        
-        # 保存委托数据的字典
-        self.orderDict = {}
-        
-        # 保存活动委托数据的字典（即可撤销）
-        self.workingOrderDict = {}
+    
         ########################################################################
         ## william
         ## 通过 loadContracts() 来载入所有合约

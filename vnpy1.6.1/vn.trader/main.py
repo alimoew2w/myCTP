@@ -214,7 +214,7 @@ try:
     print u"CTP 正在登录!!!",
     for i in range(50):
         print ".",
-        time.sleep(.2)
+        time.sleep(.1)
 
     print "\n#---------------------------------------------------------------"
     print u"CTP 连接成功!!!"
