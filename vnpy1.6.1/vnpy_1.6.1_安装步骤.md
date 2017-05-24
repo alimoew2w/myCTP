@@ -16,6 +16,9 @@
 
         conda install pyqt=4
 
+        ## Ref:https://github.com/ContinuumIO/anaconda-issues/issues/483
+        conda install libgcc
+
 2. pip 安装
 
         sudo apt-get install python-setuptools
