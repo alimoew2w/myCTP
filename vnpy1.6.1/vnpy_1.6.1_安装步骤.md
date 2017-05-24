@@ -33,7 +33,7 @@
 
         conda install -c https://conda.anaconda.org/quantopian ta-lib
 
-4. vn.ctp
+4. vn.ctp: 记得需要先在 /myCTP/Toolkits/vnpy-1.6.1/vn.api/vn.ctp, 先编译文件,得到动态链接库, 然后再把 `vn.api/vn.ctp/` 文件和 `vn.trader/gateway` 文件夹复制过去.
 
         cd /vn.api/vn.ctp
         sudo chmod a+x build.sh
