@@ -22,7 +22,8 @@
         sudo apt-get install build-essential python-dev libmysqlclient-dev
         sudo apt-get install python-mysqldb
 
-        sudo apt-install cmake libblkid-dev libboost-all-dev libaudit-dev e2fslibs-dev
+        ## 需要安装 Boost, 否则在编译 vn.api/vn.ctp 的时候会报错
+        sudo apt install cmake libblkid-dev libboost-all-dev libaudit-dev e2fslibs-dev
 
         pip install --upgrade pip
         pip install pymongo qdarkstyle zmq msgpack-python websocket
