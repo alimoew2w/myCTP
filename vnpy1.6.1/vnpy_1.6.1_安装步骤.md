@@ -30,6 +30,7 @@
 
         pip install --upgrade pip
         pip install pymongo qdarkstyle zmq msgpack-python websocket
+        pip install pyqtgraph
         pip install MySQL-python
 
 3. talib 安装：
