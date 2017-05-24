@@ -849,7 +849,7 @@ class CtpTdApi(TdApi):
             else:
                 pos.price = (cost * volumeMultiple  + data['PositionCost']) / pos.position
                 pos.price = pos.price / volumeMultiple
-            pos.price = round(pos.price, 3)
+            pos.price = round(pos.price, 2)
 
         ########################################################################
         ## william
@@ -964,6 +964,11 @@ class CtpTdApi(TdApi):
             contract.optionType = OPTION_CALL
         elif data['OptionsType'] == '2':
             contract.optionType = OPTION_PUT
+
+        # print "\n#######################################################################"
+        # print u'contract.__dict__'
+        # print contract.__dict__
+        # print "#######################################################################\n"
 
         # 缓存代码和交易所的印射关系
         self.symbolExchangeDict[contract.symbol] = contract.exchange
