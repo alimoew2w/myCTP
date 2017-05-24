@@ -45,7 +45,7 @@ sys.setdefaultencoding('utf8')
 ## /////////////////////////////////////////////////////////////////////////////
 ## 保存 Tick Data 为 /data/csv
 import csv
-dataFile = os.path.join(data_recorder_path,'TickData', (vtFunction.tradingDay() + '.csv'))
+dataFile = os.path.join(data_recorder_path,'TickData', (datetime.now().strftime('%Y%m%d')+ '.csv'))
 
 if not os.path.exists(dataFile): 
     myHeader = ['timeStamp','date','time','symbol','exchange',\
