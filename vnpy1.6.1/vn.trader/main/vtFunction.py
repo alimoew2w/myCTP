@@ -87,7 +87,7 @@ def loadMySQLSetting():
     ############################################################################
     ## william
     path     = os.path.abspath(os.path.dirname(__file__))
-    fileName = os.path.join(path, fileName)
+    fileName = os.path.join(path, 'setting', fileName)
     ############################################################################ 
     
     try:
