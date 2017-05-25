@@ -32,4 +32,4 @@
 
         sudo apt install terminator 
 
-      ![terminator](/myCTP/Toolkits/pic/terminator.png)
+  ![terminator](/myCTP/Toolkits/pic/terminator.png)
