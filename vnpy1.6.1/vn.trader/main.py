@@ -48,7 +48,7 @@ ICON_FILENAME = 'vnpy.ico'
 ICON_FILENAME = os.path.join(path, ICON_FILENAME)  
 
 SETTING_FILENAME = 'VT_setting.json'
-SETTING_FILENAME = os.path.join(path, SETTING_FILENAME) 
+SETTING_FILENAME = os.path.join(path, 'setting', SETTING_FILENAME) 
 #
 #
 #

@@ -18,7 +18,9 @@ def loadFont():
     """载入字体设置"""
     fileName = 'VT_setting.json'
     path = os.path.abspath(os.path.dirname(__file__)) 
-    fileName = os.path.join(path, fileName)  
+    ############################################################################
+    ## william
+    fileName = os.path.join(path, 'setting', fileName)  
     
     try:
         f = file(fileName)

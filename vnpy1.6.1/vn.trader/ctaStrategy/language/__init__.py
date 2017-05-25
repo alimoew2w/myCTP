@@ -12,7 +12,7 @@ from chinese import text
 # 获取目录上级路径
 path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'main'))
 SETTING_FILENAME = 'VT_setting.json'
-SETTING_FILENAME = os.path.join(path, SETTING_FILENAME)
+SETTING_FILENAME = os.path.join(path, 'setting', SETTING_FILENAME)
 
 # 打开配置文件，读取语言配置
 try:
