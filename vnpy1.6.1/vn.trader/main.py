@@ -17,16 +17,7 @@ import re
 os.chdir("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
 
 import vtPath
-################################################################################
-##　william
-################################################################################
-print "\n#######################################################################"
-print u"vtPath 测试成功！！！"
-print "#######################################################################\n"
 
-################################################################################
-##　william
-## Break Point
 ################################################################################
 from vtEngine import MainEngine
 import vtFunction
@@ -378,9 +369,6 @@ print mainEngine.ctaEngine.__dict__
 print mainEngine.ctaEngine.strategyDict
 print mainEngine.ctaEngine.tickStrategyDict
 
-# 初始化策略
-mainEngine.ctaEngine.initStrategy('Bollinger Band')
-
 
 ################################################################################
 '''
@@ -425,8 +413,17 @@ print u
 ################################################################################
 
 # 启动策略
+# 初始化策略
+mainEngine.ctaEngine.initStrategy('Bollinger Band')
 mainEngine.ctaEngine.startStrategy('Bollinger Band')
-y = mainEngine.ctaEngine.strategyDict
-strat = y['Bollinger Band']
+strat = mainEngine.ctaEngine.strategyDict
+stratBB = strat['Bollinger Band']
 
 # mainEngine.ctaEngine.stopStrategy('Bollinger Band')
+
+
+# 初始化策略
+mainEngine.ctaEngine.initStrategy('YY')
+mainEngine.ctaEngine.startStrategy('YY')
+strat = mainEngine.ctaEngine.strategyDict
+stratYY = strat['YY']
