@@ -98,8 +98,8 @@ def loadMySQLSetting():
         user    = setting['mysqlUser']
         passwd  = setting['mysqlPassword']
     except:
-        host    = '192.168.1.106'
-        port    = 3306
+        host    = 'gczhang.imwork.net'
+        port    = 24572
         user    = 'fl'
         passwd  = 'abc@123'
         
