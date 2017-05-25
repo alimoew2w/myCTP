@@ -3,7 +3,7 @@
     "orderCancelLimit": 100, 
     "marginRatioLimit": 2, 
     "workingOrderLimit": 100, 
-    "tradeLimit": 200, 
+    "tradeLimit": 2000, 
     "orderSizeLimit": 50, 
     "active": true, 
     "orderFlowLimit": 50
