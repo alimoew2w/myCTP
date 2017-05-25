@@ -27,3 +27,9 @@
           --help                        Show this message and exit.
 
         mycli -h hostsite -P portNumber -u user -p password
+
+- `terminator`: Linux 系统下的 `terminal` 模仿 IDE, 具备在屏幕下切割多个窗口的功能.
+
+        sudo apt install terminator 
+
+      ![terminator](/myCTP/Toolkits/pic/terminator.png)
