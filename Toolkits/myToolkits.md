@@ -26,7 +26,7 @@
   - Auto-save: 通过设置 keybinds:{ "keys": ["ctrl+shift+s"], "command": "auto_save" }
   - C++ Completes
 
-  整体的截面非常的优雅:
+  整体的界面非常的优雅:
 
   ![sublime](/Toolkits/pic/sublime.png)
 
