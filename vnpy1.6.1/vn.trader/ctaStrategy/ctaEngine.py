@@ -87,6 +87,9 @@ class CtaEngine(object):
         ## 期货交易日历表
         ## Usage: mainEngine.ctaEngine.ChinaFuturesCalendar
         self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 'select * from ChinaFuturesCalendar where days >= 20170101')
+        self.lastTradingDay = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < datetime.strptime(vtFunction.tradingDay(), '%Y%m%d').date(), 'days'].max()
+
+        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" %self.lastTradingDay)
 
         ## MySQL 储存的不同策略的持仓信息
         ## Usage
@@ -508,6 +511,9 @@ class CtaEngine(object):
             self.writeCtaLog(u'载入策略出错：%s' %e)
             return
         
+        ########################################################################
+        ## william
+        ## 查看是否在 ctaStrategy/strategy 目录下有策略
         # 获取策略类
         strategyClass = STRATEGY_CLASS.get(className, None)
         if not strategyClass:
@@ -546,8 +552,9 @@ class CtaEngine(object):
             ####################################################################
             ## william
             # 保存Tick映射关系
-            vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
-            vtSymbolList = vtSymbolSet.split(',')
+            # vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
+            # vtSymbolList = vtSymbolSet.split(',')
+            vtSymbolList = self.mainContracts.Main_contract.values
             for vtSymbol in vtSymbolList:  
             #by hw 单个策略订阅多个合约，配置文件中"vtSymbol": "IF1602,IF1603"
                 # if strategy.vtSymbol in self.tickStrategyDict:
@@ -555,7 +562,7 @@ class CtaEngine(object):
                     # l = self.tickStrategyDict[strategy.vtSymbol]
                     ############################################################
                     ## william
-                    l = self.tickStrategyDict[strategy.vtSymbol]
+                    l = self.tickStrategyDict[vtSymbol]
                 else:
                     l = []
                     #self.tickStrategyDict[strategy.vtSymbol] = l
@@ -575,14 +582,13 @@ class CtaEngine(object):
                     req.exchange = contract.exchange
                     
                     # 对于IB接口订阅行情时所需的货币和产品类型，从策略属性中获取
-                    req.currency = strategy.currency
-                    req.productClass = strategy.productClass
+                    # req.currency = strategy.currency
+                    # req.productClass = strategy.productClass
                     
                     self.mainEngine.subscribe(req, contract.gatewayName)
                 else:
                     ############################################################
                     ## william
-                    #self.writeCtaLog(u'%s的交易合约%s无法找到' %(name, strategy.vtSymbol))
                     print "\n#######################################################################"
                     print u'%s的交易合约%s无法找到' %(name, vtSymbol)
                     print "#######################################################################\n"
@@ -678,7 +684,6 @@ class CtaEngine(object):
             for setting in l:
                 ## setting = {u'className': u'EmaDemoStrategy', u'name': u'double ema', u'vtSymbol': u'IF1706'}
                 self.loadStrategy(setting)
-
 
         self.loadPosition()
 
