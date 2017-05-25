@@ -2,6 +2,38 @@
 
 ## `Linux` 软件
 
+- `Sublime Text 3`: 一款集成的 `IDE` 环境, 目前我主要在上面开发 `R` 和 `python`. 通过安装各种增强插件, 以及可自定义的快捷键, 让其功能变得异常的强大. 常用的插件有:
+
+  - R-Box
+  - R-snippets
+  - R_comments
+  - sendCode
+  - Sublime REPL
+  - SFTP
+  - Material Theme
+  - SideBarEnhancements
+  - MarkdownLivePreview: alt+m
+  - Markdown Extended 
+  - 解决中文乱码：GBK Support, ConvertToUTF8, Codecs33
+  - AutoPEP8：python 规范化
+  - SublimeCodeIntel：实现语法自动高亮
+  - Python BreakPoint
+  - sudo apt install npm && sudo npm install -g markmon
+  - Markdown 预览： markmon
+  - Git + Github：Git, GithubTools
+  - StatusBarTime: 在状态栏显示系统时间
+  - GitGutter
+  - Auto-save: 通过设置 keybinds:{ "keys": ["ctrl+shift+s"], "command": "auto_save" }
+  - C++ Completes
+
+  整体的截面非常的优雅:
+
+  ![sublime](/Toolkits/pic/sublime.png)
+
+  通过 `REPL` 运行代码:
+
+  ![sublime_2](/Toolkits/pic/sublime_2.png)
+
 - `mycli`: 这是一款配合 `MySQL` 自动补全的命令行工具, 可以实现在 `terminal` 自动跳出补全的可用命令. 具体的使用方法可以通过帮助文档获取.
 
         sudo apt install mycli
