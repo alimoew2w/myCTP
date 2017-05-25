@@ -91,6 +91,16 @@ class CtaEngine(object):
 
         self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" %self.lastTradingDay)
 
+        self.positionContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from positionInfo;""")
+
+        self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
+
+        ########################################################################
+        ## william
+        ## 需要订阅的合约
+        # self.subscribeContracts = list(set(self.mainContracts.Main_contract.values) | set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
+        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
+
         ## MySQL 储存的不同策略的持仓信息
         ## Usage
         # self.allStrategyPosInfo = self.mainEngine.dbMySQLQuery('fl', 'select * from positionInfo')
@@ -552,9 +562,10 @@ class CtaEngine(object):
             ####################################################################
             ## william
             # 保存Tick映射关系
-            # vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
-            # vtSymbolList = vtSymbolSet.split(',')
-            vtSymbolList = self.mainContracts.Main_contract.values
+            vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
+            vtSymbolListStrat = vtSymbolSet.split(',')
+            vtSymbolList = list(set(self.subscribeContracts) | set(vtSymbolListStrat))
+            # vtSymbolList = self.subscribeContracts
             for vtSymbol in vtSymbolList:  
             #by hw 单个策略订阅多个合约，配置文件中"vtSymbol": "IF1602,IF1603"
                 # if strategy.vtSymbol in self.tickStrategyDict:
