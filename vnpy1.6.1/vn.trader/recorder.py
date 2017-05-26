@@ -34,14 +34,6 @@ import eventEngine, vtEngineRecorder, vtGateway
 from vtEngineRecorder import MainEngine
 import vtFunction
 
-print "\n#######################################################################"
-print u"vtEngine 测试成功！！！"
-print "#######################################################################"
-
-# 重载sys模块，设置默认字符串编码方式为utf8
-reload(sys)
-sys.setdefaultencoding('utf8')  
-
 ## /////////////////////////////////////////////////////////////////////////////
 ## 保存 Tick Data 为 /data/csv
 import csv
