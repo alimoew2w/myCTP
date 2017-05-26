@@ -15,8 +15,24 @@ import platform
 import re
 from datetime import datetime
 import time
+################################################################################
+
 
 ################################################################################
+import csv
+path = os.path.dirname(__file__)
+ChinaFuturesCalendar = os.path.normpath(os.path.join(path,'main','ChinaFuturesCalendar.csv'))
+TradingDay = []
+with open(ChinaFuturesCalendar) as f:
+    ChinaFuturesCalendar = csv.reader(f)
+    for row in ChinaFuturesCalendar:
+        if row[1] >= '20170101':
+            TradingDay.append(row[1])
+TradingDay.pop(0)
+# print TradingDay
+
+if datetime.now().strftime("%Y%m%d") not in TradingDay:
+    sys.exit("Not TradingDaY!!!")
 
 ################################################################################
 ##　增加路径说明
@@ -118,7 +134,7 @@ for contract in contractInfo:
     dfData.append([contract.__dict__[k] for k in dfHeader])
 
 df = pd.DataFrame(dfData, columns = dfHeader)
-df.to_csv(os.path.join(data_recorder_path,'ContractInfo', ('ContractInfo_' + vtFunction.tradingDay() + '.csv')), index = False)
+df.to_csv(os.path.join(data_recorder_path,'ContractInfo', ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
 ################################################################################
 
 
