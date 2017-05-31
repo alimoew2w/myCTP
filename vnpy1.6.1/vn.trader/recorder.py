@@ -20,7 +20,8 @@ import time
 
 ################################################################################
 import csv
-path = os.path.dirname(__file__)
+# path = os.path.dirname(__file__)
+path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader'
 ChinaFuturesCalendar = os.path.normpath(os.path.join(path,'main','ChinaFuturesCalendar.csv'))
 TradingDay = []
 with open(ChinaFuturesCalendar) as f:
@@ -136,6 +137,10 @@ for contract in contractInfo:
     dfData.append([contract.__dict__[k] for k in dfHeader])
 
 df = pd.DataFrame(dfData, columns = dfHeader)
+
+reload(sys) # reload 才能调用 setdefaultencoding 方法  
+sys.setdefaultencoding('utf-8')
+
 df.to_csv(os.path.join(data_recorder_path,'ContractInfo', ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
 ################################################################################
 
