@@ -38,7 +38,6 @@ class BBStrategy(CtaTemplate):
     className    = 'BBStrategy'
     strategyID   = 'BBStragegy'
     author       = 'william'
-    vtSymbolList = ["i1709", "rb1710", "cu1707", "MA709", "SR709", "FG709", "J1709"]
 
     ############################################################################
     ## william
@@ -111,7 +110,7 @@ class BBStrategy(CtaTemplate):
         ## Usage: key: pd.DataFrame
         self.minuteBar = {}
         ########################################################################
-
+        self.vtSymbolList = ["i1709", "rb1710", "cu1707", "MA709", "SR709", "FG709", "J1709"]
         ########################################################################
         ## william
         # 注册事件监听
@@ -247,7 +246,7 @@ class BBStrategy(CtaTemplate):
             
             if tick.askVolume1 > 10 and tick.bidVolume1 > 10:    ###### 出于流动性的考虑
                 self.minuteBar[tick.vtSymbol] = md[md.TradingDay == tickDate][md.InstrumentID == tick.vtSymbol].sort_values(by = ['TradingDay','NumericExchTime'], ascending = [1,1]).reset_index(drop = True)
-                if len(self.minuteBar[tick.vtSymbol]) > self.nMinute and tickSecond >= 58:
+                if len(self.minuteBar[tick.vtSymbol]) > self.nMinute and tickSecond > 59.1:
                     self.minuteBar[tick.vtSymbol] = self.minuteBar[tick.vtSymbol][-self.nMinute:].reset_index(drop = True)
                     # print self.minuteBar[tick.vtSymbol]
                     self.onBar(self.minuteBar[tick.vtSymbol])
@@ -319,16 +318,21 @@ class BBStrategy(CtaTemplate):
         # print instrumentID
         # print self.lastTickData[instrumentID[0]]
         # print "#######################################################################\n"
-        instrumentID = bar.InstrumentID.unique()[0]
-        instrumentTick = self.lastTickData[instrumentID]
+        InstrumentID = bar.InstrumentID.unique()[0]
+        instrumentTick = self.lastTickData[InstrumentID]
 
-        barClose = self.minuteBar[instrumentID].ClosePrice
+        barClose = self.minuteBar[InstrumentID].ClosePrice
         # print barClose
 
-        posInfo = self.stratPosInfo[self.stratPosInfo.instrumentID == instrumentID]
+        posInfo = self.stratPosInfo[self.stratPosInfo.InstrumentID == InstrumentID]
         # print posInfo
 
-        barClose = self.minuteBar[instrumentID].ClosePrice     
+        barClose = self.minuteBar[InstrumentID].ClosePrice  
+
+        ########################################################################
+        ## william
+        if barClose.std() < 0.05:
+            return    
 
         signalSell = barClose.mean() + 3 * barClose.std()
         signalBuy = barClose.mean() + 1 * barClose.std()
@@ -355,31 +359,31 @@ class BBStrategy(CtaTemplate):
         # # ################################################################################
         if signalValue == 'buy':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['askrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
+                vtOrderID = self.cover(vtSymbol = InstrumentID, price = instrumentTick['askrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)
             elif posInfo[posInfo.direction == 'long'].shape[0] == 0:
-                vtOrderID = self.buy(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = 5)
+                vtOrderID = self.buy(vtSymbol = InstrumentID, price = instrumentTick['askPrice1'], volume = 5)
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
         elif signalValue == 'sell':
             if posInfo[posInfo.direction == 'long'].shape[0] != 0:
-                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
+                vtOrderID = self.sell(vtSymbol = InstrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
         elif signalValue == 'cover':
             if posInfo[posInfo.direction == 'short'].shape[0] != 0:
-                vtOrderID = self.cover(vtSymbol = instrumentID, price = instrumentTick['askPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
+                vtOrderID = self.cover(vtSymbol = InstrumentID, price = instrumentTick['askPrice1'], volume = int(posInfo.loc[posInfo.direction == 'short','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)      
             else:
                 pass      
         elif signalValue == 'short':
             if posInfo[posInfo.direction == 'long'].shape[0] != 0:
-                vtOrderID = self.sell(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
+                vtOrderID = self.sell(vtSymbol = InstrumentID, price = instrumentTick['bidPrice1'], volume = int(posInfo.loc[posInfo.direction == 'long','volume'].values))
                 self.vtOrderIDList.append(vtOrderID)  
             elif posInfo[posInfo.direction == 'short'].shape[0] == 0:
-                vtOrderID = self.short(vtSymbol = instrumentID, price = instrumentTick['bidPrice1'], volume = 5)
+                vtOrderID = self.short(vtSymbol = InstrumentID, price = instrumentTick['bidPrice1'], volume = 5)
                 self.vtOrderIDList.append(vtOrderID)
             else:
                 pass
@@ -431,17 +435,17 @@ class BBStrategy(CtaTemplate):
             ## -----------------------------------------        
 
             ## 2. stratPosInfo
-            instrumentID = stratTrade['vtSymbol']
-            if self.stratPosInfo[self.stratPosInfo.instrumentID == instrumentID].shape[0] == 0:
+            InstrumentID = stratTrade['vtSymbol']
+            if self.stratPosInfo[self.stratPosInfo.InstrumentID == InstrumentID].shape[0] == 0:
                 ''' 如果没有持仓,则直接添加到持仓 '''
-                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], tempDirection,stratTrade['volume']]], columns = ['strategyID','instrumentID','direction','volume'])
+                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], tempDirection,stratTrade['volume']]], columns = ['strategyID','InstrumentID','direction','volume'])
                 self.stratPosInfo = self.stratPosInfo.append(tempRes)
             else:
                 ''' 如果有持仓, 则需要更新数据 '''
-                if self.stratPosInfo[self.stratPosInfo.instrumentID == instrumentID].reset_index(drop = True).loc[0,'direction'] != tempDirection:
-                    self.stratPosInfo.loc[self.stratPosInfo.instrumentID == instrumentID,'volume'] -= stratTrade['volume']
+                if self.stratPosInfo[self.stratPosInfo.InstrumentID == InstrumentID].reset_index(drop = True).loc[0,'direction'] != tempDirection:
+                    self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == InstrumentID,'volume'] -= stratTrade['volume']
                 else:
-                    self.stratPosInfo.loc[self.stratPosInfo.instrumentID == instrumentID,'volume'] += stratTrade['volume']
+                    self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == InstrumentID,'volume'] += stratTrade['volume']
 
             ## 3. 更新策略的持仓数据      
             self.stratPosInfo = self.stratPosInfo[self.stratPosInfo.volume != 0]

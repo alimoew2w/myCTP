@@ -159,3 +159,46 @@ if x == 4:
     print 'hello'
 else:
     print 'world'
+
+vtSymbolList = mainEngine.dbMySQLQuery('lhg_trade', 'select InstrumentID from lhg_open_t;').InstrumentID
+
+for i in vtSymbolList:
+    print i
+    print type(i)
+
+mainEngine.ctaEngine.ChinaFuturesCalendar
+
+from datetime import datetime
+print vtFunction.tradingDay()
+
+lastTradingDay = mainEngine.ctaEngine.ChinaFuturesCalendar.loc[mainEngine.ctaEngine.ChinaFuturesCalendar.days < datetime.strptime(vtFunction.tradingDay(), '%Y%m%d').date(), 'days'].max()
+print lastTradingDay
+
+mainContracts = mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" % lastTradingDay)
+
+print mainEngine.ctaEngine.mainContracts.Main_contract.values
+
+print mainEngine.ctaEngine.mainContracts
+
+
+positionContracts =mainEngine.dbMySQLQuery('fl',"""select * from positionInfo;""")
+print positionContracts
+signalContracts =mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
+print signalContracts
+
+print mainContracts.Main_contract.values
+print positionContracts.InstrumentID.values
+print signalContracts.InstrumentID.values
+
+x = list(mainContracts.Main_contract.values, positionContracts.InstrumentID.values)
+
+
+x = set(mainContracts.Main_contract.values, positionContracts.InstrumentID.values)
+
+
+x = list(set(mainContracts.Main_contract.values)|set(positionContracts.InstrumentID.values)|set(signalContracts.InstrumentID.values))
+print x
+
+a = ['a','b']
+b = ['a','c']
+print list(set(a) & set(b))

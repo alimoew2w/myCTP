@@ -2,12 +2,12 @@
     {
         "name": "Bollinger Band",
         "className": "BBStrategy",
-        "vtSymbol": "i1709, rb1710, cu1707, MA709, SR709, FG709, J1709"
+        "vtSymbol": "i1709, rb1709, cu1707, IC1707"
     },
 
     {
-        "name": "LHG",
-        "className": "LHGStrategy",
-        "vtSymbol": "i1709, rb1710, cu1707, MA709, SR709, FG709, J1709"
+        "name": "Yun Yang",
+        "className": "YYStrategy",
+        "vtSymbol": "i1709"
     }
 ]

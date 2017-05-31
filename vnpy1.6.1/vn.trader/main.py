@@ -161,7 +161,7 @@ mainWindow.showMinimized()
 ##'''
 print "\n#######################################################################"
 print u"main 主函数启动成功！！！"
-time.sleep(5.0)
+time.sleep(2.0)
 print "#######################################################################\n"
 ############################################################################
 
@@ -423,7 +423,7 @@ stratBB = strat['Bollinger Band']
 
 
 # 初始化策略
-mainEngine.ctaEngine.initStrategy('YY')
-mainEngine.ctaEngine.startStrategy('YY')
+mainEngine.ctaEngine.initStrategy('Yun Yang')
+mainEngine.ctaEngine.startStrategy('Yun Yang')
 strat = mainEngine.ctaEngine.strategyDict
-stratYY = strat['YY']
+stratYY = strat['Yun Yang']
