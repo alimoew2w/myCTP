@@ -5,8 +5,9 @@
 create table fl.positionInfo(
     strategyID      VARCHAR(100) NOT NULL,
     InstrumentID    VARCHAR(20)  NOT NULL,
+    orderTime       DATETIME     NOT NULL,
     direction       VARCHAR(20)  NOT NULL,
-    volume          INT           NULL,
+    volume          INT          NULL,
     PRIMARY KEY(strategyID, instrumentID, direction)
 );
 
