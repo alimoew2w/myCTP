@@ -1588,6 +1588,7 @@ class CtpTdApi(TdApi):
         orderReq.orderTime = datetime.now().strftime('%H:%M:%S')
         orderReq.orderID = self.orderRef
         orderReq.tradeStatus = u'未成交'
+
         ########################################################################
         ## william
         ## orderReq
@@ -1600,8 +1601,9 @@ class CtpTdApi(TdApi):
         ## print temp
         ## print req
         # print pd.DataFrame([req.values()], columns = req.keys())
+        # print orderReq.__dict__
         print "-----------------------------------------------------------------------"
-        tempFields = ['symbol','exchange','price','priceType','direction','offset','tradeStatus','orderTime','orderID']
+        tempFields = ['symbol','exchange','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
         print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
         print "#######################################################################"
         ########################################################################
