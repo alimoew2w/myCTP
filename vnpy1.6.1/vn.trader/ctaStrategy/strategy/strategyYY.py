@@ -33,7 +33,7 @@ class YYStrategy(CtaTemplate):
     # 策略类的名称和作者
     name         = 'Yun Yang'
     className    = 'YYStrategy'
-    strategyID   = 'YYStragegy'
+    strategyID   = className
     author       = 'Lin Huangen'
 
     ############################################################################
@@ -104,6 +104,7 @@ class YYStrategy(CtaTemplate):
         ## 其中
         ##    key   是合约名称
         ##    value 是具体的订单, 参考
+        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade', 'select * from lhg_open_t')
         self.tradingOrderSeq = {}
         ########################################################################
         ## william
@@ -147,24 +148,76 @@ class YYStrategy(CtaTemplate):
         ## 先计算今天需要处理的订单命令
         ## self.tradingOrderSeq
         if len(self.stratPosInfo) != 0:
-            pass
+            ####################################################################
+            x = list(set(self.tradingInfo.InstrumentID.values) & set(self.stratPosInfo.InstrumentID.values))
+            # print x
+            if len(x) != 0:
+                for i in x:
+                    tempVolume = int(self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'volume'].values)
+
+                    if self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == i, 'direction'].values == 'long':
+                        if self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                            pass
+                        else:
+                            tempDirection = 'sell'
+                            self.tradingOrderSeq[i] = {'direction':tempDirection,
+                                                  'volume':tempVolume}
+                    else:
+                        if self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                            tempDirection = 'cover'
+                            self.tradingOrderSeq[i] = {'direction':tempDirection,
+                                                  'volume':tempVolume}
+                        else:
+                            pass
+
+            # print tradingOrderSeq
+
+            y = [i for i in self.stratPosInfo.InstrumentID.values if i not in self.tradingInfo.InstrumentID.values]
+            # print y
+            if len(y) != 0:
+                for i in y:
+                    tempOrderTime = pd.to_datetime(self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == i, 'orderTime'].values[0]).strftime('%Y%m%d')
+                    tempHoldingDays = self.ctaEngine.ChinaFuturesCalendar[self.ctaEngine.ChinaFuturesCalendar.days.between(tempOrderTime,self.ctaEngine.mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+                    if tempHoldingDays >= 5:
+                        tempVolume = int(self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == i, 'volume'].values)
+
+                        if self.stratPosInfo.loc[self.stratPosInfo.InstrumentID == i, 'direction'].values == 'long':
+                            tempDirection = 'sell'
+                        else:
+                            tempDirection = 'cover'
+                        
+                        self.tradingOrderSeq[i] = {'direction':tempDirection, 'volume':tempVolume}
+            # print tradingOrderSeq
+
+            z = [i for i in self.tradingInfo.InstrumentID.values if i not in self.stratPosInfo.InstrumentID.values]
+            # print z
+            if len(z) != 0:
+                for i in z:
+                    if self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                        tempDirection = 'buy'
+                    elif self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == -1:
+                        tempDirection = 'short'
+                    else:
+                        pass
+                    tempVolume = int(self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'volume'].values)
+                    self.tradingOrderSeq[i] = {'direction':tempDirection, 'volume':tempVolume}
+            # print tradingOrderSeq
+            ####################################################################
         else:
         # [如果原来的持仓是空的]
         # 如果原来的持仓是空的,
         # 则只需要处理单日发出的信号
-            tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade', 'select * from lhg_open_t')
-
-            for i in tradingInfo.InstrumentID.values:
-                if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+            ####################################################################
+            for i in self.tradingInfo.InstrumentID.values:
+                if self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == 1:
                     tempDirection = 'buy'
-                elif tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == -1:
+                elif self.tradingInfo.loc[self.tradingInfo.InstrumentID == i, 'direction'].values == -1:
                     tempDirection = 'short'
                 else:
                     pass
                 tempVolume = int(tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values)
                 self.tradingOrderSeq[i] = {'direction':tempDirection,
                                            'volume':tempVolume}
-
         ########################################################################
 
         print '#################################################################'
@@ -185,67 +238,83 @@ class YYStrategy(CtaTemplate):
     #---------------------------------------------------------------------------
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
-        ########################################################################
-        ## william
-        ## 这个 tick 已经是 CtaTickData, 已经处理接收的数据
-        ## Ref: /ctaStragegy/ class CtaEngine/ def processTickEvent(self, event):
-        # 计算K线
-        # 14:59:30
-        tickDate = tick.datetime.strftime('%Y%m%d')    
-        tickHour   = int(tick.datetime.strftime("%H"))
-        tickMinute = tick.datetime.strftime('%H:%M:00') 
-        tickSecond = int(tick.datetime.strftime("%S"))
-        # print tickMinute
-
-        # if tickHour != 14:
-        #     pass
-
-        # 14:59:30
-        # if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.vtSymbolList:
-        # if tick.vtSymbol in self.vtSymbolList:
-        #     ####################################################################
-        #     ## william
-        #     ## 先进行 onBar 的交易
-        #     self.lastTickData[tick.vtSymbol] = tick.__dict__
-
-        # if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.tradingOrderSeq.keys():
-        if int(tick.datetime.strftime("%M")) == 29 and tickSecond > 58 and tick.vtSymbol in self.tradingOrderSeq.keys():
-            print 'hello, world'
+        if datetime.now().hour == 14 and datetime.now().minute >= 50:
+            ########################################################################
             ## william
-            ## 开始发出交易信号
-            tempInstrumentID = tick.vtSymbol
-            tempPriceTick    = self.ctaEngine.mainEngine.getContract(tick.vtSymbol).priceTick
-            tempDirection    = self.tradingOrderSeq[tick.vtSymbol]['direction']
-            tempVolume       = self.tradingOrderSeq[tick.vtSymbol]['volume']
+            ## 这个 tick 已经是 CtaTickData, 已经处理接收的数据
+            ## Ref: /ctaStragegy/ class CtaEngine/ def processTickEvent(self, event):
+            if tick.vtSymbol in self.vtSymbolList:
+                self.lastTickData[tick.vtSymbol] = tick.__dict__
 
+        # 14:59:30
+        # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and datetime.now().second >= 30 and mode(datetime.now().second / 5) == 0:
             # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
+            for orderID in self.vtOrderIDList:
+                self.cancelOrder(orderID)
 
-            if tempDirection == 'buy':
-                ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
-                tempPrice = tick.askPrice1 + tempPriceTick
-                vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
-                self.vtOrderIDList.append(vtOrderID)
-            elif tempDirection == 'short':
-                ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
-                tempPrice = tick.BidPrice1 - tempPriceTick
-                vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
-                self.vtOrderIDList.append(vtOrderID)
-            elif tempDirection == 'cover':
-                ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
-                tempPrice = tick.askPrice1 + tempPriceTick
-                vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
-                self.vtOrderIDList.append(vtOrderID)
-            elif tempDirection == 'sell':
-                ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
-                tempPrice = tick.BidPrice1 - tempPriceTick
-                vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
-                self.vtOrderIDList.append(vtOrderID)
+            stratWorkingOrders = []
+            tratTradedOrders = []
+
+            for orderID in self.vtOrderIDList:
+                tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().orderID == orderID & self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].orderID.values[0]
+                stratWorkingOrders.append(tempWorkingOrder)
+
+                tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().orderID == orderID & self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].orderID.values[0]
+                stratTradedOrders.append(tempTradedOrder)
+
+
+            # for i in  range(len(self.ctaEngine.mainEngine.getAllWorkingOrders())):
+            #     tempWorkingOrder = self.ctaEngine.mainEngine.getAllWorkingOrders()[i]
+            #     if tempWorkingOrder.strategyID == self.strategyID and tempWorkingOrder.status == u'未成交':
+            #         stratWorkingOrders[tempWorkingOrder.OrderID] = {'status': tempWorkingOrder.status}
+
+            # stratTradedOrders = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().strategyID == self.strategyID].vtSymbol.values
+            # stratTradedOrders = []
+            # for orderID in self.vtOrderIDList:
+            #     tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().orderID == orderID & self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].orderID.values
+            #     stratTradedOrders.append(tempTradedOrder)
+
+            if len(stratWorkingOrders) != 0:
+                for orderID in stratWorkingOrders:
+                    self.cancelOrder(orderID)
             else:
-                return None
-            ####################################################################
+                tempTradingInstrumentID = [k for k in self.tradingOrderSeq.keys() if k not in stratTradedOrders]
+                if len(tempTradingInstrumentID) != 0:
+                    for i in tempTradingInstrumentID:
+                        tempInstrumentID = i
+                        tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+                        tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
+                        tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
+                        tempDirection    = self.tradingOrderSeq[tempInstrumentID]['direction']
+                        tempVolume       = self.tradingOrderSeq[tempInstrumentID]['volume']
+
+                        ########################################################
+                        if tempDirection == 'buy':
+                            ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+                            tempPrice = tempAskPrice1 + tempPriceTick
+                            vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                            self.vtOrderIDList.append(vtOrderID)
+                        elif tempDirection == 'short':
+                            ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+                            tempPrice = tempBidPrice1 - tempPriceTick
+                            vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                            self.vtOrderIDList.append(vtOrderID)
+                        elif tempDirection == 'cover':
+                            ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+                            tempPrice = tempAskPrice1 + tempPriceTick
+                            vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                            self.vtOrderIDList.append(vtOrderID)
+                        elif tempDirection == 'sell':
+                            ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+                            tempPrice = tempBidPrice1 - tempPriceTick
+                            vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                            self.vtOrderIDList.append(vtOrderID)
+                        else:
+                            return None
+                            ####################################################
         # 发出状态更新事件
         self.putEvent()
-
 
     #---------------------------------------------------------------------------
     def onBar(self, bar):
@@ -298,7 +367,7 @@ class YYStrategy(CtaTemplate):
             InstrumentID = stratTrade['vtSymbol']
             if self.stratPosInfo[self.stratPosInfo.InstrumentID == InstrumentID].shape[0] == 0:
                 ''' 如果没有持仓,则直接添加到持仓 '''
-                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], tempDirection,stratTrade['volume']], stratTrade['orderTime']], columns = ['strategyID','InstrumentID','orderTime','direction','volume'])
+                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], stratTrade['orderTime'], tempDirection,stratTrade['volume']]], columns = ['strategyID','InstrumentID','orderTime','direction','volume'])
                 self.stratPosInfo = self.stratPosInfo.append(tempRes)
             else:
                 ''' 如果有持仓, 则需要更新数据 '''
