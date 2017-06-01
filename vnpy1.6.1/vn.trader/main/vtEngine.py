@@ -68,7 +68,8 @@ class MainEngine(object):
     def __init__(self):
         """Constructor"""
         # 记录今日日期
-        self.todayDate = datetime.now().strftime('%Y%m%d')
+        self.todayDate  = datetime.now().strftime('%Y%m%d')
+        self.tradingDay = vtFunction.tradingDay()
         
         # 创建事件引擎
         self.eventEngine = EventEngine2()
