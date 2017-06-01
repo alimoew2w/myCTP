@@ -100,6 +100,13 @@ class YYStrategy(CtaTemplate):
 
         ########################################################################
         ## william
+        ## 当天需要处理的订单字典
+        ## 其中
+        ##    key   是合约名称
+        ##    value 是具体的订单, 参考
+        self.tradingOrderSeq = {}
+        ########################################################################
+        ## william
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
         # 否则会出现多个策略实例之间数据共享的情况，有可能导致潜在的策略逻辑错误风险，
         # 策略类中的这些可变对象属性可以选择不写，全都放在__init__下面，写主要是为了阅读
@@ -135,6 +142,31 @@ class YYStrategy(CtaTemplate):
         ## 策略启动的时候需要从 MySQL 的数据库 fl.positionInfo 载入各个策略的持仓情况
         self.dbMySQLStratPosInfo()
 
+        ########################################################################
+        ## william
+        ## 先计算今天需要处理的订单命令
+        ## self.tradingOrderSeq
+        if len(self.stratPosInfo) != 0:
+            pass
+        else:
+        # [如果原来的持仓是空的]
+        # 如果原来的持仓是空的,
+        # 则只需要处理单日发出的信号
+            tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade', 'select * from lhg_open_t')
+
+            for i in tradingInfo.InstrumentID.values:
+                if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                    tempDirection = 'buy'
+                elif tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == -1:
+                    tempDirection = 'short'
+                else:
+                    pass
+                self.tradingOrderSeq[i] = {'direction':tempDirection,
+                                           'volume':tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values}
+
+
+        ########################################################################
+
         print '#################################################################'
         print u'%s策略启动' %self.name
         print '#################################################################'
@@ -166,10 +198,8 @@ class YYStrategy(CtaTemplate):
         # print tickMinute
 
         if tickHour != 14:
-            print "not 14!"
-            return 
+            pass
 
-        print 'hello, world'
         # 14:59:30
         # if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.vtSymbolList:
         if tick.vtSymbol in self.vtSymbolList:
@@ -177,14 +207,35 @@ class YYStrategy(CtaTemplate):
             ## william
             ## 先进行 onBar 的交易
             self.lastTickData[tick.vtSymbol] = tick.__dict__
+
+        if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.tradingOrderSeq.keys():
+            ## william
+            ## 开始发出交易信号
+            tempInstrumentID = tick.vtSymbol
+            tempPriceTick = self.ctaEngine.mainEngine.getContract(tick.vtSymbol).priceTick
+            tempDirection = self.tradingOrderSeq[tick.vtSymbol]['direction']
+            tempVolume    = self.tradingOrderSeq[tick.vtSymbol]['volume']
+
+            if tempDirection == 'buy':
+                ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+                tempPrice = tick.askPrice1 + tempPriceTick
+                vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                self.vtOrderIDList.append(vtOrderID)
+            elif tempDirection == 'short':
+                ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+                tempPrice = tick.BidPrice1 - tempPriceTick
+                vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                self.vtOrderIDList.append(vtOrderID)
             ####################################################################
+        # 发出状态更新事件
+        self.putEvent()
 
 
     #---------------------------------------------------------------------------
     def onBar(self, bar):
         """收到Bar推送（必须由用户继承实现）"""
         # 发出状态更新事件
-        self.putEvent()
+        # self.putEvent()
 
     #---------------------------------------------------------------------------
     def onOrder(self, order):
@@ -217,7 +268,8 @@ class YYStrategy(CtaTemplate):
             ## 0 初始化持仓信息
 
             ## 1. strategyID
-            stratTrade['strategyID'] = self.strategyID      
+            stratTrade['strategyID'] = self.strategyID
+            stratTrade['orderTime']  = self.ctaEngine.mainEngine.tradingDay      
 
             ## -----------------------------------------
             if stratTrade['direction'] == u'多':
@@ -230,7 +282,7 @@ class YYStrategy(CtaTemplate):
             InstrumentID = stratTrade['vtSymbol']
             if self.stratPosInfo[self.stratPosInfo.InstrumentID == InstrumentID].shape[0] == 0:
                 ''' 如果没有持仓,则直接添加到持仓 '''
-                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], tempDirection,stratTrade['volume']]], columns = ['strategyID','InstrumentID','direction','volume'])
+                tempRes = pd.DataFrame([[stratTrade['strategyID'], stratTrade['vtSymbol'], tempDirection,stratTrade['volume']], stratTrade['orderTime']], columns = ['strategyID','InstrumentID','orderTime','direction','volume'])
                 self.stratPosInfo = self.stratPosInfo.append(tempRes)
             else:
                 ''' 如果有持仓, 则需要更新数据 '''
