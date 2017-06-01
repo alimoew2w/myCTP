@@ -398,7 +398,7 @@ class DrEngine(object):
         temp = self.tradeInfo.__dict__
         print "-----------------------------------------------------------------------"
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
-        print tempRes[['symbol','exchange','price','direction','offset','tradeStatus','tradeTime','orderID']]
+        print tempRes[['symbol','exchange','price','direction','offset','volume','tradeStatus','tradeTime','orderID']]
         print "#######################################################################"
 
     def getTradeInfo(self):
