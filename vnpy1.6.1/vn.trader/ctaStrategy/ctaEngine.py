@@ -87,7 +87,11 @@ class CtaEngine(object):
         ## 期货交易日历表
         ## Usage: mainEngine.ctaEngine.ChinaFuturesCalendar
         self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 'select * from ChinaFuturesCalendar where days >= 20170101')
-        self.lastTradingDay = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < datetime.strptime(vtFunction.tradingDay(), '%Y%m%d').date(), 'days'].max()
+        for i in range(len(self.ChinaFuturesCalendar)):
+            self.ChinaFuturesCalendar.loc[i, 'nights'] = str(self.ChinaFuturesCalendar.loc[i, 'nights']).replace('-','')
+            self.ChinaFuturesCalendar.loc[i, 'days'] = str(self.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
+
+        self.lastTradingDay = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < vtFunction.tradingDay(), 'days'].max()
 
         self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" %self.lastTradingDay)
 
