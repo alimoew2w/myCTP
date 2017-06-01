@@ -562,10 +562,13 @@ class CtaEngine(object):
             ####################################################################
             ## william
             # 保存Tick映射关系
-            vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
-            vtSymbolStrat = vtSymbolSet.split(',')
-            vtSymbolList = list(set(self.subscribeContracts) | set(vtSymbolStrat))
-            # vtSymbolList = self.subscribeContracts
+            if 'vtSymbol' in setting.keys() and len(setting['vtSymbol']) != 0:
+                vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
+                vtSymbolStrat = vtSymbolSet.split(',')
+                vtSymbolList = list(set(self.subscribeContracts) | set(vtSymbolStrat))
+            else:
+                vtSymbolList = list(set(self.subscribeContracts))
+
             for vtSymbol in vtSymbolList:  
             #by hw 单个策略订阅多个合约，配置文件中"vtSymbol": "IF1602,IF1603"
                 # if strategy.vtSymbol in self.tickStrategyDict:
