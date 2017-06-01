@@ -161,9 +161,9 @@ class YYStrategy(CtaTemplate):
                     tempDirection = 'short'
                 else:
                     pass
+                tempVolume = int(tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values)
                 self.tradingOrderSeq[i] = {'direction':tempDirection,
-                                           'volume':tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values}
-
+                                           'volume':tempVolume}
 
         ########################################################################
 
@@ -197,24 +197,28 @@ class YYStrategy(CtaTemplate):
         tickSecond = int(tick.datetime.strftime("%S"))
         # print tickMinute
 
-        if tickHour != 14:
-            pass
+        # if tickHour != 14:
+        #     pass
 
         # 14:59:30
         # if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.vtSymbolList:
-        if tick.vtSymbol in self.vtSymbolList:
-            ####################################################################
-            ## william
-            ## 先进行 onBar 的交易
-            self.lastTickData[tick.vtSymbol] = tick.__dict__
+        # if tick.vtSymbol in self.vtSymbolList:
+        #     ####################################################################
+        #     ## william
+        #     ## 先进行 onBar 的交易
+        #     self.lastTickData[tick.vtSymbol] = tick.__dict__
 
-        if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.tradingOrderSeq.keys():
+        # if int(tick.datetime.strftime("%S")) == 59 and tickSecond > 30 and tick.vtSymbol in self.tradingOrderSeq.keys():
+        if int(tick.datetime.strftime("%M")) == 29 and tickSecond > 58 and tick.vtSymbol in self.tradingOrderSeq.keys():
+            print 'hello, world'
             ## william
             ## 开始发出交易信号
             tempInstrumentID = tick.vtSymbol
-            tempPriceTick = self.ctaEngine.mainEngine.getContract(tick.vtSymbol).priceTick
-            tempDirection = self.tradingOrderSeq[tick.vtSymbol]['direction']
-            tempVolume    = self.tradingOrderSeq[tick.vtSymbol]['volume']
+            tempPriceTick    = self.ctaEngine.mainEngine.getContract(tick.vtSymbol).priceTick
+            tempDirection    = self.tradingOrderSeq[tick.vtSymbol]['direction']
+            tempVolume       = self.tradingOrderSeq[tick.vtSymbol]['volume']
+
+            # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
 
             if tempDirection == 'buy':
                 ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
@@ -226,6 +230,18 @@ class YYStrategy(CtaTemplate):
                 tempPrice = tick.BidPrice1 - tempPriceTick
                 vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
                 self.vtOrderIDList.append(vtOrderID)
+            elif tempDirection == 'cover':
+                ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+                tempPrice = tick.askPrice1 + tempPriceTick
+                vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                self.vtOrderIDList.append(vtOrderID)
+            elif tempDirection == 'sell':
+                ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+                tempPrice = tick.BidPrice1 - tempPriceTick
+                vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+                self.vtOrderIDList.append(vtOrderID)
+            else:
+                return None
             ####################################################################
         # 发出状态更新事件
         self.putEvent()
