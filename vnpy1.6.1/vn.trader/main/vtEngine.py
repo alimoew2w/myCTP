@@ -644,8 +644,7 @@ class DataEngine(object):
                 temp = allOrders[i]
                 dfData.append(temp.__dict__.values())
             df = pd.DataFrame(dfData, columns = dfHeader)
-            print df
-            
+            # print df
             return df
         else:
             print u"没有查询到订单!!!"

@@ -202,3 +202,274 @@ print x
 a = ['a','b']
 b = ['a','c']
 print list(set(a) & set(b))
+
+
+
+
+tradingOrderSeq = {}
+for i in tradingInfo.InstrumentID.values:
+    if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+        tempDirection = 'long'
+    elif tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == -1:
+        tempDirection = 'short'
+    else:
+        pass
+
+    tradingOrderSeq[i] = {'direction':tempDirection,
+                          'volume':tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values}
+print tradingOrderSeq
+
+for i in  range(len(mainEngine.getAllWorkingOrders())):
+    x = mainEngine.getAllWorkingOrders()[i]
+    x = mainEngine.getAllWorkingOrders()[i].__dict__
+    print pd.DataFrame([x.values()], columns = x.keys())
+
+
+
+
+settingFileName = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/CTA_setting.json'
+with open(settingFileName) as f:
+    l = json.load(f)
+
+if 'vtSymbol' in l[1].keys():
+    print 'in'
+    print len(l[1]['vtS'])
+
+tempInstrumentID = i
+tempPriceTick    = mainEngine.getContract(tempInstrumentID).priceTick
+tempDirection    = stratYY.tradingOrderSeq[tempInstrumentID]['direction']
+tempVolume       = stratYY.tradingOrderSeq[tempInstrumentID]['volume']
+
+
+print stratYY.lastTickData[tempInstrumentID]['askPrice1']
+
+
+
+
+
+for i in  range(len(mainEngine.getAllWorkingOrders())):
+    x = mainEngine.getAllWorkingOrders()[i]
+    x = mainEngine.getAllWorkingOrders()[i].__dict__
+    print pd.DataFrame([x.values()], columns = x.keys())
+
+stratWorkingOrders = {}
+strategyID = stratYY.strategyID
+for i in  range(len(mainEngine.getAllWorkingOrders())):
+    tempWorkingOrder = mainEngine.getAllWorkingOrders()[i]
+    if tempWorkingOrder.strategyID == strategyID and tempWorkingOrder.status == u'未成交':
+        stratWorkingOrders[tempWorkingOrder.OrderID] = {'status': tempWorkingOrder.status}
+print stratWorkingOrders
+
+
+if datetime.now().hour == 14:
+    print 'hello'
+    pass
+else:
+    print 'world'
+
+print 'dsfjsdlfj'
+
+
+try:
+    if datetime.now().hour == 14:
+        print 'hello, 14'
+except:
+    pass
+print 'hello
+
+stratTradedOrders = mainEngine.getAllOrders()[mainEngine.getAllOrders().strategyID == stratYY.strategyID].vtSymbol.values
+print stratTradedOrders
+
+stratTradedOrders
+stratYY.tradingOrderSeq.keys()
+
+print [i for i in stratYY.tradingOrderSeq.keys() if i not in stratTradedOrders]
+
+
+
+stratTradedOrders = []
+for orderID in stratYY.vtOrderIDList:
+    tempTradedOrder = mainEngine.getAllOrders()[mainEngine.getAllOrders().status == u'全部成交'].orderID.values
+    stratTradedOrders.append(orderID)
+print stratTradedOrders
+
+
+
+
+print mainEngine.getAllOrders()[mainEngine.getAllOrders().status == u'全部成交'].orderID.values
+
+
+stratWorkingOrders = []
+tratTradedOrders = []
+
+for orderID in strat.vtOrderIDList:
+    tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().orderID == orderID & self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].orderID.values
+    stratWorkingOrders.append(tempWorkingOrder)
+
+    tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().orderID == orderID & self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].orderID.values
+    stratTradedOrders.append(tempTradedOrder)
+
+
+for orderID in stratWorkingOrders:
+    stratYY.cancelOrder(orderID)
+
+
+
+        
+for i in range(len(mainEngine.ctaEngine.ChinaFuturesCalendar)):
+    mainEngine.ctaEngine.ChinaFuturesCalendar.loc[i, 'nights'] = str(mainEngine.ctaEngine.ChinaFuturesCalendar.loc[i, 'nights']).replace('-','')
+    mainEngine.ctaEngine.ChinaFuturesCalendar.loc[i, 'days'] = str(mainEngine.ctaEngine.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
+
+        
+
+
+mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" %lastTradingDay)
+
+
+orderTime = '20170526'
+
+mainEngine.tradingDay
+
+
+print mainEngine.ctaEngine.ChinaFuturesCalendar[mainEngine.ctaEngine.ChinaFuturesCalendar.days.between(orderTime,mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+
+
+stratPosInfo = mainEngine.ctaEngine.mainEngine.dbMySQLQuery('fl',"""select * from positionInfo where strategyID = '%s' """ %stratYY.strategyID)
+
+
+
+
+tradingInfo = stratYY.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade', 'select * from lhg_open_t')
+tradingOrderSeq = {}
+stratPosInfo = stratYY.stratPosInfo
+
+
+print tradingInfo
+print stratPosInfo
+
+x = list(set(tradingInfo.InstrumentID.values) & set(stratPosInfo.InstrumentID.values))
+print x
+if len(x) != 0:
+    for i in x:
+        tempVolume = int(tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values)
+
+        if stratPosInfo.loc[stratPosInfo.InstrumentID == i, 'direction'].values == 'long':
+            if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                pass
+            else:
+                tempDirection = 'sell'
+                tradingOrderSeq[i] = {'direction':tempDirection,
+                                      'volume':tempVolume}
+        else:
+            if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+                tempDirection = 'cover'
+                tradingOrderSeq[i] = {'direction':tempDirection,
+                                      'volume':tempVolume}
+            else:
+                pass
+
+print tradingOrderSeq
+
+y = [i for i in stratPosInfo.InstrumentID.values if i not in tradingInfo.InstrumentID.values]
+print y
+if len(y) != 0:
+    for i in y:
+        tempOrderTime = pd.to_datetime(stratPosInfo.loc[stratPosInfo.InstrumentID == i, 'orderTime'].values[0]).strftime('%Y%m%d')
+        tempHoldingDays = mainEngine.ctaEngine.ChinaFuturesCalendar[mainEngine.ctaEngine.ChinaFuturesCalendar.days.between(tempOrderTime,mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+        if tempHoldingDays >= 2:
+            tempVolume = int(stratPosInfo.loc[stratPosInfo.InstrumentID == i, 'volume'].values)
+
+            if stratPosInfo.loc[stratPosInfo.InstrumentID == i, 'direction'].values == 'long':
+                tempDirection = 'sell'
+            else:
+                tempDirection = 'cover'
+            
+            tradingOrderSeq[i] = {'direction':tempDirection, 'volume':tempVolume}
+print tradingOrderSeq
+
+z = [i for i in tradingInfo.InstrumentID.values if i not in stratPosInfo.InstrumentID.values]
+print z
+if len(z) != 0:
+    for i in z:
+        if tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == 1:
+            tempDirection = 'buy'
+        elif tradingInfo.loc[tradingInfo.InstrumentID == i, 'direction'].values == -1:
+            tempDirection = 'short'
+        else:
+            pass
+        tempVolume = int(tradingInfo.loc[tradingInfo.InstrumentID == i, 'volume'].values)
+        tradingOrderSeq[i] = {'direction':tempDirection, 'volume':tempVolume}
+print tradingOrderSeq
+
+
+print tradingOrderSeq
+
+
+print stratYY.tradingOrderSeq
+
+print stratYY.tradingOrderSeq
+print stratYY.lastTickData
+
+
+print len(stratYY.vtSymbolList) == len(stratYY.lastTickData.keys())
+
+stratYY.onStop()
+
+
+stratWorkingOrders = []
+stratTradedOrders  = []
+stratTradedSymbols  = []
+orderID = 'CTP.8'
+for orderID in stratYY.vtOrderIDList:
+    tempWorkingOrder = stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().vtOrderID == orderID][stratYY.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].vtOrderID.values
+    if len(tempWorkingOrder) != 0:
+        stratWorkingOrders.append(tempWorkingOrder[0])
+
+    tempTradedOrder = stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().vtOrderID == orderID][stratYY.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].vtOrderID.values
+    if len(tempTradedOrder) != 0:
+        stratTradedOrders.append(tempTradedOrder[0])
+
+    tempTradedSymbol = stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().vtOrderID == orderID][stratYY.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].symbol.values
+    if len(tempTradedSymbol) != 0:
+        stratTradedSymbols.append(tempTradedSymbol[0])
+
+print stratWorkingOrders
+print stratTradedOrders
+print stratTradedSymbols
+
+stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().status == u'未成交']
+
+
+stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'][stratYY.ctaEngine.mainEngine.getAllOrders().vtOrderID == orderID].vtOrderID.values[0]
+
+mainEngine.dbMySQLQuery('fl','select * from positionInfo')
+
+
+################################################################################
+print stratYY.tradingInfo
+print stratYY.tradingOrderSeq
+
+
+tempTradingInstrumentID = [k for k in stratYY.tradingOrderSeq.keys() if k not in stratTradedOrders]
+print tempTradingInstrumentID
+
+x = {'orderID': '', 'optionType': u'', 'direction': u'\u7a7a', 'tradeStatus': u'', 'exchange': 'DCE', 'symbol': 'i1709', 'productClass': u'', 'strikePrice': 0.0, 'expiry': '', 'volume': 1, 'currency': u'', 'multiplier': '', 'offset': u'\u5e73\u4ed3', 'lastTradeDateOrContractMonth': '', 'orderTime': '', 'price': 431.5, 'priceType': u'\u9650\u4ef7'}
+
+
+stratWorkingOrders  = []
+stratTradedSymbols  = []
+
+for orderID in stratYY.vtOrderIDList:
+    tempWorkingOrder = stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][stratYY.ctaEngine.mainEngine.getAllOrders().orderID == orderID][stratYY.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].orderID.values
+    if len(tempWorkingOrder) != 0 and tempWorkingOrder not in stratWorkingOrders:
+        stratWorkingOrders.append(tempWorkingOrder[0])
+
+    tempTradedSymbol = stratYY.ctaEngine.mainEngine.getAllOrders()[stratYY.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][stratYY.ctaEngine.mainEngine.getAllOrders().vtOrderID == orderID][stratYY.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].vtSymbol.values
+    if len(tempTradedSymbol) != 0 and tempTradedSymbol not in stratTradedSymbols:
+        stratTradedSymbols.append(tempTradedSymbol[0])
+
+
+if len(stratWorkingOrders) != 0:
+    print 'hello'
+elif len(stratWorkingOrders) == 0 and vtSymbol in stratTradedSymbols:
+    print 'world'

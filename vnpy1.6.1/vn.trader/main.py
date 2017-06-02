@@ -365,9 +365,9 @@ mainEngine.cancelOrderAll()
 # 加载设置
 mainEngine.ctaEngine.loadSetting()
 
-print mainEngine.ctaEngine.__dict__
-print mainEngine.ctaEngine.strategyDict
-print mainEngine.ctaEngine.tickStrategyDict
+# print mainEngine.ctaEngine.__dict__
+# print mainEngine.ctaEngine.strategyDict
+# print mainEngine.ctaEngine.tickStrategyDict
 
 
 ################################################################################
@@ -414,16 +414,19 @@ print u
 
 # 启动策略
 # 初始化策略
-mainEngine.ctaEngine.initStrategy('Bollinger Band')
-mainEngine.ctaEngine.startStrategy('Bollinger Band')
-strat = mainEngine.ctaEngine.strategyDict
-stratBB = strat['Bollinger Band']
+# mainEngine.ctaEngine.initStrategy('Bollinger Band')
+# mainEngine.ctaEngine.startStrategy('Bollinger Band')
+# strat = mainEngine.ctaEngine.strategyDict
+# stratBB = strat['Bollinger Band']
 
 # mainEngine.ctaEngine.stopStrategy('Bollinger Band')
 
 
 # 初始化策略
 mainEngine.ctaEngine.initStrategy('Yun Yang')
+time.sleep(5)
 mainEngine.ctaEngine.startStrategy('Yun Yang')
+# mainEngine.ctaEngine.stopStrategy('Yun Yang')
 strat = mainEngine.ctaEngine.strategyDict
 stratYY = strat['Yun Yang']
+

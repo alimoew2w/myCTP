@@ -1139,6 +1139,9 @@ class CtpTdApi(TdApi):
     def onRtnOrder(self, data):
         """报单回报"""
         # 更新最大报单编号
+        ########################################################################
+        ## william
+        ## 订单反馈的信息
         newref = data['OrderRef']
         self.orderRef = max(self.orderRef, int(newref))
         
