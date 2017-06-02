@@ -69,3 +69,5 @@
 - 'navicate': 这是一款 `MySQL 可视化操作` 的 GUI, 可以很方便的用来查看数据库, 而且支持对多种数据库的连接. 在 `Linux` 可以有一个 *14* 天的试用期. 届时到期了, 可以通过以下方法延期使用:
     - 一种方法是删除在 `/home/william/.navicat64` 的整个文件夹, 然后再重新安装 `navicat112_premium_en_x64/start.sh`, 即可恢复 *14* 天的试用期了.
     - 另一种方法, 我没有具体操作过, 就是删除 `/home/william/.navicat64/system.reg`, 这是一个计算使用时间的文件, 每次安装好 `navicat` 在启动前, 都先删除了, 就可以一直使用了.
+
+  ![terminator](/Toolkits/pic/navicat.png)
