@@ -237,10 +237,18 @@ class RmEngine(object):
         ## william
         ## 保证金与可用资金的比例上限
         self.marginRatio = self.mainEngine.drEngine.accountInfo.margin / self.mainEngine.drEngine.accountInfo.available
-        if self.marginRatio > self.marginRatioLimit:
+        # print 'orderReq'
+        # print orderReq.__dict__
+        #  and orderReq.offset == u'开仓'
+        ########################################################################
+        ## william
+        ## 对于开仓的订单, 需要检查以下两项风控:
+        ## 1. 保证金比例
+        ## 2. 开仓, 如果是平仓, 就不需要了
+        if self.marginRatio > self.marginRatioLimit and orderReq.offset == u'开仓':
             print "\n#######################################################################"
             print u'当前账户 %s 保证金比例 %0.2f 超过 %0.2f' %(self.name, self.marginRatio, self.marginRatioLimit)
-            self.writeRiskLog(u'当前账户保证金比例 %0.2f 超过 %0.2f' %(tempRatio, self.marginRatioLimit))
+            self.writeRiskLog(u'当前账户保证金比例 %0.2f 超过 %0.2f' %(self.marginRatio, self.marginRatioLimit))
             print "#######################################################################\n"
             return False
 
