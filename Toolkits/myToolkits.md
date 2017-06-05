@@ -70,4 +70,6 @@
     - 一种方法是删除在 `/home/william/.navicat64` 的整个文件夹, 然后再重新安装 `navicat112_premium_en_x64/start.sh`, 即可恢复 *14* 天的试用期了.
     - 另一种方法, 我没有具体操作过, 就是删除 `/home/william/.navicat64/system.reg`, 这是一个计算使用时间的文件, 每次安装好 `navicat` 在启动前, 都先删除了, 就可以一直使用了.
 
-  ![terminator](/Toolkits/pic/navicat.png)
+  ![navicat](/Toolkits/pic/navicat.png)
+
+- 'Rodeo', 这是一款由 `yhat` 出品的 `python IDE`, 整体界面跟 `Rstudio` 非常的相似, 实现了从脚本直接运行的操作, 并且可以输出画图, 相比于 `jupyter`, 更适合编写项目文件.
