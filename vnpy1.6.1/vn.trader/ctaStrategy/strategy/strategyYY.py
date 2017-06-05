@@ -221,7 +221,7 @@ class YYStrategy(CtaTemplate):
     #---------------------------------------------------------------------------
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
-        if datetime.now().hour >= 9 and datetime.now().minute >= 00:
+        if datetime.now().hour == 14 and datetime.now().minute >= 30:
             ####################################################################
             ## william
             ## 这个 tick 已经是 CtaTickData, 已经处理接收的数据
@@ -232,7 +232,7 @@ class YYStrategy(CtaTemplate):
         ########################################################################
         ## william
         ## 
-        if datetime.now().hour >= 9 and datetime.now().minute >= 00 and datetime.now().second >= 30 and datetime.now().second % 5 == 0:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and datetime.now().second >= 50 and datetime.now().second % 2 == 0:
             ####################################################################
             ## william
             ## 保证有 lastTickData
