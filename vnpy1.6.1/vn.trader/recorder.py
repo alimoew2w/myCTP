@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# -*- coding: utf-8 -*-
 ################################################################################
 ## william
 ## 用于记录 CTP Tick Data
@@ -130,7 +130,8 @@ mainEngine.saveContractInfo()
 import pandas as pd
 contractInfo = mainEngine.dataEngine.getAllContracts()
 
-dfHeader = ['symbol','name','exchange','gatewayName','productClass','size','priceTick']
+# dfHeader = ['symbol','name','exchange','gatewayName','productClass','size','priceTick']
+dfHeader = ['symbol','exchange','gatewayName','size','priceTick']
 dfData = []
 
 for contract in contractInfo:
@@ -138,9 +139,10 @@ for contract in contractInfo:
 
 df = pd.DataFrame(dfData, columns = dfHeader)
 
-reload(sys) # reload 才能调用 setdefaultencoding 方法  
-sys.setdefaultencoding('utf-8')
+# reload(sys) # reload 才能调用 setdefaultencoding 方法  
+# sys.setdefaultencoding('utf-8')
 
+print df
 df.to_csv(os.path.join(data_recorder_path,'ContractInfo', ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
 ################################################################################
 
