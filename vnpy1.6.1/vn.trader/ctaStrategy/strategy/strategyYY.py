@@ -232,7 +232,7 @@ class YYStrategy(CtaTemplate):
         ########################################################################
         ## william
         ## 
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and datetime.now().second >= 50 and datetime.now().second % 2 == 0:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and datetime.now().second >= 53 and datetime.now().second % 2 == 0:
             ####################################################################
             ## william
             ## 保证有 lastTickData
