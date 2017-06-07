@@ -40,16 +40,11 @@ ICON_FILENAME = os.path.join(path, ICON_FILENAME)
 
 SETTING_FILENAME = 'VT_setting.json'
 SETTING_FILENAME = os.path.join(path, 'setting', SETTING_FILENAME) 
-#
-#
-#
-#
-#
-#
-#
-#
-#
+
+################################################################################
 """主程序入口"""
+################################################################################
+
 # 重载sys模块，设置默认字符串编码方式为utf8
 reload(sys)
 sys.setdefaultencoding('utf8')  
@@ -134,7 +129,6 @@ except:
 ################################################################################
 ## william
 ## CTA 策略
-# print mainEngine.ctaEngine.ChinaFuturesCalendar
 
 # 加载设置
 mainEngine.ctaEngine.loadSetting()
@@ -146,6 +140,7 @@ mainEngine.ctaEngine.loadSetting()
 
 ################################################################################
 # 初始化策略
+## BBStragegy
 # mainEngine.ctaEngine.initStrategy('Bollinger Band')
 # mainEngine.ctaEngine.startStrategy('Bollinger Band')
 # strat = mainEngine.ctaEngine.strategyDict
@@ -155,6 +150,7 @@ mainEngine.ctaEngine.loadSetting()
 
 ################################################################################
 # 初始化策略
+## YYStrategy
 mainEngine.ctaEngine.initStrategy('Yun Yang')
 time.sleep(5)
 mainEngine.ctaEngine.startStrategy('Yun Yang')
@@ -162,3 +158,4 @@ mainEngine.ctaEngine.startStrategy('Yun Yang')
 strat = mainEngine.ctaEngine.strategyDict
 stratYY = strat['Yun Yang']
 
+print stratYY.tradingOrderSeq
