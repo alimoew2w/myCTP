@@ -34,6 +34,29 @@
 
   ![sublime_2](/Toolkits/pic/sublime_2.png)
 
+- `Clion`: 俗话说, "JetBrain 出品, 必属精品". 这是当前公认的 `c++` 开发最好用的 `IDE`, 真的没有*之一*. 这里我简要说明一下在 `Linux` 下面的安装及破解步骤:
+
+    - 从官网下载最新版本的 `cilon` 软件: [https://www.jetbrains.com/clion/](https://www.jetbrains.com/clion/)
+    - [参考](http://feixiao.github.io/2015/06/16/clion_1/): 从得到的压缩包, 进行解压, 将其复制到目录 `/home/williiam/Documents`
+    - **配置环境变量**
+      
+            vim ~/.bashrc
+            export PATH=/home/william/clion-2017.1.2/bin:${PATH}
+
+    - 启动, 在终端输入
+      
+            clion.sh
+
+    - **破解**: 参考[这里](http://xclient.info/a/f0b9738a-36fd-8a97-a966-0d3db497092d.html):
+    
+        - 打开激活窗口
+        - 选择 Activate new license with License server （用license server 激活）
+        - 在 License sever address 处填入 http://xidea.online
+        - 点击 Activate 进行认证
+        - done！
+
+  ![clion](/Toolkits/pic/clion.png)
+
 - `mycli`: 这是一款配合 `MySQL` 自动补全的命令行工具, 可以实现在 `terminal` 自动跳出补全的可用命令. 具体的使用方法可以通过帮助文档获取.
 
         sudo apt install mycli
