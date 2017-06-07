@@ -57,6 +57,18 @@
 
   ![clion](/Toolkits/pic/clion.png)
 
+- 'DataGrip': 又是一款 `JetBrain` 公司出品的多数据库管理 `IDE`. 安装方法类似 `clion`. 使用通用的破解技术:`http://xidea.online`. 同时, 建立文件 `DataGrip.desktop`, 保存到 `~/.local/share/applications`,内容为
+
+        [Desktop Entry]
+        Name=DataGrip
+        Exec=/home/william/DataGrip-2017.1.4/bin/datagrip.sh
+        Icon=/home/william/DataGrip-2017.1.4/bin/datagrip.png
+        Terminal=false
+        Type=Application
+
+  ![datagrip](/Toolkits/pic/datagrip.png)
+
+
 - `mycli`: 这是一款配合 `MySQL` 自动补全的命令行工具, 可以实现在 `terminal` 自动跳出补全的可用命令. 具体的使用方法可以通过帮助文档获取.
 
         sudo apt install mycli
