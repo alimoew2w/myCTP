@@ -37,7 +37,7 @@
 - `Clion`: 俗话说, "JetBrain 出品, 必属精品". 这是当前公认的 `c++` 开发最好用的 `IDE`, 真的没有*之一*. 这里我简要说明一下在 `Linux` 下面的安装及破解步骤:
 
     - 从官网下载最新版本的 `cilon` 软件: [https://www.jetbrains.com/clion/](https://www.jetbrains.com/clion/)
-    - [参考](http://feixiao.github.io/2015/06/16/clion_1/): 从得到的压缩包, 进行解压, 将其复制到目录 `/home/williiam/Documents`
+    - [参考](http://feixiao.github.io/2015/06/16/clion_1/): 从得到的压缩包, 进行解压, 将其复制到目录 `/home/williiam/`
     - **配置环境变量**
       
             vim ~/.bashrc
