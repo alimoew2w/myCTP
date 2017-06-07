@@ -396,6 +396,7 @@ class YYStrategy(CtaTemplate):
     ## william
     ## 从 MySQL 数据库读取策略持仓信息
     def updateStratPosInfo(self, df):
+        """更新策略持仓信息"""
         conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl')
         cursor = conn.cursor()
         cursor.execute(""" delete from fl.positionInfo where strategyID = '%s' """ %self.strategyID)
@@ -403,9 +404,25 @@ class YYStrategy(CtaTemplate):
         df.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
         conn.close()
 
+    ############################################################################
     def updateTradingInfo(self, df):
+        """更新交易记录"""
         conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl')
         cursor = conn.cursor()
         df.to_sql(con=conn, name='tradingInfo', if_exists='append', flavor='mysql', index = False)
-        conn.close()      
+        conn.close()   
+
+    ############################################################################
+    def updateTradingDay(self, strategyID, InstrumentID, TradingDay):
+        """更新交易日历"""  
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl')
+        cursor = conn.cursor()
+        cursor.execute("""
+                        UPDATE positionInfo
+                        SET TradingDay = %s
+                        WHERE strategyID = %s
+                        AND InstrumentID = %s
+                       """, (TradingDay, strategyID, InstrumentID))
+        conn.commit()
+        conn.close()
 
