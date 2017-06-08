@@ -25,7 +25,7 @@ create table fl.tradingInfo(
     offset          VARCHAR(20)  NOT NULL,
     volume          INT           NOT NULL,
     price           DECIMAL(15,5) NOT NULL,
-    PRIMARY KEY(strategyID, InstrumentID, TradingDay, direction, offset)   
+    PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)   
 );
 
 ## orderTime: 下单时间
