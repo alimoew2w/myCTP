@@ -15,7 +15,7 @@ import re
 ##　增加路径说明
 ################################################################################
 os.chdir("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
-
+sys.path.append("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
 import vtPath
 
 ################################################################################
@@ -54,8 +54,8 @@ sys.setdefaultencoding('utf8')
 ## 去掉 windows 的设置
 ################################################################################
 # 设置Windows底部任务栏图标
-#### if 'Windows' in platform.uname() :
-####     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')     
+if 'Windows' in platform.uname() :
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')     
 
 # 初始化Qt应用对象
 app = QtGui.QApplication(sys.argv)
@@ -86,25 +86,13 @@ mainEngine = MainEngine()
 mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
 ## mainWindow.showMaximized() 
 mainWindow.showMinimized()  
-##'''
+
 print "\n#######################################################################"
 print u"main 主函数启动成功！！！"
 time.sleep(2.0)
 print "#######################################################################\n"
 ############################################################################
 
-
-############################################################################
-## william
-## 默认启动连接 CTP 
-print "#######################################################################"
-print "以下是目前可以使用的 gateway name:"
-time.sleep(1.0)
-for i in range(len(GATEWAY_DICT)):  
-    print u"#---------------------------------------------------------------"
-    print i+1, ":===>", list(GATEWAY_DICT)[i]
-    print u"#---------------------------------------------------------------"
-print "#######################################################################"
 
 gatewayName = 'CTP'
 print U"GatewayName:", gatewayName
