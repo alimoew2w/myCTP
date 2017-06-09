@@ -160,6 +160,65 @@ class CtpGateway(VtGateway):
         # 初始化并启动查询
         self.initQuery()
 
+    #---------------------------------------------------------------------------
+    ############################################################################
+    ## william
+    ## 连接CTP账户, 需要提供账户信息
+    def connectCTPAccount(self, accountInfo):
+        """连接 CTP 指定的账户"""
+        # 载入json文件
+        fileName = self.gatewayName + '_connect' + '_' + accountInfo + '.json'
+        path     = os.path.dirname(__file__)
+        path     = os.path.normpath(os.path.join(path, '..', '..'))
+        fileName = os.path.join(path, 'setting', fileName)
+        
+        try:
+            f = file(fileName)
+        except IOError:
+            log = VtLogData()
+            log.gatewayName = self.gatewayName
+            log.logContent = text.LOADING_ERROR
+            self.onLog(log)
+            return
+        
+        # 解析json文件
+        setting = json.load(f)
+        try:
+            userID    = str(setting['userID'])
+            password  = str(setting['password'])
+            brokerID  = str(setting['brokerID'])
+            tdAddress = str(setting['tdAddress'])
+            mdAddress = str(setting['mdAddress'])
+            
+            # 如果json文件提供了验证码
+            if 'authCode' in setting: 
+                authCode = str(setting['authCode'])
+                userProductInfo = str(setting['userProductInfo'])
+                self.tdApi.requireAuthentication = True
+            else:
+                authCode = None
+                userProductInfo = None
+
+        except KeyError:
+            log = VtLogData()
+            log.gatewayName = self.gatewayName
+            log.logContent = text.CONFIG_KEY_MISSING
+            self.onLog(log)
+            return            
+        
+        ########################################################################
+        ## william
+        ## 连接到 
+        ## 1. MdAPI
+        ## 2. TdAPI
+        ########################################################################
+        # 创建行情和交易接口对象
+        self.mdApi.connect(userID, password, brokerID, mdAddress)
+        self.tdApi.connect(userID, password, brokerID, tdAddress,authCode, userProductInfo)
+        
+        # 初始化并启动查询
+        self.initQuery()
+
 
     ############################################################################
     ## william
