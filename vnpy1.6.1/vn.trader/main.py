@@ -98,7 +98,8 @@ gatewayName = 'CTP'
 print U"GatewayName:", gatewayName
 
 try:
-    mainEngine.connect(gatewayName)
+    # mainEngine.connect(gatewayName)
+    mainEngine.connectCTPAccount(accountInfo = 'accountTest')
     print u"CTP 正在登录!!!",
     for i in range(50):
         print ".",
@@ -122,7 +123,7 @@ except:
 mainEngine.ctaEngine.loadSetting()
 
 # print mainEngine.ctaEngine.__dict__
-# print mainEngine.ctaEngine.strategyDict
+print mainEngine.ctaEngine.strategyDict
 # print mainEngine.ctaEngine.tickStrategyDict
 
 
@@ -139,11 +140,10 @@ mainEngine.ctaEngine.loadSetting()
 ################################################################################
 # 初始化策略
 ## YYStrategy
-mainEngine.ctaEngine.initStrategy('Yun Yang')
-time.sleep(5)
-mainEngine.ctaEngine.startStrategy('Yun Yang')
-# mainEngine.ctaEngine.stopStrategy('Yun Yang')
+time.sleep(3)
+mainEngine.ctaEngine.initStrategy('Yun Yang Test')
+time.sleep(3)
+mainEngine.ctaEngine.startStrategy('Yun Yang Test')
+# mainEngine.ctaEngine.stopStrategy('Yun Yang Test')
 strat = mainEngine.ctaEngine.strategyDict
-stratYY = strat['Yun Yang']
-
-print stratYY.tradingOrderSeq
+stratYY = strat['Yun Yang Test']
