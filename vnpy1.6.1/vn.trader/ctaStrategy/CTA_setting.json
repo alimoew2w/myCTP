@@ -8,5 +8,10 @@
     {
         "name": "Yun Yang",
         "className": "YYStrategy"
+    },
+
+    {
+        "name": "Yun Yang Test",
+        "className": "YYTestStrategy"
     }
 ]
