@@ -2,7 +2,7 @@
 ## fl.positionInfo
 ## 策略持仓情况
 ################################################################################
-create table fl.positionInfo(
+create table positionInfo(
     strategyID      VARCHAR(100) NOT NULL,
     InstrumentID    VARCHAR(20)  NOT NULL,
     TradingDay      DATE         NOT NULL,
@@ -16,7 +16,7 @@ create table fl.positionInfo(
 ## fl.tradingIndo
 ## 策略交易历史情况
 ################################################################################
-create table fl.tradingInfo(
+create table tradingInfo(
     strategyID      VARCHAR(100) NOT NULL,
     InstrumentID    VARCHAR(20)  NOT NULL,
     TradingDay      DATE         NOT NULL,
@@ -25,7 +25,8 @@ create table fl.tradingInfo(
     offset          VARCHAR(20)  NOT NULL,
     volume          INT           NOT NULL,
     price           DECIMAL(15,5) NOT NULL,
-    PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)   
+    -- PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)   
+    PRIMARY KEY(strategyID, InstrumentID, TradingDay, direction, offset)   
 );
 
 ## orderTime: 下单时间
@@ -36,7 +37,7 @@ create table fl.tradingInfo(
 ## fl.failedInfo
 ## 策略交易失败情况
 ################################################################################
-create table fl.failedInfo(
+create table failedInfo(
     strategyID      VARCHAR(100) NOT NULL,
     InstrumentID    VARCHAR(20)  NOT NULL,
     TradingDay      DATE         NOT NULL,
