@@ -7,7 +7,7 @@
 
 ### 中文写入 `MySQL` 的时候报错
 
-    把策略的交易记录(`tempTradingInfo`) 写入 `MySQL` 的时候, 无法把中文的 `开仓` 或   `平仓` 顺利写入, 报错为
+    把策略的交易记录(`tempTradingInfo`) 写入 `MySQL` 的时候, 无法把中文的 `开仓` 或 `平仓` 顺利写入, 报错为
 
     UnicodeEncodeError: 'latin-1' codec can't encode characters in position 0-3: ordinal not in range(256)
 

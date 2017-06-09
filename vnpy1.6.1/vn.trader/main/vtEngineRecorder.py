@@ -53,6 +53,7 @@ class MainEngine(object):
         """Constructor"""
         # 记录今日日期
         self.todayDate = datetime.now().strftime('%Y%m%d')
+        self.tradingDay = vtFunction.tradingDay()
         
         # 创建事件引擎
         self.eventEngine = EventEngine2()
@@ -168,6 +169,15 @@ class MainEngine(object):
         f = shelve.open(os.path.join(main_path,contractFileName))
         f['data'] = self.dataEngine.contractDict
         f.close()
+
+        ########################################################################
+        ## william
+        ## 保存合约信息
+        f2 = shelve.open(os.path.normpath(os.path.join(main_path,'..','..','vn.data','ContractInfo',(self.tradingDay + '_' + contractFileName) )))
+        # f2['data'] = self.dataEngine.contractDict
+        f2['data'] = 'hello, world'
+        f2.close()
+
         print "#######################################################################\n"
     ############################################################################
     ## william

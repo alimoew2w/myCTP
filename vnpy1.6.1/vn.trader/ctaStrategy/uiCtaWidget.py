@@ -38,9 +38,15 @@ class CtaValueMonitor(QtGui.QTableWidget):
     def updateData(self, data):
         """更新数据"""
         if not self.inited:
+            ####################################################################
+            ## william
+            ## 设置标题
             self.setColumnCount(len(data))
             self.setHorizontalHeaderLabels(data.keys())
-            
+
+            ####################################################################
+            ## william
+            ## 新增数据
             col = 0
             for k, v in data.items():
                 cell = QtGui.QTableWidgetItem(unicode(v))
@@ -50,6 +56,9 @@ class CtaValueMonitor(QtGui.QTableWidget):
             
             self.inited = True
         else:
+            ####################################################################
+            ## william
+            ## 更新数据
             for k, v in data.items():
                 cell = self.keyCellDict[k]
                 cell.setText(unicode(v))

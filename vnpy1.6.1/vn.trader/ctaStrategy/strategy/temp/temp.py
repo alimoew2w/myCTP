@@ -473,3 +473,275 @@ if len(stratWorkingOrders) != 0:
     print 'hello'
 elif len(stratWorkingOrders) == 0 and vtSymbol in stratTradedSymbols:
     print 'world'
+
+
+print stratYY.tempTradingInfo
+
+
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+df = stratYY.tempTradingInfo
+df.to_sql(con=conn, name='tradingInfo', if_exists='append', flavor='mysql', index = False)
+conn.close()   
+
+
+conn = MySQLdb.connect(host="192.168.1.106", user = "fl", passwd = "abc@123", db = "fl", use_unicode=True, charset="utf8")
+
+
+
+
+
+
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+cursor.execute("""
+                UPDATE positionInfo
+                SET TradingDay = %s
+                WHERE strategyID = %s
+                AND InstrumentID = %s
+               """, (TradingDay, strategyID, InstrumentID))
+conn.commit()
+conn.close()
+
+import os
+path = '/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/strategy'
+
+for root, subdirs, files in os.walk(path):
+    if 'temp' in subdirs:
+        for name in files:
+            # print name
+            # 只有文件名中包含strategy且非.pyc的文件，才是策略文件
+            if 'strategy' in name and '.pyc' not in name:
+                # 模块名称需要上前缀
+                moduleName = 'ctaStrategy.strategy.' + name.replace('.py', '')
+                print moduleName
+            
+            # 使用importlib动态载入模块
+            # module = importlib.import_module(moduleName)
+            
+            # # 遍历模块下的对象，只有名称中包含'Strategy'的才是策略类
+            # for k in dir(module):
+            #     if 'Strategy' in k:
+            #         v = module.__getattribute__(k)
+            #         STRATEGY_CLASS[k] = v
+
+        self.vtSymbolList = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade',
+                                 """
+                                  SELECT DISTINCT InstrumentID
+                                  FROM lhg_open_t
+                                 """).InstrumentID.values
+
+x = mainEngine.dbMySQLQuery('lhg_trade',
+                                 """
+                                  SELECT DISTINCT InstrumentID
+                                  FROM lhg_open_t
+                                 """).InstrumentID.values
+y = mainEngine.dbMySQLQuery('fl',
+                                """
+                                SELECT * 
+                                FROM positionInfo 
+                                WHERE strategyID = '%s'
+                                """ %strategyID)
+print y
+
+################################################################################
+
+
+openInfo = mainEngine.dbMySQLQuery('lhg_trade',
+                    """
+                    SELECT * 
+                    FROM lhg_open_t
+                    """)
+failedInfo = mainEngine.dbMySQLQuery('fl',
+                    """
+                    SELECT * 
+                    FROM failedInfo
+                    """)
+positionInfo = mainEngine.dbMySQLQuery('fl',
+                    """
+                    SELECT * 
+                    FROM positionInfo
+                    """)
+tradingOrder = {}
+
+vtSymbolList = list(set(openInfo.InstrumentID.values) |
+                         set(failedInfo.InstrumentID.values) |
+                         set(positionInfo.InstrumentID.values)
+                        )
+print vtSymbolList
+
+print positionInfo
+
+if len(positionInfo) != 0:
+    for i in range(len(positionInfo)):
+        tempTradingDay = positionInfo.loc[i,'TradingDay']
+        tempHoldingDays = mainEngine.ctaEngine.ChinaFuturesCalendar[mainEngine.ctaEngine.ChinaFuturesCalendar.days.between(tempTradingDay.strftime('%Y%m%d'), mainEngine.ctaEngine.mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+        positionInfo.loc[i,'holdingDays'] = tempHoldingDays
+print positionInfo
+positionInfo = positionInfo[positionInfo.holdingDays >= 5]
+print positionInfo
+
+if len(positionInfo) == 0:
+    ## 没有 5 天以上的合约, 不进行处理
+    ## 只处理 openInfo
+    if len(openInfo) != 0:
+        for i in range(len(openInfo)):
+            ## direction
+            if openInfo.loc[i,'direction'] == 1:
+                tempDirection = 'buy'
+            elif openInfo.loc[i,'direction'] == -1:
+                tempDirection = 'short'
+            else:
+                pass
+            ## volume
+            tempVolume = int(openInfo.loc[i,'volume'])
+            tempKey = openInfo.loc[i,'InstrumentID'] + '-' + tempDirection
+            tradingOrder[tempKey] = {'vtSymbol':openInfo.loc[i,'InstrumentID'],
+                                     'direction':tempDirection,
+                                     'volume':tempVolume}
+else:
+    if len(openInfo) == 0:
+        ## 当天没有开仓信息
+        ## 只需要处理持仓超过5天的信息
+        for i in range(len(positionInfo)):
+            ## direction
+            if positionInfo.loc[i,'direction'] == 'long':
+                tempDirection = 'sell'
+            elif positionInfo.loc[i,'direction'] == 'short':
+                tempDirection = 'cover'
+            else:
+                pass
+            ## volume
+            tempVolume = int(positionInfo.loc[i,'volume'])
+            tempKey = positionInfo.loc[i,'InstrumentID'] + '-' + tempDirection
+            tradingOrder[tempKey] = {'vtSymbol':positionInfo.loc[i,'InstrumentID'],
+                                     'direction':tempDirection,
+                                     'volume':tempVolume}
+    else:
+        ## 如果当天有持仓
+        ## x: 交集
+        ## y: positionInfo
+        ## z: openInfo
+        x = list(set(positionInfo.InstrumentID.values) & set(openInfo.InstrumentID.values))
+        y = [i for i in positionInfo.InstrumentID.values if i not in openInfo.InstrumentID.values]
+        z = [i for i in openInfo.InstrumentID.values if i not in positionInfo.InstrumentID.values]
+
+        if len(x) != 0:
+            for i in x:
+                ## direction
+                if positionInfo.loc[positionInfo.InstrumentID == i, 'direction'].values == 'long':
+                    if openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == 1:
+                        # updateTradingDay(strategyID = strategyID, InstrumentID = i, TradingDay = mainEngine.ctaEngine.mainEngine.tradingDay, direction = 'long')
+                        print 'hello'
+                    elif openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == -1:
+                        tempDirection1 = 'sell'
+                        tempVolume1    = int(positionInfo.loc[positionInfo.InstrumentID == i, 'volume'].values)
+                        tempKey1       = i + '-' + tempDirection1
+
+                        tempDirection2 = 'short'
+                        tempVolume1    = int(openInfo.loc[openInfo.InstrumentID == i, 'volume'].values)
+                        tempKey2       = i + '-' + tempDirection2
+
+                        tradingOrder[tempKey1] = {'vtSymbol':i,
+                                                  'direction':tempDirection1,
+                                                  'volume':tempVolume1}
+
+                        tradingOrder[tempKey2] = {'vtSymbol':i,
+                                                  'direction':tempDirection2,
+                                                  'volume':tempVolume2}
+                    else:
+                        pass
+                elif positionInfo.loc[positionInfo.InstrumentID == i, 'direction'].values == 'short':
+                    if openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == 1:
+                        tempDirection1 = 'cover'
+                        tempVolume1    = int(positionInfo.loc[positionInfo.InstrumentID == i, 'volume'].values)
+                        tempKey1       = i + '-' + tempDirection1
+
+                        tempDirection2 = 'buy'
+                        tempVolume1    = int(openInfo.loc[openInfo.InstrumentID == i, 'volume'].values)
+                        tempKey2       = i + '-' + tempDirection2
+
+                        tradingOrder[tempKey1] = {'vtSymbol':i,
+                                                  'direction':tempDirection1,
+                                                  'volume':tempVolume1}
+
+                        tradingOrder[tempKey2] = {'vtSymbol':i,
+                                                  'direction':tempDirection2,
+                                                  'volume':tempVolume2}   
+                    elif openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == -1:
+                        # updateTradingDay(strategyID = strategyID, InstrumentID = i, TradingDay = mainEngine.ctaEngine.mainEngine.tradingDay, direction = 'short')
+                        print 'hello'
+                    else:
+                        pass
+                else:
+                    pass
+
+        if len(y) != 0:
+            for i in y:
+                ## direction
+                if positionInfo.loc[positionInfo.InstrumentID == i, 'direction'].values == 'long':
+                    tempDirection = 'sell'
+                elif positionInfo.loc[positionInfo.InstrumentID == i, 'direction'].values == 'short':
+                    tempDirection = 'cover'
+                ## volume
+                tempVolume = int(positionInfo.loc[positionInfo.InstrumentID == i, 'volume'].values)
+                tempKey = i + '-' + tempDirection
+                tradingOrder[tempKey] = {'vtSymbol':i,
+                                         'direction':tempDirection,
+                                         'volume':tempVolume}
+
+        if len(z) != 0:
+            for i in z:
+                ## direction
+                if openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == 1:
+                    tempDirection = 'buy'
+                elif openInfo.loc[openInfo.InstrumentID == i, 'direction'].values == -1:
+                    tempDirection = 'short'
+                ## volume
+                tempVolume = int(openInfo.loc[openInfo.InstrumentID == i, 'volume'].values)
+                tempKey = i + '-' + tempDirection
+                tradingOrder[tempKey] = {'vtSymbol':i,
+                                         'direction':tempDirection,
+                                         'volume':tempVolume}
+
+
+
+
+
+
+print tradingOrder
+
+print [tradingOrder[k]['vtSymbol'] for k in tradingOrder.keys()]
+
+
+
+
+
+i = 0
+x = positionInfo.loc[i,'TradingDay']
+print x.strftime('%Y%m%d')
+print mainEngine.ctaEngine.ChinaFuturesCalendar
+print mainEngine.ctaEngine.mainEngine.tradingDay
+print mainEngine.ctaEngine.ChinaFuturesCalendar[mainEngine.ctaEngine.ChinaFuturesCalendar.days.between(x.strftime('%Y%m%d'), mainEngine.ctaEngine.mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+
+
+tempPositionInfo = stratYY.positionInfo[stratYY.positionInfo.InstrumentID == 'sn1709']
+print tempPositionInfo.InstrumentID.values[0]
+
+print stratYY.positionInfo.loc[stratYY.positionInfo.InstrumentID == 'sn1709', 'TradingDay'].values[0].strftime('%Y%m%d')
+
+
+failedOrders = {k:stratYY.tradingOrders[k] for k in stratYY.tradingOrders.keys() if k not in stratYY.tradedOrders.keys()}
+
+
+positionInfoToday = positionInfo[positionInfo.TradingDay == datetime.strptime(mainEngine.tradingDay,'%Y%m%d').date()]
+
+if len(positionInfoToday) != 0:
+    tempInstrumentID = positionInfoToday.InstrumentID.values
+    for i in range(len(tempInstrumentID)):
+        temp = tempInstrumentID[i]
+        openInfo.drop(openInfo[openInfo.InstrumentID == temp].index, inplace = True)
+    openInfo = openInfo.reset_index(drop=True)
+
+
+
