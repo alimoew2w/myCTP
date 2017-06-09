@@ -145,7 +145,30 @@ class MainEngine(object):
             ## william
             ## 如果连接 CTP,
             ## 则默认自动连接 MySQL 数据库
-            # self.dbMySQLConnect()
+            self.dbMySQLConnect()
+            print u"#######################################################################"
+            ####################################################################
+        else:
+            self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
+
+    #----------------------------------------------------------------------
+    def connectCTPAccount(self, accountInfo, gatewayName = 'CTP'):
+        """连接特定名称的接口"""
+        """
+        1. CTP
+        """
+        if gatewayName in self.gatewayDict:
+            gateway = self.gatewayDict[gatewayName]
+            gateway.connectCTPAccount(accountInfo)
+            '''
+            # 接口连接后自动执行数据库连接的任务
+            self.dbConnect()
+            '''
+            ####################################################################
+            ## william
+            ## 如果连接 CTP,
+            ## 则默认自动连接 MySQL 数据库
+            self.dbMySQLConnect()
             print u"#######################################################################"
             ####################################################################
         else:
@@ -408,7 +431,7 @@ class MainEngine(object):
             host, port, user, passwd = loadMySQLSetting()
                 
             try:
-                conn = MySQLdb.connect(db = dbName, host = host, port = port, user = user, passwd = passwd)
+                conn = MySQLdb.connect(db = dbName, host = host, port = port, user = user, passwd = passwd, use_unicode = True, charset = "utf8")
                 return conn
                 # cursor = conn.cursor()  
                 # return cursor
@@ -439,7 +462,7 @@ class MainEngine(object):
 
         # if self.dbMySQLClient:
         try:
-            conn = MySQLdb.connect(host = host, port = port, db = db, user = user, passwd = passwd)
+            conn = MySQLdb.connect(host = host, port = port, db = db, user = user, passwd = passwd, use_unicode = True, charset = "utf8")
             mysqlData = pd.read_sql(query, conn)
             ## william
             ## 打印数据库列表
