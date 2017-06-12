@@ -54,6 +54,14 @@
         - 在 License sever address 处填入 http://xidea.online
         - 点击 Activate 进行认证
         - done！
+      
+    - **编译**: 使用项目文件夹下面的 `CMakeLists.txt`, 在里面添加:
+      
+            set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "/home/william/ClionProjects/Cpp_Primer/Binaries")
+        
+        这样, 就可以在下面下面找到可执行文件, `Cpp_Primer`, 可以直接运行:
+
+            ./Cpp_Primer
 
   ![clion](/Toolkits/pic/clion.png)
 
