@@ -86,7 +86,10 @@ class YYStrategy(CtaTemplate):
                             SELECT * 
                             FROM lhg_open_t
                             """)
+        lastTradingDay = self.ctaEngine.ChinaFuturesCalendar.loc[self.ctaEngine.ChinaFuturesCalendar.days < self.ctaEngine.mainEngine.tradingDay, 'days'].max()
 
+        self.openInfo = self.openInfo[self.openInfo.TradingDay == datetime.strptime(lastTradingDay,'%Y%m%d').date().strftime('%Y-%m-%d')]
+        
         self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
                             """
                             SELECT * 
