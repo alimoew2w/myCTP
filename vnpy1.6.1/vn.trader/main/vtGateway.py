@@ -446,17 +446,20 @@ class VtContractData(VtBaseData):
         ## william
         ## 继承 CTP 数据结构
         ## Ref: vn.api/cn.ctp/ctpapi/ThostFtdcUserApiStruct.h
-        '''
+        
+        # 合约保证金
         self.volumeMultiple         = EMPTY_INT     # 合约数量乘数
         self.longMarginRatio        = EMPTY_FLOAT   #   
-        self.shortMarginRatio       = EMPTY_FLOAT   #   
-        self.openRatioByMoney       = EMPTY_FLOAT   #   
-        self.openRatiobyVolume      = EMPTY_FLOAT   #   
-        self.closeRatioByMoney      = EMPTY_FLOAT   #   
-        self.closeRatioByVolume     = EMPTY_FLOAT   #   
-        self.closeTodayRatioByMoney = EMPTY_FLOAT   #   
-        self.closeTodayByVolume     = EMPTY_FLOAT   #  
-        ''' 
+        self.shortMarginRatio       = EMPTY_FLOAT   #  
+
+        # 合约手续费率 
+        # self.openRatioByMoney       = EMPTY_FLOAT   #   
+        # self.openRatiobyVolume      = EMPTY_FLOAT   #   
+        # self.closeRatioByMoney      = EMPTY_FLOAT   #   
+        # self.closeRatioByVolume     = EMPTY_FLOAT   #   
+        # self.closeTodayRatioByMoney = EMPTY_FLOAT   #   
+        # self.closeTodayByVolume     = EMPTY_FLOAT   #  
+        
         ########################################################################
         
         # 期权相关
