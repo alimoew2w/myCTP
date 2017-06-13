@@ -901,7 +901,7 @@ class CtpTdApi(TdApi):
         ## 计算持仓均价
         ## vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == 'cu1709', 'VolumeMultiple'].values
         exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
-        volumeMultiple = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values
+        volumeMultiple = int(vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values)
 
         if pos.position:
             if exchangeID != 'SHFE':
