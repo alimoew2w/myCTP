@@ -108,7 +108,7 @@ gatewayName = 'CTP'
 print U"GatewayName:", gatewayName
 
 try:
-    mainEngine.connect(gatewayName)
+    mainEngine.connectCTPAccount(accountInfo = 'accountLHG')
     print u"CTP 正在登录!!!",
     for i in range(20):
         print ".",
@@ -130,11 +130,16 @@ mainEngine.saveContractInfo()
 import pandas as pd
 contractInfo = mainEngine.dataEngine.getAllContracts()
 
-dfHeader = ['symbol','name','exchange','gatewayName','productClass','size','priceTick']
+dfHeader = ['symbol','name','exchange','gatewayName','productClass','size','priceTick','longMarginRatio','shortMarginRatio']
 dfData = []
 
 for contract in contractInfo:
-    dfData.append([contract.__dict__[k] for k in dfHeader])
+    try:
+        dfData.append([contract.__dict__[k] for k in dfHeader])
+    except:
+        contract.longMarginRatio = ''
+        contract.shortMarginRatio = ''
+        dfData.append([contract.__dict__[k] for k in dfHeader])
 
 df = pd.DataFrame(dfData, columns = dfHeader)
 
