@@ -1014,7 +1014,10 @@ class CtpTdApi(TdApi):
         # 合约数值
         contract.size = data['VolumeMultiple']
         contract.priceTick = data['PriceTick']
-        contract.strikePrice = data['StrikePrice']
+        # ----------------------------------------------------------------------
+        if data['StrikePrice'] < 1e+99:
+            contract.strikePrice = data['StrikePrice']
+        # ----------------------------------------------------------------------
         contract.underlyingSymbol = data['UnderlyingInstrID']
 
         contract.productClass = productClassMapReverse.get(data['ProductClass'], PRODUCT_UNKNOWN)
@@ -1029,6 +1032,12 @@ class CtpTdApi(TdApi):
         # print u'contract.__dict__'
         # print contract.__dict__
         # print "#######################################################################\n"
+
+        contract.volumeMultiple         = data['VolumeMultiple']
+        
+        if data['LongMarginRatio'] < 1e+99 and data['ShortMarginRatio'] < 1e+99:
+            contract.longMarginRatio        = data['LongMarginRatio']   
+            contract.shortMarginRatio       = data['ShortMarginRatio']   
 
         # 缓存代码和交易所的印射关系
         self.symbolExchangeDict[contract.symbol] = contract.exchange
