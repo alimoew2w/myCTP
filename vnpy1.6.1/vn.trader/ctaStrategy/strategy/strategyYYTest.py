@@ -89,6 +89,8 @@ class YYTestStrategy(CtaTemplate):
         if len(self.openInfo) != 0:
             self.openInfo.TradingDay = self.ctaEngine.tradingDay
 
+        ## ---------------------------------------------------------------------
+        ## 上一个交易日未成交订单
         self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl',
                             """
                             SELECT * 
@@ -96,6 +98,8 @@ class YYTestStrategy(CtaTemplate):
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
 
+        ## ---------------------------------------------------------------------
+        ## 持仓合约信息
         self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl',
                             """
                             SELECT * 
@@ -103,11 +107,24 @@ class YYTestStrategy(CtaTemplate):
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
 
-        self.tradingOrders = {}
-        self.tradingOrdersFailedInfo = {}
-        self.tradedOrders  = {}
-        self.failedOrders  = {}
+        ## ---------------------------------------------------------------------
+        ## 交易订单存放位置
+        self.tradingOrders = {}             ## 当日订单, 正常需要处理的
+        ## 字典格式如下
+        ## 1. vtSymbol
+        ## 2. direction: buy, sell, short, cover
+        ## 3. volume
+        ## 4. TradingDay
+        
+        self.tradingOrdersFailedInfo = {}   ## 上一个交易日没有完成的订单,需要优先处理
+                                            ## 
+        self.tradedOrders  = {}             ## 当日订单完成的情况
+        self.tradedOrdersFailedInfo  = {}   ## 当日订单完成的情况
+                                            ## 
+        self.failedOrders  = {}             ## 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
 
+        ## ---------------------------------------------------------------------
+        ## 当前策略下面的所有合约集合
         self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
                                  set(self.failedInfo.InstrumentID.values) |
                                  set(self.positionInfo.InstrumentID.values)
@@ -128,11 +145,16 @@ class YYTestStrategy(CtaTemplate):
     def onInit(self):
         """初始化策略（必须由用户继承实现）"""
         ## =====================================================================
-        # 策略初始化
+        ## 策略初始化
+        ## 对订单进行预先处理
         ## =====================================================================
 
+        ## =====================================================================
+        ## 如果上一个交易日有未完成的订单,需要优先处理
+        ## =====================================================================
         if len(self.failedInfo) != 0:
             for i in range(len(self.failedInfo)):
+                ## -------------------------------------------------------------
                 ## direction
                 if self.failedInfo.loc[i,'direction'] == 'long':
                     if self.failedInfo.loc[i,'offset'] == u'开仓':
@@ -144,6 +166,7 @@ class YYTestStrategy(CtaTemplate):
                         tempDirection = 'short'
                     elif self.failedInfo.loc[i,'offset'] == u'平仓':
                         tempDirection = 'sell'
+                ## -------------------------------------------------------------
                 ## volume
                 tempVolume = self.failedInfo.loc[i,'volume']
                 tempKey    = self.failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
@@ -159,7 +182,8 @@ class YYTestStrategy(CtaTemplate):
         if len(self.positionInfo) != 0:
             ## -----------------------------------------------------------------
             ## 排除当天已经成交的订单
-            self.positionInfoToday = self.positionInfo[self.positionInfo.TradingDay == datetime.strptime(self.ctaEngine.mainEngine.tradingDay,'%Y%m%d').date()]
+            ## 如果检测到 TradingDay 是当前交易日,则进行剔除处理
+            self.positionInfoToday = self.positionInfo[self.positionInfo.TradingDay == self.ctaEngine.tradingDate]
 
             if len(self.positionInfoToday) != 0:
                 tempInstrumentID = self.positionInfoToday.InstrumentID.values
@@ -173,7 +197,7 @@ class YYTestStrategy(CtaTemplate):
             ## 计算持仓超过5天的
             for i in range(len(self.positionInfo)):
                 tempTradingDay = self.positionInfo.loc[i,'TradingDay']
-                tempHoldingDays = self.ctaEngine.ChinaFuturesCalendar[self.ctaEngine.ChinaFuturesCalendar.days.between(tempTradingDay.strftime('%Y%m%d'), self.ctaEngine.mainEngine.tradingDay, inclusive = True)].shape[0] - 1
+                tempHoldingDays = self.ctaEngine.ChinaFuturesCalendar[self.ctaEngine.ChinaFuturesCalendar.days.between(tempTradingDay, self.ctaEngine.tradingDate, inclusive = True)].shape[0] - 1
                 self.positionInfo.loc[i,'holdingDays'] = tempHoldingDays
             ## -----------------------------------------------------------------
 
@@ -183,10 +207,13 @@ class YYTestStrategy(CtaTemplate):
         ## 2.计算开仓的信息
         ## =====================================================================
         if len(self.positionInfo) == 0:
+            ## -----------------------------------------------------------------
             ## 没有 5 天以上的合约, 不进行处理
             ## 只处理 openInfo
+            ## -----------------------------------------------------------------
             if len(self.openInfo) != 0:
                 for i in range(len(self.openInfo)):
+                    ## ---------------------------------------------------------
                     ## direction
                     if self.openInfo.loc[i,'direction'] == 1:
                         tempDirection = 'buy'
@@ -194,6 +221,7 @@ class YYTestStrategy(CtaTemplate):
                         tempDirection = 'short'
                     else:
                         pass
+                    ## ---------------------------------------------------------
                     ## volume
                     tempVolume = int(self.openInfo.loc[i,'volume'])
                     tempKey = self.openInfo.loc[i,'InstrumentID'] + '-' + tempDirection
@@ -209,10 +237,16 @@ class YYTestStrategy(CtaTemplate):
                 print u'停止策略 %s' %self.name
                 print "#######################################################################\n"
         else:
+            ## -----------------------------------------------------------------
+            ## 存在 5 天以上的持仓合约, 需要平仓
+            ## -----------------------------------------------------------------
             if len(self.openInfo) == 0:
+                ## -------------------------------------------------------------
                 ## 当天没有开仓信息
                 ## 只需要处理持仓超过5天的信息
+                ## -------------------------------------------------------------
                 for i in range(len(self.positionInfo)):
+                    ## ---------------------------------------------------------
                     ## direction
                     if self.positionInfo.loc[i,'direction'] == 'long':
                         tempDirection = 'sell'
@@ -220,10 +254,11 @@ class YYTestStrategy(CtaTemplate):
                         tempDirection = 'cover'
                     else:
                         pass
+                    ## ---------------------------------------------------------
                     ## volume
                     tempVolume = int(self.positionInfo.loc[i,'volume'])
                     tempKey = self.positionInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                    tempTradingDay = self.openInfo.loc[i,'TradingDay'] 
+                    tempTradingDay = self.positionInfo.loc[i,'TradingDay'] 
                     self.tradingOrders[tempKey] = {'vtSymbol':self.positionInfo.loc[i,'InstrumentID'],
                                                    'direction':tempDirection,
                                                    'volume':tempVolume,
@@ -238,24 +273,37 @@ class YYTestStrategy(CtaTemplate):
                 y = [i for i in self.positionInfo.InstrumentID.values if i not in self.openInfo.InstrumentID.values]
                 z = [i for i in self.openInfo.InstrumentID.values if i not in self.positionInfo.InstrumentID.values]
 
-                ## =============================================================
+                ## =================================================================================
                 if len(x) != 0:
                     for i in x:
                         ## direction
                         if self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'direction'].values == 'long':
                             if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
-                                tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0].strftime('%Y%m%d')
-                                self.updateTradingDay(strategyID = self.strategyID, InstrumentID = i, oldTradingDay = tempTradingDay, newTradingDay = self.ctaEngine.mainEngine.tradingDay, direction = 'long')
+                                tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
+                                ## -----------------------------------------------------------------
+                                ## 只更新持仓时间, 不进行交易
+                                self.updateTradingDay(strategyID = self.strategyID, 
+                                                      InstrumentID = i, 
+                                                      oldTradingDay = tempTradingDay, 
+                                                      newTradingDay = self.ctaEngine.tradingDate, 
+                                                      direction = 'long')
+                                ## -----------------------------------------------------------------
                             elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
-                                tempDirection1 = 'sell'
-                                tempVolume1    = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
-                                tempKey1       = i + '-' + tempDirection1
+                                ## -----------------------------------------------------------------
+                                ## 先进行原来持仓的多头平仓
+                                ## -----------------------------------------------------------------
+                                tempDirection1  = 'sell'
+                                tempVolume1     = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
+                                tempKey1        = i + '-' + tempDirection1
                                 tempTradingDay1 = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
 
-                                tempDirection2 = 'short'
-                                tempVolume2    = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
-                                tempKey2       = i + '-' + tempDirection2
-                                tempTradingDay1 = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
+                                ## -----------------------------------------------------------------
+                                ## 再进行新的空头开仓
+                                ## -----------------------------------------------------------------
+                                tempDirection2  = 'short'
+                                tempVolume2     = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
+                                tempKey2        = i + '-' + tempDirection2
+                                tempTradingDay2 = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
 
                                 self.tradingOrders[tempKey1] = {'vtSymbol':i,
                                                                 'direction':tempDirection1,
@@ -270,15 +318,21 @@ class YYTestStrategy(CtaTemplate):
                                 pass
                         elif self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'direction'].values == 'short':
                             if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
-                                tempDirection1 = 'cover'
-                                tempVolume1    = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
-                                tempKey1       = i + '-' + tempDirection1
+                                ## -----------------------------------------------------------------
+                                ## 先进行原来持仓的空头平仓
+                                ## -----------------------------------------------------------------
+                                tempDirection1  = 'cover'
+                                tempVolume1     = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
+                                tempKey1        = i + '-' + tempDirection1
                                 tempTradingDay1 = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
 
-                                tempDirection2 = 'buy'
-                                tempVolume2    = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
-                                tempKey2       = i + '-' + tempDirection2
-                                tempTradingDay1 = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
+                                ## -----------------------------------------------------------------
+                                ## 再进行新的多头开仓
+                                ## -----------------------------------------------------------------
+                                tempDirection2  = 'buy'
+                                tempVolume2     = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
+                                tempKey2        = i + '-' + tempDirection2
+                                tempTradingDay2 = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
 
                                 self.tradingOrders[tempKey1] = {'vtSymbol':i,
                                                                 'direction':tempDirection1,
@@ -291,21 +345,30 @@ class YYTestStrategy(CtaTemplate):
                                                                 'TradingDay':tempTradingDay2}
 
                             elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
-                                tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0].strftime('%Y%m%d')
-                                self.updateTradingDay(strategyID = self.strategyID, InstrumentID = i, oldTradingDay = tempTradingDay, newTradingDay = self.ctaEngine.mainEngine.tradingDay, direction = 'short')
+                                tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
+                                ## -----------------------------------------------------------------
+                                ## 只更新持仓时间, 不进行交易
+                                self.updateTradingDay(strategyID = self.strategyID, 
+                                                      InstrumentID = i, 
+                                                      oldTradingDay = tempTradingDay, 
+                                                      newTradingDay = self.ctaEngine.tradingDate, 
+                                                      direction = 'short')
+                                ## -----------------------------------------------------------------
                             else:
                                 pass
                         else:
                             pass                    
 
-                ## =============================================================
+                ## =================================================================================
                 if len(y) != 0:
                     for i in y:
+                        ## -----------------------------------------------------
                         ## direction
                         if self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'direction'].values == 'long':
                             tempDirection = 'sell'
                         elif self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'direction'].values == 'short':
                             tempDirection = 'cover'
+                        ## -----------------------------------------------------
                         ## volume
                         tempVolume = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
                         tempKey = i + '-' + tempDirection
@@ -315,14 +378,16 @@ class YYTestStrategy(CtaTemplate):
                                                        'volume':tempVolume,
                                                         'TradingDay':tempTradingDay}
 
-                ## =============================================================
+                ## =================================================================================
                 if len(z) != 0:
                     for i in z:
+                        ## -----------------------------------------------------
                         ## direction
                         if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
                             tempDirection = 'buy'
                         elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
                             tempDirection = 'short'
+                        ## -----------------------------------------------------
                         ## volume
                         tempVolume = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
                         tempKey = i + '-' + tempDirection
@@ -342,10 +407,7 @@ class YYTestStrategy(CtaTemplate):
 
         print u'当日需要执行的订单为:'
         print self.tradingOrders
-        ########################################################################
 
-        ########################################################################
-        ## william
         print '#################################################################'
         print u"@william 策略初始化成功 !!!"
         self.writeCtaLog(u'%s策略初始化' %self.name)
@@ -389,16 +451,16 @@ class YYTestStrategy(CtaTemplate):
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        # if datetime.now().hour == 14 and datetime.now().minute >= 30:
-        if datetime.now().hour >= 9:
+        if datetime.now().hour == 14 and datetime.now().minute >= 30:
+        # if datetime.now().hour >= 9:
             if tick.vtSymbol in self.vtSymbolList:
                 self.lastTickData[tick.vtSymbol] = tick.__dict__
         ## =====================================================================
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        # if datetime.now().hour == 14 and datetime.now().minute >= 59 and datetime.now().second >= 55 and datetime.now().second % 2 == 0:
-        if datetime.now().hour >= 9:
+        if datetime.now().hour == 14 and datetime.now().minute >= 58 and datetime.now().second >= 55 and datetime.now().second % 2 == 0:
+        # if datetime.now().hour >= 9:
             ################################################################
             ## william
             ## 存储有 self.lastTickData
@@ -436,13 +498,23 @@ class YYTestStrategy(CtaTemplate):
         self.failedInfoTradedOrders  = []
 
         for vtOrderID in self.vtOrderIDListFailedInfo:
-            tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID][self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].vtOrderID.values
+            ## -----------------------------------------------------------------
+            tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+
             if len(tempWorkingOrder) != 0:
                 for i in range(len(tempWorkingOrder)):
                     if tempWorkingOrder[i] not in self.failedInfoWorkingOrders:
                         self.failedInfoWorkingOrders.append(tempWorkingOrder[i])
 
-            tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID][self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].vtOrderID.values
+            ## -----------------------------------------------------------------
+            tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
+
             if len(tempTradedOrder) != 0:
                 for i in range(len(tempTradedOrder)):
                     if tempTradedOrder[i] not in self.failedInfoTradedOrders:
@@ -453,7 +525,9 @@ class YYTestStrategy(CtaTemplate):
         ## =====================================================================
         if len(self.failedInfoWorkingOrders) != 0:
             for vtOrderID in self.failedInfoWorkingOrders:
+                ## -------------------------------------------------------------
                 self.cancelOrder(vtOrderID)
+                ## -------------------------------------------------------------
         else:
             tempSymbolList = [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]
             tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
@@ -463,10 +537,11 @@ class YYTestStrategy(CtaTemplate):
             if len(self.failedInfoTradedOrders) == 0:
                 ## 还没有成交
                 ## 不要全部都下单
-                ################################################################
+                ####################################################################################
                 for i in tempTradingList:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i], my_vtOrderIDList = self.vtOrderIDListFailedInfo)
-                ################################################################
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i], 
+                                          my_vtOrderIDList = self.vtOrderIDListFailedInfo)
+                ####################################################################################
             elif len(self.failedInfoTradedOrders) == 1:
                 ## 有一个订单成交了
                 if len(tempTradingList) == 2:
@@ -486,10 +561,11 @@ class YYTestStrategy(CtaTemplate):
 
                     tempRes = tempTradedOrder.vtSymbol.values[0] + '-' + tempDirection
                     tempTradingList.remove(tempRes)
-                    ###################################################################
+                    ################################################################################
                     for i in tempTradingList:
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], my_vtOrderIDList = self.vtOrderIDListFailedInfo)
-                    ###################################################################
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                                              my_vtOrderIDList = self.vtOrderIDListFailedInfo)
+                    ################################################################################
                 elif len(tempTradingList) <= 1:
                     pass
             elif len(self.failedInfoTradedOrders) == 2:
@@ -511,13 +587,23 @@ class YYTestStrategy(CtaTemplate):
         self.vtSymbolTradedOrders   = []
 
         for vtOrderID in self.vtOrderIDList:
-            tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID][self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].vtOrderID.values
+            ## -----------------------------------------------------------------
+            tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+
             if len(tempWorkingOrder) != 0:
                 for i in range(len(tempWorkingOrder)):
                     if tempWorkingOrder[i] not in self.vtSymbolWorkingOrders:
                         self.vtSymbolWorkingOrders.append(tempWorkingOrder[i])
 
-            tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol][self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID][self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交'].vtOrderID.values
+            ## -----------------------------------------------------------------
+            tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
+
             if len(tempTradedOrder) != 0:
                 for i in range(len(tempTradedOrder)):
                     if tempTradedOrder[i] not in self.vtSymbolTradedOrders:
@@ -538,10 +624,11 @@ class YYTestStrategy(CtaTemplate):
             if len(self.vtSymbolTradedOrders) == 0:
                 ## 还没有成交
                 ## 不要全部都下单
-                ################################################################
+                ####################################################################################
                 for i in tempTradingList:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], my_vtOrderIDList = self.vtOrderIDList)
-                ################################################################
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                                          my_vtOrderIDList = self.vtOrderIDList)
+                ####################################################################################
             elif len(self.vtSymbolTradedOrders) == 1:
                 ## 有一个订单成交了
                 if len(tempTradingList) == 2:
@@ -561,10 +648,11 @@ class YYTestStrategy(CtaTemplate):
 
                     tempRes = tempTradedOrder.vtSymbol.values[0] + '-' + tempDirection
                     tempTradingList.remove(tempRes)
-                    ###################################################################
+                    ################################################################################
                     for i in tempTradingList:
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], my_vtOrderIDList = self.vtOrderIDList)
-                    ###################################################################
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                                              my_vtOrderIDList = self.vtOrderIDList)
+                    ################################################################################
                 elif len(tempTradingList) <= 1:
                     pass
             elif len(self.vtSymbolTradedOrders) == 2:
@@ -627,8 +715,6 @@ class YYTestStrategy(CtaTemplate):
         # # print stratTrade.__dict__
         # print u"stratTrade:==>", stratTrade
 
-        # print self.vtOrderIDList
-
         ########################################################################
         ## william
         ## 更新持仓
@@ -643,9 +729,9 @@ class YYTestStrategy(CtaTemplate):
             
             # ------------------------------------------------------------------
             if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
-                self.stratTrade['TradingDay']  = self.ctaEngine.mainEngine.tradingDay
+                self.stratTrade['TradingDay']  = self.ctaEngine.tradingDay
             elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
-                self.stratTrade['TradingDay']  = self.lastTradingDay
+                self.stratTrade['TradingDay']  = self.ctaEngine.lastTradingDay
             # ------------------------------------------------------------------  
 
             self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']      
@@ -744,17 +830,17 @@ class YYTestStrategy(CtaTemplate):
             tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
 
             if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
-                tempTradingDay = self.ctaEngine.mainEngine.tradingDay
+                tempTradingDay = self.ctaEngine.tradingDay
                 self.tradedOrders[tempKey] = {'vtSymbol':self.stratTrade['vtSymbol'],
                                               'direction':tempDirection,
                                               'volume':self.stratTrade['volume'],
                                               'TradingDay':tempTradingDay}
-            elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
-                tempTradingDay = self.lastTradingDay
-                self.tradedOrdersFailedInfo[tempKey] = {'vtSymbol':self.stratTrade['vtSymbol'],
-                                              'direction':tempDirection,
-                                              'volume':self.stratTrade['volume'],
-                                              'TradingDay':tempTradingDay}
+            # elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            #     tempTradingDay = self.ctaEngine.lastTradingDay
+            #     self.tradedOrdersFailedInfo[tempKey] = {'vtSymbol':self.stratTrade['vtSymbol'],
+            #                                             'direction':tempDirection,
+            #                                             'volume':self.stratTrade['volume'],
+            #                                             'TradingDay':tempTradingDay}
 
             ## 更新交易记录,并写入 mysql
             self.updateTradingInfo(tempTradingInfo)
