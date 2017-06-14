@@ -136,6 +136,11 @@ class CtaTemplate(object):
             self.ctaEngine.cancelStopOrder(vtOrderID)
         else:
             self.ctaEngine.cancelOrder(vtOrderID)
+
+        ## ---------------------------------------------------------------------
+        ## william
+        ## ---------------------------------------------------------------------
+        time.sleep(0.1)
     
     #----------------------------------------------------------------------
     def insertTick(self, tick):
