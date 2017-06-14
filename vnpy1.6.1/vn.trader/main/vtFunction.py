@@ -133,7 +133,7 @@ def tradingDay():
     for i in range(len(ChinaFuturesCalendar)):
         ChinaFuturesCalendar.loc[i, 'nights'] = ChinaFuturesCalendar.loc[i, 'nights'].replace('.0','')
 
-    if 8 <= datetime.now().hour < 20:
+    if 8 <= datetime.now().hour < 19:
         tempRes = datetime.now().strftime("%Y%m%d")
     else:
         temp = ChinaFuturesCalendar[ChinaFuturesCalendar['nights'] == datetime.now().strftime("%Y%m%d")]['days']

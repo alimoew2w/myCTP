@@ -100,3 +100,24 @@ if len(stratYY.positionInfo) != 0:
         stratYY.positionInfo.loc[i,'holdingDays'] = tempHoldingDays
 
     stratYY.positionInfo = stratYY.positionInfo[stratYY.positionInfo.holdingDays >= 5]
+
+openInfoTradingDay = stratYY.openInfo.TradingDay.unique()
+openInfoTradingDayMax = max(openInfoTradingDay).replace()
+if len(openInfoTradingDay)
+
+
+mainEngine.tradingDay
+
+print stratYY.openInfo[stratYY.openInfo.TradingDay == datetime.strptime(mainEngine.tradingDay,'%Y%m%d').date().strftime('%Y-%m-%d')]
+
+datetime.strptime(mainEngine.tradingDay,'%Y%m%d')
+positionInfo = mainEngine.dbMySQLQuery('fl',
+                            """
+                            SELECT * 
+                            FROM positionInfo
+                            """)
+
+tempTradingDay = mainEngine.ctaEngine.ChinaFuturesCalendar.loc[mainEngine.ctaEngine.ChinaFuturesCalendar.days < mainEngine.tradingDay, 'days'].max()
+print tempTradingDay
+
+print stratYY.openInfo[stratYY.openInfo.TradingDay == datetime.strptime(tempTradingDay,'%Y%m%d').date().strftime('%Y-%m-%d')]

@@ -143,7 +143,71 @@ print mainEngine.ctaEngine.strategyDict
 time.sleep(3)
 mainEngine.ctaEngine.initStrategy('Yun Yang Test')
 time.sleep(3)
-mainEngine.ctaEngine.startStrategy('Yun Yang Test')
-# mainEngine.ctaEngine.stopStrategy('Yun Yang Test')
+
 strat = mainEngine.ctaEngine.strategyDict
 stratYY = strat['Yun Yang Test']
+
+mainEngine.ctaEngine.startStrategy('Yun Yang Test')
+# mainEngine.ctaEngine.stopStrategy('Yun Yang Test')
+
+
+
+
+
+
+
+
+
+################################################################################
+## william
+## 账户信息
+import copy
+y = copy.copy(mainEngine.drEngine.getPositionInfo())
+
+x = {}
+for key in y.keys():
+    tempFields = ['symbol','direction','price','position','positionProfit','size']
+    x[key] = {k:y[key][k] for k in tempFields}
+    x[key]['size'] = int(x[key]['size'])
+    # --------------------------------------------------------------------------
+    if x[key]['direction'] == u'多':
+        x[key]['positionPct'] = (x[key]['price'] * x[key]['size'] * mainEngine.getContract(x[key]['symbol']).longMarginRatio)
+    elif x[key]['direction'] == u'空':
+        x[key]['positionPct'] = (x[key]['price'] * x[key]['size'] * mainEngine.getContract(x[key]['symbol']).shortMarginRatio)
+    # print x[key]['symbol'], x[key]['positionPct'] 
+    x[key]['positionPct'] = round(x[key]['positionPct'] * x[key]['position'] / mainEngine.drEngine.accountInfo.balance * 100, 4)
+    # --------------------------------------------------------------------------
+# print x
+# print pd.DataFrame(x).transpose()
+
+tempRes = pd.DataFrame(x).transpose()
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+tempRes.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+conn.close()   
+
+# print mainEngine.drEngine.accountInfo.__dict__
+# y = mainEngine.drEngine.accountInfo.__dict__
+
+y = copy.copy(mainEngine.drEngine.accountInfo.__dict__)
+# print y
+
+y['marginPct'] = y['margin'] / y['balance'] * 100
+
+y['balance'] = y['balance'] / 1000000
+y['preBalance'] = y['preBalance'] / 1000000
+y['deltaBalancePct'] = (y['balance'] - y['preBalance']) / y['preBalance']
+
+tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
+for k in tempFields:
+    y[k] = round(y[k],4)
+
+tempFields = ['vtAccountID','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
+
+# print pd.DataFrame([[y[k] for k in tempFields]], columns = tempFields)
+tempRes = pd.DataFrame([[y[k] for k in tempFields]], columns = tempFields)
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+tempRes.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+conn.close()  
+################################################################################

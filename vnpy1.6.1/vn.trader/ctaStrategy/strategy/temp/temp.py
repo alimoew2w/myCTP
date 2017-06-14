@@ -744,4 +744,194 @@ if len(positionInfoToday) != 0:
     openInfo = openInfo.reset_index(drop=True)
 
 
+import copy
+y = copy.copy(mainEngine.drEngine.getPositionInfo())
 
+x = {}
+for key in y.keys():
+    tempFields = ['symbol','direction','price','position','positionProfit','size']
+    x[key] = {k:y[key][k] for k in tempFields}
+    x[key]['size'] = int(x[key]['size'])
+print x
+print pd.DataFrame(x).transpose()
+
+tempRes = pd.DataFrame(x).transpose()
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+tempRes.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+conn.close()   
+
+print mainEngine.drEngine.accountInfo.__dict__
+# y = mainEngine.drEngine.accountInfo.__dict__
+import copy
+y = copy.copy(mainEngine.drEngine.accountInfo.__dict__)
+print y
+
+y['marginPct'] = y['margin'] / y['balance']
+
+y['balance'] = y['balance'] / 1000000
+y['preBalance'] = y['preBalance'] / 1000000
+y['deltaBalancePct'] = (y['balance'] - y['preBalance']) / y['preBalance']
+
+tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
+for k in tempFields:
+    y[k] = round(y[k],4)
+
+tempFields = ['vtAccountID','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
+
+print pd.DataFrame([[y[k] for k in tempFields]], columns = tempFields)
+tempRes = pd.DataFrame([[y[k] for k in tempFields]], columns = tempFields)
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+tempRes.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+conn.close()  
+
+
+k = stratYY.failedOrders.keys()[0]
+print k
+print stratYY.failedOrders[k]
+
+
+
+
+if len(stratYY.failedOrders) != 0:
+    dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
+    dfData   = []
+    ## -------------------------------------------------------------
+    for k in stratYY.failedOrders.keys():
+        temp_strategyID = stratYY.strategyID
+        temp_InstrumentID = stratYY.failedOrders[k]['vtSymbol']
+        temp_TradingDay = stratYY.ctaEngine.mainEngine.tradingDay
+
+        if stratYY.failedOrders[k]['direction'] == 'buy':
+            temp_direction = 'long'
+            temp_offset    = u'开仓'
+        elif stratYY.failedOrders[k]['direction'] == 'sell':
+            temp_direction = 'short'
+            temp_offset    = u'平仓'
+        elif stratYY.failedOrders[k]['direction'] == 'short':
+            temp_direction = 'short'
+            temp_offset    = u'开仓'
+        elif stratYY.failedOrders[k]['direction'] == 'cover':
+            temp_direction = 'long'
+            temp_offset    = u'开仓'
+
+        temp_volume = stratYY.failedOrders[k]['volume']
+        tempRes = [temp_strategyID, temp_InstrumentID, temp_TradingDay, temp_direction, temp_offset, temp_volume]
+        dfData.append(tempRes)
+
+    df = pd.DataFrame(dfData, columns = dfHeader)
+
+
+conn = mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
+conn.close()  
+
+print datetime.strptime(mainEngine.tradingDay,'%Y%m%d').date()
+
+
+
+
+
+
+strategyID = 'YYTestStrategy'
+failedInfo = mainEngine.dbMySQLQuery('fl',
+                            """
+                            SELECT * 
+                            FROM failedInfo
+                            WHERE strategyID = '%s'
+                            """ %(strategyID))
+
+
+failedInfo = stratYY.ctaEngine.mainEngine.dbMySQLQuery('fl',
+                            """
+                            SELECT * 
+                            FROM failedInfo
+                            """ %(self.strategyID))
+
+
+openInfo = mainEngine.dbMySQLQuery('lhg_trade',
+                    """
+                    SELECT * 
+                    FROM lhg_open_t
+                    """)
+lastTradingDay = mainEngine.ctaEngine.ChinaFuturesCalendar.loc[mainEngine.ctaEngine.ChinaFuturesCalendar.days <= mainEngine.ctaEngine.mainEngine.tradingDay, 'days'].max()
+
+openInfo = openInfo[openInfo.TradingDay == datetime.strptime(lastTradingDay,'%Y%m%d').date().strftime('%Y-%m-%d')]
+
+tempTradingDay = stratYY.ctaEngine.ChinaFuturesCalendar.loc[stratYY.ctaEngine.ChinaFuturesCalendar.days > stratYY.lastTradingDay].days.min()
+tempTradingDay = tempTradingDay[:4] + '-' + tempTradingDay[4:6] + '-' + tempTradingDay[6:]
+
+stratYY.openInfo.TradingDay = tempTradingDay
+
+
+tempPositionInfo = stratYY.failedInfo[stratYY.failedInfo.InstrumentID == stratYY.stratTrade['vtSymbol']][stratYY.failedInfo.direction == stratYY.stratTrade['direction'] ]
+
+
+
+
+                if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+                    tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','volume'])
+                    ## -------------------------------------------------------------
+                    try:
+                        conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl')
+                        cursor = conn.cursor()
+                        tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                        conn.close()  
+                    except:
+                        pass
+                elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+                    # pass
+                    tempPositionInfo = self.failedInfo[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol'] & self.failedInfo.direction == self.stratTrade['direction'] ]
+                    conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl')
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                                    DELETE FROM failedInfo
+                                    WHERE strategyID = %s
+                                    AND InstrumentID = %s
+                                    AND TradingDay = %s
+                                    AND direction  = %s
+                                   """, (self.strategyID, tempPositionInfo.InstrumentID.values[0], tempPositionInfo.TradingDay.values[0], tempPositionInfo.direction.values[0]))
+                    conn.commit()
+                    conn.close() 
+
+
+tempPositionInfo = stratYY.failedInfo[stratYY.failedInfo.InstrumentID == stratYY.stratTrade['vtSymbol'][stratYY.failedInfo.direction == self.stratTrade['direction'] ]
+
+
+
+tempPositionInfo = stratYY.failedInfo[stratYY.failedInfo.InstrumentID == stratYY.stratTrade['vtSymbol']][stratYY.failedInfo.direction == stratYY.stratTrade['direction']]
+
+conn = stratYY.ctaEngine.mainEngine.dbMySQLConnect('fl')
+cursor = conn.cursor()
+cursor.execute("""
+                DELETE FROM failedInfo
+                WHERE strategyID = %s
+                AND InstrumentID = %s
+                AND TradingDay = %s
+                AND direction  = %s
+               """, (stratYY.strategyID, tempPositionInfo.InstrumentID.values[0], tempPositionInfo.TradingDay.values[0], tempPositionInfo.direction.values[0]))
+conn.commit()
+conn.close() 
+
+
+ChinaFuturesCalendar = mainEngine.dbMySQLQuery('dev', """select * from ChinaFuturesCalendar where days >= 20170101""")
+
+## 当前日历的日期
+todayDate = vtFunction.todayDate().date()
+todayDay  = todayDate.strftime('%Y%m%d')
+
+## 当前交易日的日期
+tradingDate = datetime.strptime(mainEngine.tradingDay,'%Y%m%d').date()
+tradingDay  = tradingDate.strftime('%Y%m%d')
+
+## 上一个交易日
+lastTradingDate = ChinaFuturesCalendar.loc[ChinaFuturesCalendar.days < tradingDate, 'days'].max()
+lastTradingDay  = lastTradingDate.strftime('%Y%m%d')
+
+print mainEngine.ctaEngine.lastTradingDay
+
+
+
+mainContracts = mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = %s""" %mainEngine.ctaEngine.lastTradingDay)

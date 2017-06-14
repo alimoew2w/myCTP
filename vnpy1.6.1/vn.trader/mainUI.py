@@ -123,6 +123,7 @@ def main():
     ################################################################################
     # 初始化策略
     ## YYStrategy
+    time.sleep(5)
     mainEngine.ctaEngine.initStrategy('Yun Yang')
     time.sleep(5)
     mainEngine.ctaEngine.startStrategy('Yun Yang')

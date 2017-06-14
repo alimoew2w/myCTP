@@ -35,6 +35,7 @@ from vtFunction import todayDate
 import MySQLdb
 import vtFunction
 import pandas as pd
+from datetime import *
 
 
 ########################################################################
@@ -49,9 +50,39 @@ class CtaEngine(object):
         """Constructor"""
         self.mainEngine = mainEngine
         self.eventEngine = eventEngine
-        
-        # 当前日期
-        self.today = todayDate()
+
+        ############################################################################################
+        ## william
+        ## 有关日期的设置
+        ## date: 指的是日期, 即 python 里面的 date() 格式, eg: 2017-01-01
+        ## day:  是 date 转变过来的字符串格式, eg:'20170101'
+        ## -----------------------------------------------------------------------------------------
+        ## 期货交易日历表
+        ## Usage: mainEngine.ctaEngine.ChinaFuturesCalendar
+        ## __格式是 date, 即 2017-01-01, 需要用 date 格式来匹配__
+        ## nights: 夜盘日期, 
+        ## days:   日盘日期,
+        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', """select * from ChinaFuturesCalendar where days >= 20170101""")
+        ## -----------------------------------------------------------------------------------------
+        '''
+        for i in range(len(self.ChinaFuturesCalendar)):
+            self.ChinaFuturesCalendar.loc[i, 'nights'] = str(self.ChinaFuturesCalendar.loc[i, 'nights']).replace('-','')
+            self.ChinaFuturesCalendar.loc[i, 'days'] = str(self.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
+        '''
+        ## -----------------------------------------------------------------------------------------
+
+        ## 当前日历的日期
+        self.todayDate = vtFunction.todayDate().date()
+        self.todayDay  = self.todayDate.strftime('%Y%m%d')
+
+        ## 当前交易日的日期
+        self.tradingDate = datetime.strptime(self.mainEngine.tradingDay,'%Y%m%d').date()
+        self.tradingDay  = self.tradingDate.strftime('%Y%m%d')
+
+        ## 上一个交易日
+        self.lastTradingDate = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < self.tradingDate, 'days'].max()
+        self.lastTradingDay  = self.lastTradingDate.strftime('%Y%m%d')
+        ############################################################################################
         
         # 保存策略实例的字典
         # key为策略名称，value为策略实例，注意策略名称不允许重复
@@ -81,29 +112,35 @@ class CtaEngine(object):
         
         # 成交号集合，用来过滤已经收到过的成交推送
         self.tradeSet = set()
-        
-        ########################################################################
+
+        ############################################################################################
         ## william
-        ## 期货交易日历表
-        ## Usage: mainEngine.ctaEngine.ChinaFuturesCalendar
-        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 'select * from ChinaFuturesCalendar where days >= 20170101')
-        for i in range(len(self.ChinaFuturesCalendar)):
-            self.ChinaFuturesCalendar.loc[i, 'nights'] = str(self.ChinaFuturesCalendar.loc[i, 'nights']).replace('-','')
-            self.ChinaFuturesCalendar.loc[i, 'days'] = str(self.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
+        ## 有关订阅合约行情
+        ## -----------------------------------------------------------------------------------------
+        ## 所有的主力合约
+        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = %s""" %self.lastTradingDay)
 
-        self.lastTradingDay = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < vtFunction.tradingDay(), 'days'].max()
-
-        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = '%s';""" %self.lastTradingDay)
-
+        ## 持仓的合约
         self.positionContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from positionInfo;""")
+        self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
 
+        ## 信号的合约
         self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
 
-        ########################################################################
+        ## 前一个交易日未成交的合约
+        self.failedContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from failedInfo;""")
+        self.failedContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from failedInfo;""")
+
+        ## -----------------------------------------------------------------------------------------
         ## william
         ## 需要订阅的合约
         # self.subscribeContracts = list(set(self.mainContracts.Main_contract.values) | set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
-        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
+        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | 
+                                       set(self.positionContracts_trade.InstrumentID.values) | 
+                                       set(self.signalContracts.InstrumentID.values) | 
+                                       set(self.failedContracts.InstrumentID.values) | 
+                                       set(self.failedContracts_trade.InstrumentID.values))
+        ############################################################################################
 
         ## MySQL 储存的不同策略的持仓信息
         ## Usage

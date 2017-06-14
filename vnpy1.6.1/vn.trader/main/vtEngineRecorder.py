@@ -110,6 +110,18 @@ class MainEngine(object):
             print text.GATEWAY_NOT_EXIST.format(gateway=gatewayName)
 
     #----------------------------------------------------------------------
+    def connectCTPAccount(self, accountInfo, gatewayName = 'CTP'):
+        """连接特定名称的接口"""
+        """
+        1. CTP
+        """
+        if gatewayName in self.gatewayDict:
+            gateway = self.gatewayDict[gatewayName]
+            gateway.connectCTPAccount(accountInfo)
+        else:
+            self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
+
+    #----------------------------------------------------------------------
     def subscribe(self, subscribeReq, gatewayName):
         """订阅特定接口的行情"""
         if gatewayName in self.gatewayDict:
