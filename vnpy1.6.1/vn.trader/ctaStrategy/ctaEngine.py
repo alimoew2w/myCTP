@@ -267,24 +267,42 @@ class CtaEngine(object):
         ## 同样，返回订单号
         return vtOrderID
     
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def cancelOrder(self, vtOrderID):
         """撤单"""
-        # 查询报单对象
+        ## ---------------------------------------------------------------------
+        ## 查询报单对象
+        ## 1.调用主引擎接口，查询委托单对象
         order = self.mainEngine.getOrder(vtOrderID)
         
+        ## =====================================================================
         # 如果查询成功
+        ## =====================================================================
         if order:
-            # 检查是否报单还有效，只有有效时才发出撤单指令
-            orderFinished = (order.status==STATUS_ALLTRADED or order.status==STATUS_CANCELLED)
+            ## -----------------------------------------------------------------
+            ## 2.检查是否报单还有效，只有有效时才发出撤单指令
+            orderFinished = (order.status == STATUS_ALLTRADED or order.status == STATUS_CANCELLED)
             if not orderFinished:
                 req = VtCancelOrderReq()
-                req.symbol = order.symbol
-                req.exchange = order.exchange
-                req.frontID = order.frontID
-                req.sessionID = order.sessionID
-                req.orderID = order.orderID
-                self.mainEngine.cancelOrder(req, order.gatewayName)    
+                req.symbol      = order.symbol
+                req.exchange    = order.exchange
+                req.frontID     = order.frontID
+                req.sessionID   = order.sessionID
+                req.orderID     = order.orderID
+                self.mainEngine.cancelOrder(req, order.gatewayName) 
+            else:
+                if order.status == STATUS_ALLTRADED:
+                    print u'委托单({0}已执行，无法撤销'.format(vtOrderID)
+                    self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
+                if order.status == STATUS_CANCELLED:
+                    print u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
+                    self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
+        ## =====================================================================
+        # 查询不成功
+        ## =====================================================================
+        else:
+            print u'委托单({0}不存在'.format(vtOrderID)
+            self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
 
     #----------------------------------------------------------------------
     def sendStopOrder(self, vtSymbol, orderType, price, volume, strategy):
