@@ -62,7 +62,7 @@ class CtaEngine(object):
         ## __格式是 date, 即 2017-01-01, 需要用 date 格式来匹配__
         ## nights: 夜盘日期, 
         ## days:   日盘日期,
-        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', """select * from ChinaFuturesCalendar where days >= 20170101""")
+        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', """select * from ChinaFuturesCalendar where days >= 20170101;""")
         ## -----------------------------------------------------------------------------------------
         '''
         for i in range(len(self.ChinaFuturesCalendar)):
@@ -122,24 +122,27 @@ class CtaEngine(object):
 
         ## 持仓的合约
         self.positionContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from positionInfo;""")
-        self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
+        # self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
 
         ## 信号的合约
         self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
 
         ## 前一个交易日未成交的合约
         self.failedContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from failedInfo;""")
-        self.failedContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from failedInfo;""")
+        # self.failedContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from failedInfo;""")
 
         ## -----------------------------------------------------------------------------------------
         ## william
         ## 需要订阅的合约
         # self.subscribeContracts = list(set(self.mainContracts.Main_contract.values) | set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
-        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | 
-                                       set(self.positionContracts_trade.InstrumentID.values) | 
+        # self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | 
+        #                                set(self.positionContracts_trade.InstrumentID.values) | 
+        #                                set(self.signalContracts.InstrumentID.values) | 
+        #                                set(self.failedContracts.InstrumentID.values) | 
+        #                                set(self.failedContracts_trade.InstrumentID.values))
+        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) |  
                                        set(self.signalContracts.InstrumentID.values) | 
-                                       set(self.failedContracts.InstrumentID.values) | 
-                                       set(self.failedContracts_trade.InstrumentID.values))
+                                       set(self.failedContracts.InstrumentID.values))
         ############################################################################################
 
         ## MySQL 储存的不同策略的持仓信息
@@ -639,8 +642,10 @@ class CtaEngine(object):
                     # 对于IB接口订阅行情时所需的货币和产品类型，从策略属性中获取
                     # req.currency = strategy.currency
                     # req.productClass = strategy.productClass
-                    
-                    self.mainEngine.subscribe(req, contract.gatewayName)
+                    ############################################################
+                    ## william
+                    # self.mainEngine.subscribe(req, contract.gatewayName)
+                    ############################################################
                 else:
                     ############################################################
                     ## william
@@ -690,19 +695,29 @@ class CtaEngine(object):
     #----------------------------------------------------------------------
     def stopStrategy(self, name):
         """停止策略"""
+
+        ## ---------------------------------------------------------------------
+        ## 1.判断策略名称是否存在字典中
         if name in self.strategyDict:
+            ## -----------------------------------------------------------------
+            ## 2.提取策略
             strategy = self.strategyDict[name]
-            
+            ## -----------------------------------------------------------------
+            ## 3.停止交易
             if strategy.trading:
+                ## -------------------------------------------------------------
+                ## 4.设置交易状态为False
                 strategy.trading = False
+                ## -------------------------------------------------------------
+                ## 5.调用策略的停止方法, onStop
                 self.callStrategyFunc(strategy, strategy.onStop)
-                
-                # 对该策略发出的所有限价单进行撤单
+                ## -------------------------------------------------------------
+                ## 6.对该策略发出的所有限价单进行撤单
                 for vtOrderID, s in self.orderStrategyDict.items():
                     if s is strategy:
                         self.cancelOrder(vtOrderID)
-                
-                # 对该策略发出的所有本地停止单撤单
+                ## -------------------------------------------------------------
+                ## 7.对该策略发出的所有本地停止单撤单
                 for stopOrderID, so in self.workingStopOrderDict.items():
                     if so.strategy is strategy:
                         self.cancelStopOrder(stopOrderID)   
