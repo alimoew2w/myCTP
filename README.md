@@ -4,20 +4,20 @@
 
 ## Tasks
 
-- [X]: Toolkits
+- [X] Toolkits
 
-- [X]: src
+- [X] src
     - [X]: `mysql.sql`
 
-- [X]: `CTP`
+- [X] `CTP`
 
-- [ ]: `vnpy1.6.1`:
-    - [X]: `vn.api`
-    - [X]: `vn.data`
-    - [ ]: `vn.doc`
-    - [X]: `vn.trader`
-        - [X]: `main`
-        - [X]: `ctaStrategy`
+- [ ] `vnpy1.6.1`:
+    - [X] `vn.api`
+    - [X] `vn.data`
+    - [ ] `vn.doc`
+    - [X] `vn.trader`
+        - [X] `main`
+        - [X] `ctaStrategy`
 
 ## Roadmap
 
