@@ -9,7 +9,7 @@
 - [X] src
     - [X] `mysql.sql`
 
-- [X] `CTP`
+- [ ] `CTP`
 
 - [X] `vnpy1.6.1`:
     - [X] `vn.api`
