@@ -27,7 +27,7 @@ from language import text
 
 import pandas as pd
 ################################################################################
-
+import copy
 
 ################################################################################
 class DrEngine(object):
@@ -407,6 +407,55 @@ class DrEngine(object):
         print pd.DataFrame([temp.values()], columns = temp.keys())
         return self.tradeInfo.__dict__
  
+    ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    def getIndicatorInfo(self, dbName):
+        """读取指标并写入相应的数据库"""
+        ## =====================================================================
+        ## 持仓合约信息
+        posInfo = copy.copy(self.getPositionInfo())
+        tempPosInfo = {}
+
+        for key in posInfo.keys():
+            tempFields = ['symbol','direction','price','position','positionProfit','size']
+            tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
+            tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
+            # --------------------------------------------------------------------------
+            if tempPosInfo[key]['direction'] == u'多':
+                tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
+            elif tempPosInfo[key]['direction'] == u'空':
+                tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
+
+            tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+            # --------------------------------------------------------------------------
+        # print x
+        # print pd.DataFrame(x).transpose()
+        tempRes1 = pd.DataFrame(tempPosInfo).transpose()
+
+        ## =====================================================================
+        ## 账户基金净值
+        accInfo = copy.copy(self.accountInfo.__dict__)
+
+        accInfo['marginPct'] = accInfo['margin'] / accInfo['balance'] * 100
+
+        accInfo['balance'] = accInfo['balance'] / 1000000
+        accInfo['preBalance'] = accInfo['preBalance'] / 1000000
+        accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance']
+
+        tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
+        for k in tempFields:
+            accInfo[k] = round(accInfo[k],4)
+
+        tempFields = ['vtAccountID','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
+        tempRes2 = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
+        ## =====================================================================
+        conn = self.mainEngine.dbMySQLConnect(dbName)
+        cursor = conn.cursor()
+        tempRes1.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+        tempRes2.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+        conn.close()   
+
+
+
     #----------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
