@@ -7,14 +7,14 @@
 - [X] Toolkits
 
 - [X] src
-    - [X]: `mysql.sql`
+    - [X] `mysql.sql`
 
 - [X] `CTP`
 
-- [ ] `vnpy1.6.1`:
+- [X] `vnpy1.6.1`:
     - [X] `vn.api`
     - [X] `vn.data`
-    - [ ] `vn.doc`
+    - [X] `vn.doc`
     - [X] `vn.trader`
         - [X] `main`
         - [X] `ctaStrategy`
