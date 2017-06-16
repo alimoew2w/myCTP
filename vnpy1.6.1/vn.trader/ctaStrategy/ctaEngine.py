@@ -122,27 +122,27 @@ class CtaEngine(object):
 
         ## 持仓的合约
         self.positionContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from positionInfo;""")
-        # self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
+        self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
 
         ## 信号的合约
         self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
 
         ## 前一个交易日未成交的合约
         self.failedContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from failedInfo;""")
-        # self.failedContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from failedInfo;""")
+        self.failedContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from failedInfo;""")
 
         ## -----------------------------------------------------------------------------------------
         ## william
         ## 需要订阅的合约
         # self.subscribeContracts = list(set(self.mainContracts.Main_contract.values) | set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
-        # self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | 
-        #                                set(self.positionContracts_trade.InstrumentID.values) | 
-        #                                set(self.signalContracts.InstrumentID.values) | 
-        #                                set(self.failedContracts.InstrumentID.values) | 
-        #                                set(self.failedContracts_trade.InstrumentID.values))
-        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) |  
+        self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) | 
+                                       set(self.positionContracts_trade.InstrumentID.values) | 
                                        set(self.signalContracts.InstrumentID.values) | 
-                                       set(self.failedContracts.InstrumentID.values))
+                                       set(self.failedContracts.InstrumentID.values) | 
+                                       set(self.failedContracts_trade.InstrumentID.values))
+        # self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) |  
+        #                                set(self.signalContracts.InstrumentID.values) | 
+        #                                set(self.failedContracts.InstrumentID.values))
         ############################################################################################
 
         ## MySQL 储存的不同策略的持仓信息
@@ -375,6 +375,7 @@ class CtaEngine(object):
     def processTickEvent(self, event):
         """处理行情推送"""
         tick = event.dict_['data']
+
         # 收到tick行情后，先处理本地停止单（检查是否要立即发出）
         self.processStopOrder(tick)
         ####################################################################
@@ -662,7 +663,7 @@ class CtaEngine(object):
                     # req.productClass = strategy.productClass
                     ############################################################
                     ## william
-                    # self.mainEngine.subscribe(req, contract.gatewayName)
+                    self.mainEngine.subscribe(req, contract.gatewayName)
                     ############################################################
                 else:
                     ############################################################
