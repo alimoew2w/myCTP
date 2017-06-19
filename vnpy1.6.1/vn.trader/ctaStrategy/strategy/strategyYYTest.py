@@ -9,12 +9,14 @@
 ## @william
 import os
 import sys
-# cta_strategy_path = '/home/william/Documents/vnpy/vnpy-1.6.1/vn.trader/ctaStrategy'
+
 cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
 ################################################################################
 from ctaBase import *
 from ctaTemplate import CtaTemplate
+
+from vtGateway import VtSubscribeReq, VtOrderReq, VtCancelOrderReq, VtLogData
 
 import numpy as np
 import pandas as pd
@@ -24,7 +26,7 @@ from eventType import *
 
 ################################################################################
 class YYTestStrategy(CtaTemplate):
-    """ 云扬一号 交易策略"""
+    """ 云扬一号 交易策略 """
     ############################################################################
     ## william
     # 策略类的名称和作者
@@ -35,6 +37,7 @@ class YYTestStrategy(CtaTemplate):
 
     ############################################################################
     ## william
+    ############################################################################
     trading   = False                   # 是否启动交易
 
     ############################################################################
@@ -106,7 +109,16 @@ class YYTestStrategy(CtaTemplate):
                             FROM positionInfo
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
-
+        self.vtSymbolList = []
+        ## ---------------------------------------------------------------------
+        ## 计时器, 用于记录单个合约发单的间隔时间
+        ## ---------------------------------------------------------------------
+        self.tickTimer    = {}
+        ## ---------------------------------------------------------------------
+        ## tick 处理的字段, 目前只用以下几个
+        ## ---------------------------------------------------------------------
+        self.tickFileds   = ['symbol', 'vtSymbol', 'lastPrice', 'bidPrice1', 'askPrice1',
+                             'bidVolume1', 'askVolume1']
         ## ---------------------------------------------------------------------
         ## 交易订单存放位置
         self.tradingOrders = {}             ## 当日订单, 正常需要处理的
@@ -123,12 +135,6 @@ class YYTestStrategy(CtaTemplate):
                                             ## 
         self.failedOrders  = {}             ## 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
 
-        ## ---------------------------------------------------------------------
-        ## 当前策略下面的所有合约集合
-        self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
-                                 set(self.failedInfo.InstrumentID.values) |
-                                 set(self.positionInfo.InstrumentID.values)
-                                )
         ########################################################################
         ## william
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
@@ -170,7 +176,7 @@ class YYTestStrategy(CtaTemplate):
                 ## volume
                 tempVolume = self.failedInfo.loc[i,'volume']
                 tempKey    = self.failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                tempTradingDay = self.failedInfo.loc[i,'TradingDay'].strftime('%Y-%m-%d')
+                tempTradingDay = self.failedInfo.loc[i,'TradingDay']
                 self.tradingOrdersFailedInfo[tempKey] = {'vtSymbol':self.failedInfo.loc[i,'InstrumentID'],
                                                          'direction':tempDirection,
                                                          'volume':tempVolume,
@@ -201,7 +207,7 @@ class YYTestStrategy(CtaTemplate):
                 self.positionInfo.loc[i,'holdingDays'] = tempHoldingDays
             ## -----------------------------------------------------------------
 
-            self.positionInfo = self.positionInfo[self.positionInfo.holdingDays >= 5]
+            self.positionInfo = self.positionInfo[self.positionInfo.holdingDays >= 5].reset_index(drop=True)
 
         ## =====================================================================
         ## 2.计算开仓的信息
@@ -408,6 +414,24 @@ class YYTestStrategy(CtaTemplate):
         print u'当日需要执行的订单为:'
         print self.tradingOrders
 
+        ## ---------------------------------------------------------------------
+        ## 当前策略下面的所有合约集合
+        self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
+                                 set(self.failedInfo.InstrumentID.values) |
+                                 set(self.positionInfo.InstrumentID.values)
+                                )
+        for i in self.vtSymbolList:
+            self.tickTimer[i] = datetime.now()
+        ########################################################################
+        # for vtSymbol in self.vtSymbolList:
+        #     contract = self.ctaEngine.mainEngine.getContract(vtSymbol)
+        #     if contract:
+        #         req = VtSubscribeReq()
+        #         req.symbol = contract.symbol
+        #         req.exchange = contract.exchange
+        #         self.ctaEngine.mainEngine.subscribe(req, contract.gatewayName)
+        ########################################################################
+
         print '#################################################################'
         print u"@william 策略初始化成功 !!!"
         self.writeCtaLog(u'%s策略初始化' %self.name)
@@ -426,7 +450,9 @@ class YYTestStrategy(CtaTemplate):
         ## 策略启动
         ## =====================================================================
         print '#################################################################'
+        print u'%s策略启动' %self.name
         self.writeCtaLog(u'%s策略启动' %self.name)
+        self.trading = True
         self.putEvent()
         print '#################################################################'
 
@@ -435,6 +461,12 @@ class YYTestStrategy(CtaTemplate):
         """停止策略（必须由用户继承实现）"""
         print '#################################################################'
         print u'%s策略停止' %self.name
+        self.trading = False
+        ## ---------------------------------------------------------------------
+        ## 取消所有的订单
+        for vtOrderID in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
+            self.cancelOrder(vtOrderID)
+        ## ---------------------------------------------------------------------
         print '#################################################################'
         self.writeCtaLog(u'%s策略停止' %self.name)
         self.putEvent()
@@ -442,31 +474,42 @@ class YYTestStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
+        # tempTick = tick.__dict__
+        tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
+        tempFailedOrdersSymbol = [self.failedOrders[k]['vtSymbol'] for k in self.failedOrders.keys()]
         ########################################################################
         ## william
-        if len(self.failedInfo) != 0:
-            if tick.vtSymbol in self.failedInfo.InstrumentID.values:
-                self.lastTickData[tick.vtSymbol] = tick.__dict__
-                self.processFailedInfo(tick.vtSymbol)
+        if len(self.failedInfo) != 0 and self.trading:
+            if tick.vtSymbol in self.failedInfo.InstrumentID.values and tick.vtSymbol in self.tickTimer.keys():
+                self.lastTickData[tick.vtSymbol] = tempTick
+                if (datetime.now().second % 2 == 0) and ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds >= 3):
+                    self.processFailedInfo(tick.vtSymbol)
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
         if datetime.now().hour == 14 and datetime.now().minute >= 30:
         # if datetime.now().hour >= 9:
-            if tick.vtSymbol in self.vtSymbolList:
-                self.lastTickData[tick.vtSymbol] = tick.__dict__
+            # if tick.vtSymbol in self.vtSymbolList:
+            if len(self.failedOrders) != 0:
+                if tick.vtSymbol in tempFailedOrdersSymbol:
+                    self.lastTickData[tick.vtSymbol] = tempTick
+
         ## =====================================================================
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 58 and datetime.now().second >= 55 and datetime.now().second % 2 == 0:
-        # if datetime.now().hour >= 9:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (55-len(self.tradingOrders)*2)) and datetime.now().second % 2 == 0 and self.trading:
+        # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
             ################################################################
             ## william
             ## 存储有 self.lastTickData
             ## 保证有 tick data
-            if tick.vtSymbol in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()]:
-                self.prepareTradingOrder(tick.vtSymbol)
+            # if tick.vtSymbol in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()]:
+            # if tick.vtSymbol in self.vtSymbolList:
+            if len(self.failedOrders) != 0:
+                if tick.vtSymbol in tempFailedOrdersSymbol:
+                    if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds >= 3:
+                        self.prepareTradingOrder(tick.vtSymbol)
                 # pass
         ## =====================================================================
 
@@ -525,9 +568,10 @@ class YYTestStrategy(CtaTemplate):
         ## =====================================================================
         if len(self.failedInfoWorkingOrders) != 0:
             for vtOrderID in self.failedInfoWorkingOrders:
-                ## -------------------------------------------------------------
+            ####################################################################
                 self.cancelOrder(vtOrderID)
-                ## -------------------------------------------------------------
+                self.tickTimer[vtSymbol]    = datetime.now()
+            ####################################################################
         else:
             tempSymbolList = [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]
             tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
@@ -613,8 +657,11 @@ class YYTestStrategy(CtaTemplate):
         ## 2. 根据已经成交的订单情况, 重新处理生成新的订单
         ## =====================================================================
         if len(self.vtSymbolWorkingOrders) != 0:
+            ####################################################################
             for vtOrderID in self.vtSymbolWorkingOrders:
                 self.cancelOrder(vtOrderID)
+                self.tickTimer[vtSymbol]    = datetime.now()
+            ####################################################################
         else:
             tempSymbolList = [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()]
             tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
@@ -697,7 +744,7 @@ class YYTestStrategy(CtaTemplate):
         else:
             return None
         ########################################################################
-
+        self.tickTimer[tempInstrumentID]    = datetime.now()
         ## .....................................................................
         self.putEvent()
         ## .....................................................................
@@ -735,12 +782,14 @@ class YYTestStrategy(CtaTemplate):
             # ------------------------------------------------------------------  
 
             self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']      
-            ## -----------------------------------------
+            ## -----------------------------------------------------------------
             if self.stratTrade['direction'] == u'多':
                 self.stratTrade['direction'] = 'long'
-            else:
+            elif self.stratTrade['direction'] == u'空':
                 self.stratTrade['direction'] = 'short'
-            ## -----------------------------------------        
+            else:
+                pass
+            ## -----------------------------------------------------------------        
 
             ## =================================================================
             ## 2. 更新 positionInfo
@@ -819,12 +868,12 @@ class YYTestStrategy(CtaTemplate):
             if self.stratTrade['direction'] == 'long':
                 if self.stratTrade['offset'] == u'开仓':
                     tempDirection = 'buy'
-                elif self.stratTrade['offset'] == u'平仓':
+                else:
                     tempDirection = 'sell'
             elif self.stratTrade['direction'] == 'short':
                 if self.stratTrade['offset'] == u'开仓':
                     tempDirection = 'short'
-                elif self.stratTrade['offset'] == u'平仓':
+                else:
                     tempDirection = 'cover'
 
             tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
@@ -894,7 +943,12 @@ class YYTestStrategy(CtaTemplate):
         #     self.failedOrders = {k:self.tradingOrders[k] for k in self.tradingOrders.keys() if k not in self.tradedOrders.keys()}
         self.failedOrders = {k:self.tradingOrders[k] for k in self.tradingOrders.keys() if k not in self.tradedOrders.keys()}
 
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 35) and (datetime.now().second % 33 == 0):
+        ## =====================================================================
+        if datetime.now().minute % 30 == 0 and datetime.now().second % 59 == 0:
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo('fl')
+        ## =====================================================================
+
+        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15) and (datetime.now().second % 33 == 0):
             if len(self.failedOrders) != 0:
                 dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
                 dfData   = []
