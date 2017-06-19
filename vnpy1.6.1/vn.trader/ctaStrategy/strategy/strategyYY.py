@@ -945,7 +945,8 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         if datetime.now().minute % 30 == 0 and datetime.now().second % 59 == 0:
-            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo('fl_trade')
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
+                                                                initCapital = 1025377)
         ## =====================================================================
 
         if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15) and (datetime.now().second % 33 == 0):
