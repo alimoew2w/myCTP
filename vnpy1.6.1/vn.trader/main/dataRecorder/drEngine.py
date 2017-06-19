@@ -408,7 +408,7 @@ class DrEngine(object):
         return self.tradeInfo.__dict__
  
     ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def getIndicatorInfo(self, dbName):
+    def getIndicatorInfo(self, dbName, initCapital):
         """读取指标并写入相应的数据库"""
         ## =====================================================================
         ## 持仓合约信息
@@ -416,16 +416,17 @@ class DrEngine(object):
         tempPosInfo = {}
 
         for key in posInfo.keys():
-            tempFields = ['symbol','direction','price','position','positionProfit','size']
-            tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
-            tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
-            # --------------------------------------------------------------------------
-            if tempPosInfo[key]['direction'] == u'多':
-                tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
-            elif tempPosInfo[key]['direction'] == u'空':
-                tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
+            if posInfo[key]['position'] > 0:
+                tempFields = ['symbol','direction','price','position','positionProfit','size']
+                tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
+                tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
+                # --------------------------------------------------------------------------
+                if tempPosInfo[key]['direction'] == u'多':
+                    tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
+                elif tempPosInfo[key]['direction'] == u'空':
+                    tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
 
-            tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+                tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
             # --------------------------------------------------------------------------
         # print x
         # print pd.DataFrame(x).transpose()
@@ -437,9 +438,9 @@ class DrEngine(object):
 
         accInfo['marginPct'] = accInfo['margin'] / accInfo['balance'] * 100
 
-        accInfo['balance'] = accInfo['balance'] / 1000000
-        accInfo['preBalance'] = accInfo['preBalance'] / 1000000
-        accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance']
+        accInfo['balance'] = accInfo['balance'] / initCapital
+        accInfo['preBalance'] = accInfo['preBalance'] / initCapital
+        accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
 
         tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
         for k in tempFields:
