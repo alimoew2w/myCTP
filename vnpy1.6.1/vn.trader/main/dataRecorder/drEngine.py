@@ -430,7 +430,8 @@ class DrEngine(object):
             # --------------------------------------------------------------------------
         # print x
         # print pd.DataFrame(x).transpose()
-        tempRes1 = pd.DataFrame(tempPosInfo).transpose()
+        if len(tempPosInfo) != 0:
+            tempRes1 = pd.DataFrame(tempPosInfo).transpose()
 
         ## =====================================================================
         ## 账户基金净值
@@ -451,7 +452,12 @@ class DrEngine(object):
         ## =====================================================================
         conn = self.mainEngine.dbMySQLConnect(dbName)
         cursor = conn.cursor()
-        tempRes1.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+        ## ---------------------------------------------------------------------
+        if len(tempPosInfo) != 0:
+            tempRes1.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+        else:
+            cursor.execute('truncate table report_position')
+        ## ---------------------------------------------------------------------
         tempRes2.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
         conn.close()   
 
