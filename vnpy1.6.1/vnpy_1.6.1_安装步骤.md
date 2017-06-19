@@ -32,6 +32,7 @@
         pip install pymongo qdarkstyle zmq msgpack-python websocket
         pip install pyqtgraph
         pip install MySQL-python
+        conda install pandas=0.18.0
 
 3. talib 安装：
 
