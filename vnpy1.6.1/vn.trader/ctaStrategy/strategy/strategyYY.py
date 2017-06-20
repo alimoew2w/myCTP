@@ -544,23 +544,29 @@ class YYStrategy(CtaTemplate):
 
         for vtOrderID in self.vtOrderIDListFailedInfo:
             ## -----------------------------------------------------------------
-            tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
-                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+            try:
+                tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+            except:
+                tempWorkingOrder = None
 
-            if len(tempWorkingOrder) != 0:
+            if (tempWorkingOrder is not None) and len(tempWorkingOrder) != 0:
                 for i in range(len(tempWorkingOrder)):
                     if tempWorkingOrder[i] not in self.failedInfoWorkingOrders:
                         self.failedInfoWorkingOrders.append(tempWorkingOrder[i])
 
             ## -----------------------------------------------------------------
-            tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                    (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                    (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
-                                    (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
+            try:
+                tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
+            except:
+                tempTradedOrder = None
 
-            if len(tempTradedOrder) != 0:
+            if (tempTradedOrder is not None) and len(tempTradedOrder) != 0:
                 for i in range(len(tempTradedOrder)):
                     if tempTradedOrder[i] not in self.failedInfoTradedOrders:
                         self.failedInfoTradedOrders.append(tempTradedOrder[i])    
@@ -863,6 +869,9 @@ class YYStrategy(CtaTemplate):
 
             tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
             tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
+            ## -----------------------------------------------------------------
+            self.updateTradingInfo(tempTradingInfo)
+            ## -----------------------------------------------------------------
 
             ## =================================================================
             ## 3. 更新 self.tradedOrders
