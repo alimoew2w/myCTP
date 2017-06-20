@@ -7,8 +7,10 @@
 """
 ################################################################################
 ## @william
+from __future__ import division
 import os
 import sys
+
 
 cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
@@ -891,9 +893,6 @@ class YYStrategy(CtaTemplate):
             #                                             'volume':self.stratTrade['volume'],
             #                                             'TradingDay':tempTradingDay}
 
-            ## 更新交易记录,并写入 mysql
-            self.updateTradingInfo(tempTradingInfo)
-
         ########################################################################
 
         # ######################################################################
@@ -904,7 +903,10 @@ class YYStrategy(CtaTemplate):
     def registerEvent(self):
         """注册事件监听"""
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
+        ## ---------------------------------------------------------------------
+        ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingOrders)
+        ## ---------------------------------------------------------------------
 
     #---------------------------------------------------------------------------
     ############################################################################
@@ -944,9 +946,9 @@ class YYStrategy(CtaTemplate):
         self.failedOrders = {k:self.tradingOrders[k] for k in self.tradingOrders.keys() if k not in self.tradedOrders.keys()}
 
         ## =====================================================================
-        if datetime.now().minute % 30 == 0 and datetime.now().second % 59 == 0:
+        if self.trading == True and datetime.now().minute % 29 == 0 and datetime.now().second % 59 == 0:
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
-                                                                initCapital = 1025377)
+                                                                initCapital = 1000000)
         ## =====================================================================
 
         if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15) and (datetime.now().second % 33 == 0):
