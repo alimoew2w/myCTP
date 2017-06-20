@@ -457,8 +457,15 @@ class DrEngine(object):
             tempRes1.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
         else:
             cursor.execute('truncate table report_position')
+            conn.commit()
         ## ---------------------------------------------------------------------
         tempRes2.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+        ## ---------------------------------------------------------------------
+        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15):
+        # if (15 <= datetime.now().hour) and (datetime.now().minute >= 15):
+            tempRes2.to_sql(con=conn, name='report_account_history', 
+                if_exists='append', flavor='mysql', index = False)
+        ## ---------------------------------------------------------------------
         conn.close()   
 
 
