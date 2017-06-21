@@ -432,6 +432,7 @@ class DrEngine(object):
         # print pd.DataFrame(x).transpose()
         if len(tempPosInfo) != 0:
             tempRes1 = pd.DataFrame(tempPosInfo).transpose()
+            tempRes1['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
 
         ## =====================================================================
         ## 账户基金净值
@@ -442,13 +443,15 @@ class DrEngine(object):
         accInfo['balance'] = accInfo['balance'] / initCapital
         accInfo['preBalance'] = accInfo['preBalance'] / initCapital
         accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
+        accInfo['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
 
         tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
         for k in tempFields:
             accInfo[k] = round(accInfo[k],4)
 
-        tempFields = ['vtAccountID','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
+        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
         tempRes2 = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
+
         ## =====================================================================
         conn = self.mainEngine.dbMySQLConnect(dbName)
         cursor = conn.cursor()
@@ -461,8 +464,32 @@ class DrEngine(object):
         ## ---------------------------------------------------------------------
         tempRes2.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15):
-        # if (15 <= datetime.now().hour) and (datetime.now().minute >= 15):
+        # if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 10):
+        if (9 <= datetime.now().hour <= 20):
+        # ----------------------------------------------------------------------
+            if len(tempPosInfo) != 0:
+                ## -------------------------------------------------------------
+                try:
+                    cursor.execute("""
+                                    DELETE FROM report_position_history
+                                    WHERE TradingDay = %s
+                                   """,[self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')])
+                    conn.commit()
+                except:
+                    pass
+                ## -------------------------------------------------------------
+                tempRes1.to_sql(con=conn, name='report_position_history', 
+                    if_exists='append', flavor='mysql', index = True)
+        # ----------------------------------------------------------------------
+            try:
+                cursor.execute("""
+                                DELETE FROM report_account_history
+                                WHERE TradingDay = %s
+                               """,[self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')])
+                conn.commit()
+            except:
+                pass
+            ## -----------------------------------------------------------------
             tempRes2.to_sql(con=conn, name='report_account_history', 
                 if_exists='append', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
