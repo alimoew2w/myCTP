@@ -420,6 +420,7 @@ class DrEngine(object):
                 tempFields = ['symbol','direction','price','position','positionProfit','size']
                 tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
                 tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
+                tempPosInfo[key]['positionProfit'] = round(tempPosInfo[key]['positionProfit'],3)
                 # --------------------------------------------------------------------------
                 if tempPosInfo[key]['direction'] == u'多':
                     tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
@@ -431,8 +432,8 @@ class DrEngine(object):
         # print x
         # print pd.DataFrame(x).transpose()
         if len(tempPosInfo) != 0:
-            tempRes1 = pd.DataFrame(tempPosInfo).transpose()
-            tempRes1['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
+            self.accountPosition = pd.DataFrame(tempPosInfo).transpose()
+            self.accountPosition['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
 
         ## =====================================================================
         ## 账户基金净值
@@ -450,19 +451,19 @@ class DrEngine(object):
             accInfo[k] = round(accInfo[k],4)
 
         tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
-        tempRes2 = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
+        self.accountBalance = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
 
         ## =====================================================================
         conn = self.mainEngine.dbMySQLConnect(dbName)
         cursor = conn.cursor()
         ## ---------------------------------------------------------------------
         if len(tempPosInfo) != 0:
-            tempRes1.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
+            self.accountPosition.to_sql(con=conn, name='report_position', if_exists='replace', flavor='mysql', index = True)
         else:
             cursor.execute('truncate table report_position')
             conn.commit()
         ## ---------------------------------------------------------------------
-        tempRes2.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+        self.accountBalance.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
         # if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 10):
         if (9 <= datetime.now().hour <= 20):
@@ -478,7 +479,7 @@ class DrEngine(object):
                 except:
                     pass
                 ## -------------------------------------------------------------
-                tempRes1.to_sql(con=conn, name='report_position_history', 
+                self.accountPosition.to_sql(con=conn, name='report_position_history', 
                     if_exists='append', flavor='mysql', index = True)
         # ----------------------------------------------------------------------
             try:
@@ -490,7 +491,7 @@ class DrEngine(object):
             except:
                 pass
             ## -----------------------------------------------------------------
-            tempRes2.to_sql(con=conn, name='report_account_history', 
+            self.accountBalance.to_sql(con=conn, name='report_account_history', 
                 if_exists='append', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
         conn.close()   
