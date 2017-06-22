@@ -445,8 +445,8 @@ class CtpMdApi(MdApi):
         ## william
         ########################################################################
         # 忽略成交量为0的无效tick数据
-        if not data['Volume']:
-            return
+        # if not data['Volume']:
+        #     return
         
         # 创建对象
         tick = VtTickData()
