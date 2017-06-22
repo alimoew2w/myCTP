@@ -125,7 +125,7 @@ class CtaEngine(object):
         self.positionContracts_trade = self.mainEngine.dbMySQLQuery('fl_trade',"""select * from positionInfo;""")
 
         ## 信号的合约
-        self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from lhg_open_t;""")
+        self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
 
         ## 前一个交易日未成交的合约
         self.failedContracts = self.mainEngine.dbMySQLQuery('fl',"""select * from failedInfo;""")
