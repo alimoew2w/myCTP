@@ -151,5 +151,6 @@ mainEngine.ctaEngine.startStrategy('Yun Yang')
 # mainEngine.ctaEngine.stopStrategy('Yun Yang')
 
 ################################################################################
-mainEngine.drEngine.getIndicatorInfo('fl_trade')
+mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
+                                    initCapital = 1025245)
 
