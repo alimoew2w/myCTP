@@ -35,7 +35,7 @@ class YYStrategy(CtaTemplate):
     name         = 'Yun Yang'
     className    = 'YYStrategy'
     strategyID   = className
-    author       = 'Lin Huangen'
+    author       = 'Lin HuanGeng'
 
     ############################################################################
     ## william
@@ -86,7 +86,7 @@ class YYStrategy(CtaTemplate):
         self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade',
                             """
                             SELECT * 
-                            FROM lhg_open_t
+                            FROM fl_open_t
                             WHERE TradingDay = '%s'
                             """ %self.ctaEngine.lastTradingDate)
         ## ---------------------------------------------------------------------
@@ -136,6 +136,14 @@ class YYStrategy(CtaTemplate):
         self.tradedOrdersFailedInfo  = {}   ## 当日订单完成的情况
                                             ## 
         self.failedOrders  = {}             ## 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
+        
+        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl',
+                            """
+                            SELECT * 
+                            FROM tradingInfo
+                            WHERE strategyID = '%s'
+                            AND TradingDay = '%s'
+                            """ %(self.strategyID, self.ctaEngine.tradingDay))
 
         ########################################################################
         ## william
@@ -877,6 +885,7 @@ class YYStrategy(CtaTemplate):
             tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
             ## -----------------------------------------------------------------
             self.updateTradingInfo(tempTradingInfo)
+            self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
             ## -----------------------------------------------------------------
 
             ## =================================================================
