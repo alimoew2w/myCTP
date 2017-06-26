@@ -508,7 +508,7 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (55-len(self.tradingOrders)*2)) and datetime.now().second % 2 == 0 and self.trading:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (59-len(self.tradingOrders)*2)) and datetime.now().second % 2 == 0 and self.trading:
         # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
             ################################################################
             ## william
@@ -895,12 +895,12 @@ class YYStrategy(CtaTemplate):
                 if self.stratTrade['offset'] == u'开仓':
                     tempDirection = 'buy'
                 else:
-                    tempDirection = 'sell'
+                    tempDirection = 'cover'
             elif self.stratTrade['direction'] == 'short':
                 if self.stratTrade['offset'] == u'开仓':
                     tempDirection = 'short'
                 else:
-                    tempDirection = 'cover'
+                    tempDirection = 'sell'
 
             tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
 
@@ -975,7 +975,7 @@ class YYStrategy(CtaTemplate):
                                                                 initCapital = 1025245)
         ## =====================================================================
 
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 15) and (datetime.now().second % 33 == 0):
+        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 5) and (datetime.now().second % 59 == 0):
             if len(self.failedOrders) != 0:
                 dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
                 dfData   = []
@@ -996,7 +996,7 @@ class YYStrategy(CtaTemplate):
                         temp_offset    = u'开仓'
                     elif self.failedOrders[k]['direction'] == 'cover':
                         temp_direction = 'long'
-                        temp_offset    = u'开仓'
+                        temp_offset    = u'平仓'
 
                     temp_volume = self.failedOrders[k]['volume']
                     tempRes = [temp_strategyID, temp_InstrumentID, temp_TradingDay, temp_direction, temp_offset, temp_volume]
