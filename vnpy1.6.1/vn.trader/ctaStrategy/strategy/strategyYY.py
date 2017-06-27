@@ -834,7 +834,7 @@ class YYStrategy(CtaTemplate):
                     print "#######################################################################\n"
  
                 ## -------------------------------------------------------------
-            elif self.stratTrade['offset'] == u'平仓':
+            elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
                 ## -------------------------------------------------------------
                 if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
                     tempPositionInfo = self.positionInfo[self.positionInfo.InstrumentID == self.stratTrade['vtSymbol']]
