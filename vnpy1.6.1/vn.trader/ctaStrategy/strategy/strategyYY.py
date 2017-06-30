@@ -11,6 +11,11 @@ from __future__ import division
 import os
 import sys
 
+## 发送邮件通知
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
+import codecs
 
 cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
@@ -24,6 +29,7 @@ import numpy as np
 import pandas as pd
 from pandas.io import sql
 from datetime import *
+import time
 from eventType import *
 
 ################################################################################
@@ -41,6 +47,7 @@ class YYStrategy(CtaTemplate):
     ## william
     ############################################################################
     trading   = False                   # 是否启动交易
+    sendMailStatus = False              # 是否已经发送邮件
 
     ############################################################################
     ## william
@@ -930,6 +937,8 @@ class YYStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingOrders)
+        ## 收盘发送邮件
+        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
         ## ---------------------------------------------------------------------
 
     #---------------------------------------------------------------------------
@@ -970,12 +979,12 @@ class YYStrategy(CtaTemplate):
         self.failedOrders = {k:self.tradingOrders[k] for k in self.tradingOrders.keys() if k not in self.tradedOrders.keys()}
 
         ## =====================================================================
-        if self.trading == True and datetime.now().minute % 14 == 0 and datetime.now().second % 59 == 0:
+        if self.trading == True and datetime.now().minute % 14 == 0 and datetime.now().second == 59:
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
                                                                 initCapital = 1025245)
         ## =====================================================================
 
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 2) and (datetime.now().second % 59 == 0):
+        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 2) and (datetime.now().second == 59):
             if len(self.failedOrders) != 0:
                 dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
                 dfData   = []
@@ -1037,6 +1046,99 @@ class YYStrategy(CtaTemplate):
                         except:
                             None
                         ## -------------------------------------------------------------
+
+    def sendMail(self, event):
+        """发送邮件通知给：汉云交易员"""
+        if (datetime.now().hour == 15) and (datetime.now().minute == 5) and (datetime.now().second == 59):
+            self.sendMailStatus = True
+        elif self.sendMailStatus == True:
+            self.sendMailStatus = False
+        ## -----------  ----------------------------------------------------------
+        if self.sendMailStatus:
+            self.sendMailStatus = False
+            ## -----------------------------------------------------------------
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
+                                                                initCapital = 1025245)
+            ## -----------------------------------------------------------------
+            ## -----------------------------------------------------------------------------
+            sender = self.strategyID + '@hicloud.com'
+            # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']  # 接收邮件
+            # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+            receivers = ['fl@hicloud-investment.com']
+            ## -----------------------------------------------------------------------------
+
+            ## -----------------------------------------------------------------------------
+            # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
+            ## 内容，例如
+            # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
+            ## -----------------------------------------------------------------------------
+            with codecs.open("/tmp/tradingRecord.txt", "w", "utf-8") as f:
+                # f.write('{0}'.format(40*'='))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 策略信息'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n[TradingDay]: ' + self.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
+                f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
+                f.write('{0}'.format('\n[TraderName]: ' + self.author))
+                f.write('{0}'.format('\n' + 120*'-' + '\n'))
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 基金净值'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountBalance))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                ## -------------------------------------------------------------------------    
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 基金持仓'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountPosition))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n## 当日已交易'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                if len(self.tradingInfo) != 0:
+                    f.write('{0}'.format(self.tradingInfo))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n## 当日未交易'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                if len(self.failedOrders) != 0:
+                    f.write('{0}'.format(pd.DataFrame(self.failedOrders).transpose()))
+                f.write('{0}'.format('\n' + 120*'-') + '\n')
+
+
+            ## -----------------------------------------------------------------------------
+            # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+
+            # fp = codecs.open("/tmp/tradingRecord.txt", "r", "utf-8")
+            fp = open("/tmp/tradingRecord.txt", "r")
+            message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+            fp.close()
+
+            ## 显示:发件人
+            message['From'] = Header(sender, 'utf-8')
+            ## 显示:收件人
+            message['To'] =  Header('汉云交易员', 'utf-8')
+
+            ## 主题
+            subject = self.ctaEngine.tradingDay + u'：交易播报'
+            message['Subject'] = Header(subject, 'utf-8')
+
+            try:
+                smtpObj = smtplib.SMTP('localhost')
+                smtpObj.sendmail(sender, receivers, message.as_string())
+                print "邮件发送成功"
+            except smtplib.SMTPException:
+                print "Error: 无法发送邮件"
+            ## 间隔 3 秒
+            time.sleep(3)
 
 
 
