@@ -1007,3 +1007,36 @@ class YYStrategy(CtaTemplate):
                 cursor = conn.cursor()
                 df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
                 conn.close()  
+                ####################################################################################
+                ## 记得要从 positionInfo 持仓里面删除
+                ####################################################################################
+                for k in self.failedOrders.keys():
+                    if self.failedOrders[k]['direction'] in ['sell', 'cover']:
+                        if self.failedOrders[k]['direction'] == 'sell':
+                            tempDirection = 'long'
+                        elif self.failedOrders[k]['direction'] == 'cover':
+                            tempDirection = 'short'
+
+                        temp_strategyID = self.strategyID
+                        temp_InstrumentID = self.failedOrders[k]['vtSymbol']
+                        temp_TradingDay = self.failedOrders[k]['TradingDay']
+
+                        ## -------------------------------------------------------------
+                        try:
+                            conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                            cursor = conn.cursor()
+                            cursor.execute("""
+                                            DELETE FROM positionInfo
+                                            WHERE strategyID = %s
+                                            AND InstrumentID = %s
+                                            AND TradingDay = %s
+                                            AND direction  = %s
+                                           """, (self.strategyID, temp_InstrumentID, temp_TradingDay, tempDirection))
+                            conn.commit()
+                            conn.close()  
+                        except:
+                            None
+                        ## -------------------------------------------------------------
+
+
+
