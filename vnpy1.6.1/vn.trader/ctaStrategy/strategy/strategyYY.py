@@ -66,12 +66,12 @@ class YYStrategy(CtaTemplate):
     # 参数列表，保存了参数的名称
     paramList = ['name',
                  'className',
-                 'author']    
+                 'author']
 
     # 变量列表，保存了变量的名称
     varList = ['inited',
-               'trading']  
-    ############################################################################    
+               'trading']
+    ############################################################################
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def __init__(self, ctaEngine, setting):
@@ -92,7 +92,7 @@ class YYStrategy(CtaTemplate):
         ## 开仓信息, 需要检测是不是当前交易日的开仓, 使用了条件筛选
         self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade',
                             """
-                            SELECT * 
+                            SELECT *
                             FROM fl_open_t
                             WHERE TradingDay = '%s'
                             """ %self.ctaEngine.lastTradingDate)
@@ -105,7 +105,7 @@ class YYStrategy(CtaTemplate):
         ## 上一个交易日未成交订单
         self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
                             """
-                            SELECT * 
+                            SELECT *
                             FROM failedInfo
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
@@ -114,7 +114,7 @@ class YYStrategy(CtaTemplate):
         ## 持仓合约信息
         self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
                             """
-                            SELECT * 
+                            SELECT *
                             FROM positionInfo
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
@@ -136,17 +136,17 @@ class YYStrategy(CtaTemplate):
         ## 2. direction: buy, sell, short, cover
         ## 3. volume
         ## 4. TradingDay
-        
+
         self.tradingOrdersFailedInfo = {}   ## 上一个交易日没有完成的订单,需要优先处理
-                                            ## 
+                                            ##
         self.tradedOrders  = {}             ## 当日订单完成的情况
         self.tradedOrdersFailedInfo  = {}   ## 当日订单完成的情况
-                                            ## 
+                                            ##
         self.failedOrders  = {}             ## 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
-        
+
         self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl',
                             """
-                            SELECT * 
+                            SELECT *
                             FROM tradingInfo
                             WHERE strategyID = '%s'
                             AND TradingDay = '%s'
@@ -157,12 +157,12 @@ class YYStrategy(CtaTemplate):
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
         # 否则会出现多个策略实例之间数据共享的情况，有可能导致潜在的策略逻辑错误风险，
         # 策略类中的这些可变对象属性可以选择不写，全都放在__init__下面，写主要是为了阅读
-        # 策略时方便（更多是个编程习惯的选择）  
+        # 策略时方便（更多是个编程习惯的选择）
         ########################################################################
         ## william
         # 注册事件监听
         self.registerEvent()
-        ########################################################################      
+        ########################################################################
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onInit(self):
@@ -248,7 +248,7 @@ class YYStrategy(CtaTemplate):
                     ## volume
                     tempVolume = int(self.openInfo.loc[i,'volume'])
                     tempKey = self.openInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                    tempTradingDay = self.openInfo.loc[i,'TradingDay'] 
+                    tempTradingDay = self.openInfo.loc[i,'TradingDay']
                     self.tradingOrders[tempKey] = {'vtSymbol':self.openInfo.loc[i,'InstrumentID'],
                                                    'direction':tempDirection,
                                                    'volume':tempVolume,
@@ -281,7 +281,7 @@ class YYStrategy(CtaTemplate):
                     ## volume
                     tempVolume = int(self.positionInfo.loc[i,'volume'])
                     tempKey = self.positionInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                    tempTradingDay = self.positionInfo.loc[i,'TradingDay'] 
+                    tempTradingDay = self.positionInfo.loc[i,'TradingDay']
                     self.tradingOrders[tempKey] = {'vtSymbol':self.positionInfo.loc[i,'InstrumentID'],
                                                    'direction':tempDirection,
                                                    'volume':tempVolume,
@@ -305,10 +305,10 @@ class YYStrategy(CtaTemplate):
                                 tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
                                 ## -----------------------------------------------------------------
                                 ## 只更新持仓时间, 不进行交易
-                                self.updateTradingDay(strategyID = self.strategyID, 
-                                                      InstrumentID = i, 
-                                                      oldTradingDay = tempTradingDay, 
-                                                      newTradingDay = self.ctaEngine.tradingDate, 
+                                self.updateTradingDay(strategyID = self.strategyID,
+                                                      InstrumentID = i,
+                                                      oldTradingDay = tempTradingDay,
+                                                      newTradingDay = self.ctaEngine.tradingDate,
                                                       direction = 'long')
                                 ## -----------------------------------------------------------------
                             elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
@@ -371,16 +371,16 @@ class YYStrategy(CtaTemplate):
                                 tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
                                 ## -----------------------------------------------------------------
                                 ## 只更新持仓时间, 不进行交易
-                                self.updateTradingDay(strategyID = self.strategyID, 
-                                                      InstrumentID = i, 
-                                                      oldTradingDay = tempTradingDay, 
-                                                      newTradingDay = self.ctaEngine.tradingDate, 
+                                self.updateTradingDay(strategyID = self.strategyID,
+                                                      InstrumentID = i,
+                                                      oldTradingDay = tempTradingDay,
+                                                      newTradingDay = self.ctaEngine.tradingDate,
                                                       direction = 'short')
                                 ## -----------------------------------------------------------------
                             else:
                                 pass
                         else:
-                            pass                    
+                            pass
 
                 ## =================================================================================
                 if len(y) != 0:
@@ -553,7 +553,7 @@ class YYStrategy(CtaTemplate):
     def processFailedInfo(self, vtSymbol):
         ## =====================================================================
         ## 1. 取消当前的活跃订单
-        ## =====================================================================  
+        ## =====================================================================
         self.failedInfoWorkingOrders = []
         self.failedInfoTradedOrders  = []
 
@@ -561,8 +561,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             try:
                 tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
                                         (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
             except:
                 tempWorkingOrder = None
@@ -575,8 +575,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             try:
                 tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
                                         (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
             except:
                 tempTradedOrder = None
@@ -584,7 +584,7 @@ class YYStrategy(CtaTemplate):
             if (tempTradedOrder is not None) and len(tempTradedOrder) != 0:
                 for i in range(len(tempTradedOrder)):
                     if tempTradedOrder[i] not in self.failedInfoTradedOrders:
-                        self.failedInfoTradedOrders.append(tempTradedOrder[i])    
+                        self.failedInfoTradedOrders.append(tempTradedOrder[i])
 
         ## =====================================================================
         ## 2. 根据已经成交的订单情况, 重新处理生成新的订单
@@ -599,14 +599,14 @@ class YYStrategy(CtaTemplate):
             tempSymbolList = [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]
             tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
 
-            tempTradingList = [k for k in self.tradingOrdersFailedInfo.keys() if self.tradingOrdersFailedInfo[k]['vtSymbol'] == vtSymbol] 
+            tempTradingList = [k for k in self.tradingOrdersFailedInfo.keys() if self.tradingOrdersFailedInfo[k]['vtSymbol'] == vtSymbol]
 
             if len(self.failedInfoTradedOrders) == 0:
                 ## 还没有成交
                 ## 不要全部都下单
                 ####################################################################################
                 for i in tempTradingList:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i], 
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i],
                                           my_vtOrderIDList = self.vtOrderIDListFailedInfo)
                 ####################################################################################
             elif len(self.failedInfoTradedOrders) == 1:
@@ -630,7 +630,7 @@ class YYStrategy(CtaTemplate):
                     tempTradingList.remove(tempRes)
                     ################################################################################
                     for i in tempTradingList:
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
                                               my_vtOrderIDList = self.vtOrderIDListFailedInfo)
                     ################################################################################
                 elif len(tempTradingList) <= 1:
@@ -657,8 +657,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             try:
                 tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
                                         (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
             except:
                 tempWorkingOrder = None
@@ -671,12 +671,12 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             try:
                 tempTradedOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) & 
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) & 
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
                                         (self.ctaEngine.mainEngine.getAllOrders().status == u'全部成交')].vtOrderID.values
             except:
                 tempWorkingOrder = None
-                
+
             if (tempWorkingOrder is not None) and len(tempTradedOrder) != 0:
                 for i in range(len(tempTradedOrder)):
                     if tempTradedOrder[i] not in self.vtSymbolTradedOrders:
@@ -702,7 +702,7 @@ class YYStrategy(CtaTemplate):
                 ## 不要全部都下单
                 ####################################################################################
                 for i in tempTradingList:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
                                           my_vtOrderIDList = self.vtOrderIDList)
                 ####################################################################################
             elif len(self.vtSymbolTradedOrders) == 1:
@@ -726,7 +726,7 @@ class YYStrategy(CtaTemplate):
                     tempTradingList.remove(tempRes)
                     ################################################################################
                     for i in tempTradingList:
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i], 
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
                                               my_vtOrderIDList = self.vtOrderIDList)
                     ################################################################################
                 elif len(tempTradingList) <= 1:
@@ -800,17 +800,17 @@ class YYStrategy(CtaTemplate):
             ## =================================================================
             ## 1. stratTrade['vtOrderID'] 是唯一标识
             ## =================================================================
-            
+
             self.stratTrade['strategyID'] = self.strategyID
-            
+
             # ------------------------------------------------------------------
             if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
                 self.stratTrade['TradingDay']  = self.ctaEngine.tradingDay
             elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
                 self.stratTrade['TradingDay']  = self.ctaEngine.lastTradingDay
-            # ------------------------------------------------------------------  
+            # ------------------------------------------------------------------
 
-            self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']      
+            self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']
             ## -----------------------------------------------------------------
             if self.stratTrade['direction'] == u'多':
                 self.stratTrade['direction'] = 'long'
@@ -818,7 +818,7 @@ class YYStrategy(CtaTemplate):
                 self.stratTrade['direction'] = 'short'
             else:
                 pass
-            ## -----------------------------------------------------------------        
+            ## -----------------------------------------------------------------
 
             ## =================================================================
             ## 2. 更新 positionInfo
@@ -832,14 +832,14 @@ class YYStrategy(CtaTemplate):
                     conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
                     cursor = conn.cursor()
                     tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
-                    conn.close()  
+                    conn.close()
                 except:
                     print "\n#######################################################################"
                     print u'开仓信息出错'
                     self.onStop()
                     print u'停止策略 %s' %self.name
                     print "#######################################################################\n"
- 
+
                 ## -------------------------------------------------------------
             elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
                 ## -------------------------------------------------------------
@@ -858,7 +858,7 @@ class YYStrategy(CtaTemplate):
                                 AND direction  = %s
                                """, (self.strategyID, tempPositionInfo.InstrumentID.values[0], tempPositionInfo.TradingDay.values[0], tempPositionInfo.direction.values[0]))
                 conn.commit()
-                conn.close()  
+                conn.close()
                 ## -------------------------------------------------------------
             else:
                 pass
@@ -877,11 +877,11 @@ class YYStrategy(CtaTemplate):
                                 AND direction  = %s
                                """, (self.strategyID, tempPositionInfo.InstrumentID.values[0], tempPositionInfo.TradingDay.values[0], tempPositionInfo.direction.values[0]))
                 conn.commit()
-                conn.close() 
+                conn.close()
                 #-------------------------------------------------------------------
                 self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
                         """
-                        SELECT * 
+                        SELECT *
                         FROM failedInfo
                         WHERE strategyID = '%s'
                         """ %(self.strategyID))
@@ -952,11 +952,11 @@ class YYStrategy(CtaTemplate):
         conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
         cursor = conn.cursor()
         df.to_sql(con=conn, name='tradingInfo', if_exists='append', flavor='mysql', index = False)
-        conn.close()   
+        conn.close()
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def updateTradingDay(self, strategyID, InstrumentID, oldTradingDay, newTradingDay, direction):
-        """更新交易日历"""  
+        """更新交易日历"""
         conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
         cursor = conn.cursor()
         cursor.execute("""
@@ -984,7 +984,7 @@ class YYStrategy(CtaTemplate):
                                                                 initCapital = 1025245)
         ## =====================================================================
 
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 2) and (datetime.now().second == 59):
+        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute == 1) and (datetime.now().second == 59):
             if len(self.failedOrders) != 0:
                 dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
                 dfData   = []
@@ -1015,7 +1015,7 @@ class YYStrategy(CtaTemplate):
                 conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
                 cursor = conn.cursor()
                 df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
-                conn.close()  
+                conn.close()
                 ####################################################################################
                 ## 记得要从 positionInfo 持仓里面删除
                 ####################################################################################
@@ -1042,19 +1042,17 @@ class YYStrategy(CtaTemplate):
                                             AND direction  = %s
                                            """, (self.strategyID, temp_InstrumentID, temp_TradingDay, tempDirection))
                             conn.commit()
-                            conn.close()  
+                            conn.close()
                         except:
                             None
                         ## -------------------------------------------------------------
 
     def sendMail(self, event):
         """发送邮件通知给：汉云交易员"""
-        if (datetime.now().hour == 15) and (datetime.now().minute == 5) and (datetime.now().second == 59):
+        if (datetime.now().hour == 15) and (datetime.now().minute == 2) and (datetime.now().second == 59) and self.trading:
             self.sendMailStatus = True
-        elif self.sendMailStatus == True:
-            self.sendMailStatus = False
         ## -----------  ----------------------------------------------------------
-        if self.sendMailStatus:
+        if self.sendMailStatus and self.trading:
             self.sendMailStatus = False
             ## -----------------------------------------------------------------
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
@@ -1063,8 +1061,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------------------
             sender = self.strategyID + '@hicloud.com'
             # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']  # 接收邮件
-            # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
-            receivers = ['fl@hicloud-investment.com']
+            receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+            # receivers = ['fl@hicloud-investment.com']
             ## -----------------------------------------------------------------------------
 
             ## -----------------------------------------------------------------------------
@@ -1089,7 +1087,7 @@ class YYStrategy(CtaTemplate):
                 f.write('{0}'.format('\n' + 120*'-') + '\n')
                 f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountBalance))
                 f.write('{0}'.format('\n' + 120*'-') + '\n')
-                ## -------------------------------------------------------------------------    
+                ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 基金持仓'))
                 f.write('{0}'.format('\n' + 20 * '#'))
