@@ -73,8 +73,8 @@ def main():
     
     # 初始化主引擎和主窗口对象
     mainEngine = MainEngine()
-    mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-    mainWindow.showMaximized()
+    # mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+    # mainWindow.showMaximized()
 
     print "\n#######################################################################"
     print u"main 主函数启动成功！！！"
@@ -113,6 +113,9 @@ def main():
         print "#---------------------------------------------------------------"
     ############################################################################
 
+    mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+    mainWindow.showMaximized()
+    
     ################################################################################
     ## william
     ## CTA 策略
@@ -123,9 +126,8 @@ def main():
     ################################################################################
     # 初始化策略
     ## YYStrategy
-    time.sleep(5)
     mainEngine.ctaEngine.initStrategy('Yun Yang')
-    time.sleep(5)
+    time.sleep(10)
     mainEngine.ctaEngine.startStrategy('Yun Yang')
     # mainEngine.ctaEngine.stopStrategy('Yun Yang')
     strat = mainEngine.ctaEngine.strategyDict
@@ -134,6 +136,7 @@ def main():
     # print stratYY.tradingOrderSeq
 
     # 在主线程中启动Qt事件循环
+    # mainEngine.drEngine.getIndicatorInfo('fl_trade')
     sys.exit(app.exec_())
     
 if __name__ == '__main__':
