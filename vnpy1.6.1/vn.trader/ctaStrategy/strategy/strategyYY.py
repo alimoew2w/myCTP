@@ -46,8 +46,8 @@ class YYStrategy(CtaTemplate):
     ############################################################################
     ## william
     ############################################################################
-    trading   = False                   # 是否启动交易
-    sendMailStatus = False              # 是否已经发送邮件
+    trading        = False                  # 是否启动交易
+    sendMailStatus = False                  # 是否已经发送邮件
 
     ############################################################################
     ## william
@@ -59,7 +59,7 @@ class YYStrategy(CtaTemplate):
     ############################################################################
     ## william
     ## 用于保存每个合约最后(最新)一条 tick 的数据
-    lastTickData = {}
+    lastTickData = {}                       # 保留最新的价格数据
 
     ############################################################################
     ## william
@@ -103,7 +103,7 @@ class YYStrategy(CtaTemplate):
 
         ## ---------------------------------------------------------------------
         ## 上一个交易日未成交订单
-        self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
+        self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                             """
                             SELECT *
                             FROM failedInfo
@@ -112,7 +112,7 @@ class YYStrategy(CtaTemplate):
 
         ## ---------------------------------------------------------------------
         ## 持仓合约信息
-        self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
+        self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                             """
                             SELECT *
                             FROM positionInfo
@@ -123,6 +123,7 @@ class YYStrategy(CtaTemplate):
         ## 计时器, 用于记录单个合约发单的间隔时间
         ## ---------------------------------------------------------------------
         self.tickTimer    = {}
+
         ## ---------------------------------------------------------------------
         ## tick 处理的字段, 目前只用以下几个
         ## ---------------------------------------------------------------------
@@ -144,14 +145,16 @@ class YYStrategy(CtaTemplate):
                                             ##
         self.failedOrders  = {}             ## 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
 
-        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl',
+        ## ---------------------------------------------------------------------
+        ## 查看当日已经交易的订单
+        ## ---------------------------------------------------------------------
+        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                             """
                             SELECT *
                             FROM tradingInfo
                             WHERE strategyID = '%s'
                             AND TradingDay = '%s'
                             """ %(self.strategyID, self.ctaEngine.tradingDay))
-
         ########################################################################
         ## william
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
@@ -254,11 +257,12 @@ class YYStrategy(CtaTemplate):
                                                    'volume':tempVolume,
                                                    'TradingDay':tempTradingDay}
             elif len(self.failedInfo) == 0:
-                print "\n#######################################################################"
-                print u'今天没有需要交易的订单'
-                self.onStop()
-                print u'停止策略 %s' %self.name
-                print "#######################################################################\n"
+                pass
+                # print "\n#######################################################################"
+                # print u'今天没有需要交易的订单'
+                # self.onStop()
+                # print u'停止策略 %s' %self.name
+                # print "#######################################################################\n"
         else:
             ## -----------------------------------------------------------------
             ## 存在 5 天以上的持仓合约, 需要平仓
@@ -470,6 +474,12 @@ class YYStrategy(CtaTemplate):
         print u'%s策略启动' %self.name
         self.writeCtaLog(u'%s策略启动' %self.name)
         self.trading = True
+        # if len(self.tradingOrders) == 0 and len(self.tradingOrdersFailedInfo) == 0:
+        #     print "\n#################################################################"
+        #     print u'今天没有需要交易的订单'
+        #     self.onStop()
+        #     print u'停止策略 %s' %self.name
+        #     print "#################################################################\n"
         self.putEvent()
         print '#################################################################'
 
@@ -515,7 +525,7 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (59-len(self.tradingOrders)*1.5)) and datetime.now().second % 2 == 0 and self.trading:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (59-len(self.tradingOrders)*1.2)) and datetime.now().second % 2 == 0 and self.trading:
         # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
             ################################################################
             ## william
@@ -829,7 +839,7 @@ class YYStrategy(CtaTemplate):
                 tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','volume'])
                 ## -------------------------------------------------------------
                 try:
-                    conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                    conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                     cursor = conn.cursor()
                     tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
                     conn.close()
@@ -848,7 +858,7 @@ class YYStrategy(CtaTemplate):
                 elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
                     tempPositionInfo = self.failedInfo[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']]
                 ## -------------------------------------------------------------
-                conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                 cursor = conn.cursor()
                 cursor.execute("""
                                 DELETE FROM positionInfo
@@ -867,7 +877,7 @@ class YYStrategy(CtaTemplate):
             if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
                 # pass
                 tempPositionInfo = self.failedInfo[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']]
-                conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                 cursor = conn.cursor()
                 cursor.execute("""
                                 DELETE FROM failedInfo
@@ -879,7 +889,7 @@ class YYStrategy(CtaTemplate):
                 conn.commit()
                 conn.close()
                 #-------------------------------------------------------------------
-                self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery('fl_trade',
+                self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                         """
                         SELECT *
                         FROM failedInfo
@@ -949,7 +959,7 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def updateTradingInfo(self, df):
         """更新交易记录"""
-        conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
         df.to_sql(con=conn, name='tradingInfo', if_exists='append', flavor='mysql', index = False)
         conn.close()
@@ -957,7 +967,7 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def updateTradingDay(self, strategyID, InstrumentID, oldTradingDay, newTradingDay, direction):
         """更新交易日历"""
-        conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
         cursor.execute("""
                         UPDATE positionInfo
@@ -980,11 +990,11 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         if self.trading == True and datetime.now().minute % 14 == 0 and datetime.now().second == 59:
-            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
-                                                                initCapital = 1025245)
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital)
         ## =====================================================================
 
-        if (15 <= datetime.now().hour <= 16) and (datetime.now().minute == 1) and (datetime.now().second == 59):
+        if (datetime.now().hour == 15) and (datetime.now().minute >= 2) and (datetime.now().second == 59):
             if len(self.failedOrders) != 0:
                 dfHeader = ['strategyID','InstrumentID','TradingDay','direction','offset','volume']
                 dfData   = []
@@ -1012,7 +1022,7 @@ class YYStrategy(CtaTemplate):
                     dfData.append(tempRes)
                     df = pd.DataFrame(dfData, columns = dfHeader)
                 ## -------------------------------------------------------------
-                conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                 cursor = conn.cursor()
                 df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
                 conn.close()
@@ -1032,7 +1042,7 @@ class YYStrategy(CtaTemplate):
 
                         ## -------------------------------------------------------------
                         try:
-                            conn = self.ctaEngine.mainEngine.dbMySQLConnect('fl_trade')
+                            conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                             cursor = conn.cursor()
                             cursor.execute("""
                                             DELETE FROM positionInfo
@@ -1047,22 +1057,24 @@ class YYStrategy(CtaTemplate):
                             None
                         ## -------------------------------------------------------------
 
+
     def sendMail(self, event):
         """发送邮件通知给：汉云交易员"""
-        if (datetime.now().hour == 15) and (datetime.now().minute == 2) and (datetime.now().second == 59) and self.trading:
+        if (datetime.now().hour == 15) and (datetime.now().minute == 3) and (datetime.now().second == 59) and self.trading:
             self.sendMailStatus = True
         ## -----------  ----------------------------------------------------------
         if self.sendMailStatus and self.trading:
             self.sendMailStatus = False
             ## -----------------------------------------------------------------
-            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = 'fl_trade',
-                                                                initCapital = 1025245)
+            ## -----------------------------------------------------------------
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital)
             ## -----------------------------------------------------------------
             ## -----------------------------------------------------------------------------
             sender = self.strategyID + '@hicloud.com'
             # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']  # 接收邮件
-            receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
-            # receivers = ['fl@hicloud-investment.com']
+            # receivers = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+            receivers = ['fl@hicloud-investment.com']
             ## -----------------------------------------------------------------------------
 
             ## -----------------------------------------------------------------------------
@@ -1100,7 +1112,9 @@ class YYStrategy(CtaTemplate):
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format('\n' + 120*'-') + '\n')
                 if len(self.tradingInfo) != 0:
-                    f.write('{0}'.format(self.tradingInfo))
+                    tempTradingInfo = self.tradingInfo
+                    tempTradingInfo.index += 1
+                    f.write('{0}'.format(tempTradingInfo))
                 f.write('{0}'.format('\n' + 120*'-') + '\n')
                 ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
@@ -1135,8 +1149,6 @@ class YYStrategy(CtaTemplate):
                 print "邮件发送成功"
             except smtplib.SMTPException:
                 print "Error: 无法发送邮件"
+
             ## 间隔 3 秒
             time.sleep(3)
-
-
-
