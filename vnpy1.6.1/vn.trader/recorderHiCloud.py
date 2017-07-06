@@ -109,7 +109,7 @@ gatewayName = 'CTP'
 print U"GatewayName:", gatewayName
 
 try:
-    mainEngine.connectCTPAccount(accountInfo = 'accountHiCloud')
+    mainEngine.connectCTPAccount(accountInfo = 'HiCloud')
     print u"CTP 正在登录!!!",
     for i in range(20):
         print ".",
