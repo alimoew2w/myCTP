@@ -525,7 +525,7 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (59-len(self.tradingOrders)*1.2)) and datetime.now().second % 2 == 0 and self.trading:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= (59 - max(5, len(self.tradingOrders)*1.2) )) and datetime.now().second % 2 == 0 and self.trading:
         # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
             ################################################################
             ## william
