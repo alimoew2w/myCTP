@@ -20,7 +20,7 @@ from Queue import Queue
 from threading import Thread
 
 from eventEngine import *
-from vtGateway import * 
+from vtGateway import *
 from drBase import *
 from vtFunction import todayDate
 from language import text
@@ -35,7 +35,7 @@ class DrEngine(object):
 
     settingFileName = 'DR_setting.json'
     path = os.path.abspath(os.path.dirname(__file__))
-    settingFileName = os.path.join(path, settingFileName)    
+    settingFileName = os.path.join(path, settingFileName)
 
     #---------------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
@@ -45,7 +45,7 @@ class DrEngine(object):
 
         ########################################################################
         ## william
-        ## 
+        ##
         self.accountInfo = VtAccountData()
         ## 多个合约的持仓信息
         ## 返回一个字典,避免重复
@@ -56,19 +56,19 @@ class DrEngine(object):
         self.tradeInfo = VtTradeData()
         ########################################################################
 
-        
+
         # 当前日期
         self.today = todayDate()
-        
+
         # 主力合约代码映射字典，key为具体的合约代码（如IF1604），value为主力合约代码（如IF0000）
         self.activeSymbolDict = {}
-        
+
         # Tick对象字典
         self.tickDict = {}
-        
+
         # K线对象字典
         self.barDict = {}
-        
+
         ########################################################################
         ## william
         ## 是否激活 self.active
@@ -82,18 +82,18 @@ class DrEngine(object):
         ## DrEngine 关闭,则不再保存数据到 CSV 文件
         ########################################################################
         self.loadSetting()
-        
+
     #----------------------------------------------------------------------
     def loadSetting(self):
         """载入设置"""
         with open(self.settingFileName) as f:
             drSetting = json.load(f)
-            
+
             # 如果working设为False则不启动行情记录功能
             working = drSetting['working']
             if not working:
                 return
-            
+
             if 'tick' in drSetting:
                 l = drSetting['tick']
 
@@ -104,18 +104,18 @@ class DrEngine(object):
 
                     req = VtSubscribeReq()
                     req.symbol = setting[0]
-                    
+
                     # 针对LTS和IB接口，订阅行情需要交易所代码
                     if len(setting) >= 3:
                         req.exchange = setting[2]
                         vtSymbol = '.'.join([symbol, req.exchange])
-                    
+
                     # 针对IB接口，订阅行情需要货币和产品类型
                     if len(setting) >= 5:
                         req.currency = setting[3]
                         req.productClass = setting[4]
-                    
-                    
+
+
                     # 订阅合约
                     ############################################################
                     ## william
@@ -134,24 +134,24 @@ class DrEngine(object):
                         self.mainEngine.subscribe(req, contract.gatewayName)
                     else:
                         print vtSymbol,'合约没有找到'
-                    
-                    
+
+
                     ############################################################
                     ## william
-                    ## 
+                    ##
                     ############################################################
                     drTick = DrTickData()           # 该tick实例可以用于缓存部分数据（目前未使用）
                     self.tickDict[vtSymbol] = drTick
-                    
+
             if 'bar' in drSetting:
                 l = drSetting['bar']
-                
+
                 for setting in l:
                     symbol = setting[0]
                     vtSymbol = symbol
-                    
+
                     req = VtSubscribeReq()
-                    req.symbol = symbol                    
+                    req.symbol = symbol
 
                     if len(setting)>=3:
                         req.exchange = setting[2]
@@ -159,30 +159,30 @@ class DrEngine(object):
 
                     if len(setting)>=5:
                         req.currency = setting[3]
-                        req.productClass = setting[4]                    
-                    
-                    self.mainEngine.subscribe(req, setting[1])  
-                    
-                    bar = DrBarData() 
+                        req.productClass = setting[4]
+
+                    self.mainEngine.subscribe(req, setting[1])
+
+                    bar = DrBarData()
                     self.barDict[vtSymbol] = bar
-            
+
             ####################################################################
             ## william
             ## 所有的都变成 active
             ####################################################################
-            
+
             if 'active' in drSetting:
                 d = drSetting['active']
-                
+
                 # 注意这里的vtSymbol对于IB和LTS接口，应该后缀.交易所
                 for activeSymbol, vtSymbol in d.items():
                     self.activeSymbolDict[vtSymbol] = activeSymbol
 
             # 启动数据插入线程
             self.start()
-            
+
             # 注册事件监听
-            self.registerEvent()    
+            self.registerEvent()
 
     ############################################################################
     ## william
@@ -214,7 +214,7 @@ class DrEngine(object):
         for key in d.keys():
             if key != 'datetime':
                 d[key] = tick.__getattribute__(key)
-        drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')            
+        drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
         # 更新Tick数据
         if vtSymbol in self.tickDict:
             self.insertData(TICK_DB_NAME, vtSymbol, drTick)
@@ -233,9 +233,9 @@ class DrEngine(object):
             # 发出日志
             '''
             self.writeDrLog(text.TICK_LOGGING_MESSAGE.format(symbol=drTick.vtSymbol,
-                                                             time=drTick.time, 
-                                                             last=drTick.lastPrice, 
-                                                             bid=drTick.bidPrice1, 
+                                                             time=drTick.time,
+                                                             last=drTick.lastPrice,
+                                                             bid=drTick.bidPrice1,
                                                              ask=drTick.askPrice1))
             '''
             ####################################################################
@@ -245,54 +245,54 @@ class DrEngine(object):
             print u"#######################################################################"
             print u"处理行情推送:"
             print text.TICK_LOGGING_MESSAGE.format(symbol=drTick.vtSymbol,
-                                                             time=drTick.time, 
-                                                             last=drTick.lastPrice, 
-                                                             bid=drTick.bidPrice1, 
+                                                             time=drTick.time,
+                                                             last=drTick.lastPrice,
+                                                             bid=drTick.bidPrice1,
                                                              ask=drTick.askPrice1)
             print u"#######################################################################"
             """
             ####################################################################
-            
+
         # 更新分钟线数据
         if vtSymbol in self.barDict:
             bar = self.barDict[vtSymbol]
-            
+
             # 如果第一个TICK或者新的一分钟
-            if not bar.datetime or bar.datetime.minute != drTick.datetime.minute:    
+            if not bar.datetime or bar.datetime.minute != drTick.datetime.minute:
                 if bar.vtSymbol:
                     newBar = copy.copy(bar)
                     self.insertData(MINUTE_DB_NAME, vtSymbol, newBar)
-                    
+
                     if vtSymbol in self.activeSymbolDict:
                         activeSymbol = self.activeSymbolDict[vtSymbol]
-                        self.insertData(MINUTE_DB_NAME, activeSymbol, newBar)                    
-                    
-                    self.writeDrLog(text.BAR_LOGGING_MESSAGE.format(symbol=bar.vtSymbol, 
-                                                                    time=bar.time, 
-                                                                    open=bar.open, 
-                                                                    high=bar.high, 
-                                                                    low=bar.low, 
+                        self.insertData(MINUTE_DB_NAME, activeSymbol, newBar)
+
+                    self.writeDrLog(text.BAR_LOGGING_MESSAGE.format(symbol=bar.vtSymbol,
+                                                                    time=bar.time,
+                                                                    open=bar.open,
+                                                                    high=bar.high,
+                                                                    low=bar.low,
                                                                     close=bar.close))
-                         
+
                 bar.vtSymbol = drTick.vtSymbol
                 bar.symbol = drTick.symbol
                 bar.exchange = drTick.exchange
-                
+
                 bar.open = drTick.lastPrice
                 bar.high = drTick.lastPrice
                 bar.low = drTick.lastPrice
                 bar.close = drTick.lastPrice
-                
+
                 bar.date = drTick.date
                 bar.time = drTick.time
                 bar.datetime = drTick.datetime
                 bar.volume = drTick.volume
-                bar.openInterest = drTick.openInterest        
+                bar.openInterest = drTick.openInterest
             # 否则继续累加新的K线
-            else:                               
+            else:
                 bar.high = max(bar.high, drTick.lastPrice)
                 bar.low = min(bar.low, drTick.lastPrice)
-                bar.close = drTick.lastPrice            
+                bar.close = drTick.lastPrice
 
     ############################################################################
     ## william
@@ -322,7 +322,7 @@ class DrEngine(object):
         ## 是不是需要写入数据库:
         ## gatewayName = 'CTP'
         ## self.insertData(ACCOUNT_DB_NAME, gatewayName, VtAccountInfo)
-    
+
         # ----------------------------------------------------------------------
     ############################################################################
     ## william
@@ -335,16 +335,16 @@ class DrEngine(object):
         print pd.DataFrame([temp.values()], columns = temp.keys())
         return self.accountInfo.__dict__
 
-    
+
     def processPositionInfoEvent(self, event):
         """处理账户推送"""
         position = event.dict_['data']
-        
+
         tempRes = VtPositionData()
         d = tempRes.__dict__
         for key in d.keys():
             if key != 'datetime':
-                d[key] = position.__getattribute__(key) 
+                d[key] = position.__getattribute__(key)
 
         if tempRes.direction == u"多":
             tempRes.symbolPosition = tempRes.symbol + '-' + u'long'
@@ -353,15 +353,15 @@ class DrEngine(object):
         else:
             tempRes.symbolPosition = tempRes.symbol + '-' + u'unknown'
 
-        tempRes.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  
+        tempRes.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        self.positionInfo[tempRes.__dict__['symbolPosition']] = tempRes.__dict__    
+        self.positionInfo[tempRes.__dict__['symbolPosition']] = tempRes.__dict__
         ########################################################################
         ## william
         ## 是不是需要写入数据库:
         ## gatewayName = 'CTP'
         ## self.insertData(ACCOUNT_DB_NAME, gatewayName, VtAccountInfo)
-    
+
         # ----------------------------------------------------------------------
     ############################################################################
     ## william
@@ -377,7 +377,7 @@ class DrEngine(object):
         return self.positionInfo
 
     ############################################################################
-    ## william    
+    ## william
     ## 如果订单有成交,则立即发出通知
     def processTradeInfoEvent(self, event):
         """通知成交订单"""
@@ -391,8 +391,9 @@ class DrEngine(object):
         for key in d.keys():
             if key != 'datetime':
                 d[key] = trade.__getattribute__(key)
-                
-        self.tradeInfo.tradeStatus = u'全部成交'
+
+        # self.tradeInfo.tradeStatus = u'全部成交'
+        self.tradeInfo.tradeStatus = self.mainEngine.dataEngine.orderDict[self.mainEngine.drEngine.tradeInfo.__dict__['vtOrderID']].status
         print "\n#######################################################################"
         print u"当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
@@ -406,7 +407,7 @@ class DrEngine(object):
         temp = self.tradeInfo.__dict__
         print pd.DataFrame([temp.values()], columns = temp.keys())
         return self.tradeInfo.__dict__
- 
+
     ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def getIndicatorInfo(self, dbName, initCapital):
         """读取指标并写入相应的数据库"""
@@ -443,7 +444,10 @@ class DrEngine(object):
 
         accInfo['balance'] = accInfo['balance'] / initCapital
         accInfo['preBalance'] = accInfo['preBalance'] / initCapital
-        accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
+        if accInfo['preBalance'] != 0:
+            accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
+        else:
+            accInfo['deltaBalancePct'] = 0
         accInfo['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
 
         tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
@@ -479,7 +483,7 @@ class DrEngine(object):
                 except:
                     pass
                 ## -------------------------------------------------------------
-                self.accountPosition.to_sql(con=conn, name='report_position_history', 
+                self.accountPosition.to_sql(con=conn, name='report_position_history',
                     if_exists='append', flavor='mysql', index = True)
         # ----------------------------------------------------------------------
             try:
@@ -491,10 +495,10 @@ class DrEngine(object):
             except:
                 pass
             ## -----------------------------------------------------------------
-            self.accountBalance.to_sql(con=conn, name='report_account_history', 
+            self.accountBalance.to_sql(con=conn, name='report_account_history',
                 if_exists='append', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
-        conn.close()   
+        conn.close()
 
 
 
@@ -521,12 +525,12 @@ class DrEngine(object):
         ########################################################################
         """ 退出 DataRecorder 的程序"""
         self.eventEngine.register(EVENT_TIMER,self.exitfun)
- 
+
     #----------------------------------------------------------------------
     def insertData(self, dbName, collectionName, data):
         """插入数据到数据库（这里的data可以是CtaTickData或者CtaBarData）"""
         self.queue.put((dbName, collectionName, data.__dict__))
-        
+
     #----------------------------------------------------------------------
     def run(self):
         """运行插入线程"""
@@ -569,21 +573,21 @@ class DrEngine(object):
                 ## self.mainEngine.dbWriteCSV(d)
                 ############################################################
             except Empty:
-                pass     
+                pass
 
     #---------------------------------------------------------------------------
     def start(self):
         """启动"""
         self.active = True
         self.thread.start()
-        
+
     #---------------------------------------------------------------------------
     def stop(self):
         """退出"""
         if self.active:
             self.active = False
             self.thread.join()
-        
+
     #---------------------------------------------------------------------------
     def writeDrLog(self, content):
         """快速发出日志事件"""
@@ -591,7 +595,7 @@ class DrEngine(object):
         log.logContent = content
         event = Event(type_=EVENT_DATARECORDER_LOG)
         event.dict_['data'] = log
-        self.eventEngine.put(event)   
+        self.eventEngine.put(event)
     ############################################################################
     ## william
     ## 增加程序退出的设定
