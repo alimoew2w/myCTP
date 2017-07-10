@@ -514,15 +514,6 @@ class YYStrategy(CtaTemplate):
                                 )
         for i in self.vtSymbolList:
             self.tickTimer[i] = datetime.now()
-        ########################################################################
-        # for vtSymbol in self.vtSymbolList:
-        #     contract = self.ctaEngine.mainEngine.getContract(vtSymbol)
-        #     if contract:
-        #         req = VtSubscribeReq()
-        #         req.symbol = contract.symbol
-        #         req.exchange = contract.exchange
-        #         self.ctaEngine.mainEngine.subscribe(req, contract.gatewayName)
-        ########################################################################
 
         print '#################################################################'
         print u"@william 策略初始化成功 !!!"
@@ -1020,6 +1011,7 @@ class YYStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingOrders)
+        ## ---------------------------------------------------------------------
         ## 收盘发送邮件
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
         ## ---------------------------------------------------------------------
