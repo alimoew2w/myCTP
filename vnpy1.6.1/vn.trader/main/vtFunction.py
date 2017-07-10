@@ -10,7 +10,7 @@
 ##    从 /main/VT_setting.json 获取 MySQL 的配置文件
 ## 2. vtFunction.tradingDay()
 ##    获取当前时间对应的交易所交易日历
-## 3. 
+## 3.
 ################################################################################
 
 ## =============================================================================
@@ -40,13 +40,13 @@ def safeUnicode(value):
     if type(value) is int or type(value) is float:
         if value > MAX_NUMBER:
             value = 0
-    
+
     # 检查防止小数点位过多
     if type(value) is float:
         d = decimal.Decimal(str(value))
         if abs(d.as_tuple().exponent) > MAX_DECIMAL:
             value = round(value, ndigits=MAX_DECIMAL)
-    
+
     return unicode(value)
 
 
@@ -59,7 +59,7 @@ def loadMongoSetting():
     path     = os.path.abspath(os.path.dirname(__file__))
     fileName = os.path.join(path, 'setting', fileName)
     ############################################################################
-    
+
     try:
         f       = file(fileName)
         setting = json.load(f)
@@ -70,7 +70,7 @@ def loadMongoSetting():
         host    = 'localhost'
         port    = 27017
         logging = False
-        
+
     return host, port, logging
 
 
@@ -88,8 +88,8 @@ def loadMySQLSetting():
     ## william
     path     = os.path.abspath(os.path.dirname(__file__))
     fileName = os.path.join(path, 'setting', fileName)
-    ############################################################################ 
-    
+    ############################################################################
+
     try:
         f = file(fileName)
         setting = json.load(f)
@@ -102,14 +102,14 @@ def loadMySQLSetting():
         port    = 24572
         user    = 'fl'
         passwd  = 'abc@123'
-        
+
     return host, port, user, passwd
 
 
 #-------------------------------------------------------------------------------
 def todayDate():
     """获取当前本机电脑时间的日期"""
-    return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)    
+    return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 ################################################################################
@@ -123,9 +123,9 @@ def tradingDay():
     ## william
     path     = os.path.abspath(os.path.dirname(__file__))
     ChinaFuturesCalendar = os.path.join(path, fileName)
-    ############################################################################ 
+    ############################################################################
     ChinaFuturesCalendar = pd.read_csv(ChinaFuturesCalendar)
-    ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)    
+    ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)
     # print ChinaFuturesCalendar.dtypes
     ChinaFuturesCalendar.days = ChinaFuturesCalendar.days.apply(str)
     ChinaFuturesCalendar.nights = ChinaFuturesCalendar.nights.apply(str)
@@ -133,7 +133,7 @@ def tradingDay():
     for i in range(len(ChinaFuturesCalendar)):
         ChinaFuturesCalendar.loc[i, 'nights'] = ChinaFuturesCalendar.loc[i, 'nights'].replace('.0','')
 
-    if 8 <= datetime.now().hour < 19:
+    if 8 <= datetime.now().hour <= 17:
         tempRes = datetime.now().strftime("%Y%m%d")
     else:
         temp = ChinaFuturesCalendar[ChinaFuturesCalendar['nights'] == datetime.now().strftime("%Y%m%d")]['days']
@@ -160,17 +160,17 @@ def getContractInfo():
     ExchangeID      :交易所代码
     VolumeMultiple  :合约乘数
     priceTick       :最小变动价格
-    """ 
+    """
 
     contractInfoHeader = ["InstrumentID", "InstrumentName", "ProductClass",\
-                          "ExchangeID", "VolumeMultiple", "PriceTick"]    
-    contractInfoData = []   
+                          "ExchangeID", "VolumeMultiple", "PriceTick"]
+    contractInfoData = []
 
     for key, value in f['data'].items():
         data = [value.symbol, value.name, value.productClass, value.exchange,\
                 value.size, value.priceTick]
         #print data
-        contractInfoData.append(data)   
+        contractInfoData.append(data)
     f.close()
     #print contractInfoData
     contractInfo = DataFrame(contractInfoData, columns = contractInfoHeader)
