@@ -373,7 +373,7 @@ class DrEngine(object):
         ## william
         ## 1.先在屏幕打印出来
         ## 2.返回一个字典,避免重复
-        print pd.DataFrame(self.positionInfo)
+        # print pd.DataFrame(self.positionInfo)
         return self.positionInfo
 
     ############################################################################
@@ -416,25 +416,29 @@ class DrEngine(object):
         posInfo = copy.copy(self.getPositionInfo())
         tempPosInfo = {}
 
-        for key in posInfo.keys():
-            if posInfo[key]['position'] > 0:
-                tempFields = ['symbol','direction','price','position','positionProfit','size']
-                tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
-                tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
-                tempPosInfo[key]['positionProfit'] = round(tempPosInfo[key]['positionProfit'],3)
-                # --------------------------------------------------------------------------
-                if tempPosInfo[key]['direction'] == u'多':
-                    tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
-                elif tempPosInfo[key]['direction'] == u'空':
-                    tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
+        if len(posInfo) != 0:
+            for key in posInfo.keys():
+                if posInfo[key]['position'] > 0:
+                    tempFields = ['symbol','direction','price','position','positionProfit','size']
+                    tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
+                    tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
+                    tempPosInfo[key]['positionProfit'] = round(tempPosInfo[key]['positionProfit'],3)
+                    # --------------------------------------------------------------------------
+                    if tempPosInfo[key]['direction'] == u'多':
+                        tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
+                    elif tempPosInfo[key]['direction'] == u'空':
+                        tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
 
-                tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
-            # --------------------------------------------------------------------------
-        # print x
-        # print pd.DataFrame(x).transpose()
+                    tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+                # --------------------------------------------------------------------------
+            # print x
+            # print pd.DataFrame(x).transpose()
         if len(tempPosInfo) != 0:
             self.accountPosition = pd.DataFrame(tempPosInfo).transpose()
             self.accountPosition['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
+        else:
+            self.accountPosition = pd.DataFrame()
+
 
         ## =====================================================================
         ## 账户基金净值
