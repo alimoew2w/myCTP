@@ -788,145 +788,109 @@ class YYStrategy(CtaTemplate):
         """
         self.stratTrade = event.dict_['data'].__dict__
         self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
+
+        ## =====================================================================
+        if self.stratTrade['vtOrderID'] not in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
+            return
+        ## =====================================================================
+
+        ## =================================================================
+        ## 1. stratTrade['vtOrderID'] 是唯一标识
+        ## =================================================================
+        self.stratTrade['strategyID'] = self.strategyID
         # print u"stratTrade.__dict__:====>"
         # # print stratTrade.__dict__
         # print u"stratTrade:==>", stratTrade
-        if self.stratTrade['vtOrderID'] not in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
-            return
+        #
+        ## -----------------------------------------------------------------
+        if self.stratTrade['direction'] == u'多':
+            self.stratTrade['direction'] = 'long'
+            ## -----------------------------------------------------------------
+            if self.stratTrade['offset'] == u'开仓':
+                tempKey = self.stratTrade['vtSymbol'] + '-' + 'buy'
+            elif self.stratTrade['offset'] == u'平仓':
+                tempKey = self.stratTrade['vtSymbol'] + '-' + 'cover'
+            ## -----------------------------------------------------------------
+        elif self.stratTrade['direction'] == u'空':
+            self.stratTrade['direction'] = 'short'
+            ## -----------------------------------------------------------------
+            if self.stratTrade['offset'] == u'开仓':
+                tempKey = self.stratTrade['vtSymbol'] + '-' + 'short'
+            elif self.stratTrade['offset'] == u'平仓':
+                tempKey = self.stratTrade['vtSymbol'] + '-' + 'sell'
+            ## -----------------------------------------------------------------
+        ## -----------------------------------------------------------------
+
+        ## -----------------------------------------------------------------
+        self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']
+        ## -----------------------------------------------------------------
+
+
+        ## ---------------------------------------------------------------------
+        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
+        ## ---------------------------------------------------------------------
 
         ########################################################################
         ## william
-        ## 更新持仓
-        if self.stratTrade['vtOrderID'] in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
-            ## 0 初始化持仓信息
-
-            ## =================================================================
-            ## 1. stratTrade['vtOrderID'] 是唯一标识
-            ## =================================================================
-
-            self.stratTrade['strategyID'] = self.strategyID
-
+        ## 更新数量
+        if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+            self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
             # ------------------------------------------------------------------
-            if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
-                self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
-            elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
-                tempPosInfo = self.failInfo.loc[self.failInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.failInfo.direction == tempDirection][self.failInfo.offset == self.stratTrade['offset']]
-                # self.stratTrade['TradingDay']  = self.ctaEngine.lastTradingDate
-                self.stratTrade['TradingDay']  = tempPosInfo.at[0, 'TradingDay']
-            # ------------------------------------------------------------------
+            self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
 
-            self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']
-            ## -----------------------------------------------------------------
-            if self.stratTrade['direction'] == u'多':
-                self.stratTrade['direction'] = 'long'
-            elif self.stratTrade['direction'] == u'空':
-                self.stratTrade['direction'] = 'short'
-            else:
-                pass
-            ## -----------------------------------------------------------------
+        elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
+            # ------------------------------------------------------------------
+            tempPosInfo = self.failedInfo.loc[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']][self.failedInfo.offset == self.stratTrade['offset']].reset_index(drop = True)
+            self.stratTrade['TradingDay']  = tempPosInfo.at[0, 'TradingDay']
+            # ------------------------------------------------------------------
 
             ## =================================================================
             ## 2. 更新 positionInfo
             ## =================================================================
-            # tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','volume']
-            tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
-            if self.stratTrade['offset'] == u'开仓':
-                ################################################################
-                ## 1. 更新 self.tradingOrders
-                ################################################################
-                if self.stratTrade['direction'] == 'long':
-                    tempKey = self.stratTrade['vtSymbol'] + '-' + 'buy'
-                elif self.stratTrade['direction'] == 'short':
-                    tempKey = self.stratTrade['vtSymbol'] + '-' + 'short'
-                ## -------------------------------------------------------------
-                ## 更新 self.tradingOrders 的 volume
-                self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
 
-                ################################################################
-                ## 2. 更新 mysql.positionInfo
-                ################################################################                ## 如果是开仓的话,直接添加
-                # tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','volume'])
-                tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
-                ## -------------------------------------------------------------
-                ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-                mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                        """
-                                        SELECT *
-                                        FROM positionInfo
-                                        WHERE strategyID = '%s'
-                                        """ %(self.strategyID))
-                ## 看看是不是已经在数据库里面了
-                tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempRes.loc[0,'InstrumentID']][mysqlPositionInfo.TradingDay == tempRes.loc[0,'TradingDay']][mysqlPositionInfo.direction == tempRes.loc[0,'direction']]
-                if len(tempPosInfo) == 0:
-                    ## 如果不在
-                    ## 则直接添加过去即可
-                    try:
-                        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                        cursor = conn.cursor()
-                        tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
-                        conn.close()
-                    except:
-                        print "\n#######################################################################"
-                        print u'写入 MySQL 数据库出错'
-                        # self.onStop()
-                        # print u'停止策略 %s' %self.name
-                        print "#######################################################################\n"
-                else:
-                    ## 如果在
-                    ## 则需要更新数据
-                    mysqlPositionInfo.at[tempPosInfo.index[0], 'volume'] += tempRes.loc[0,'volume']
-                    mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-                    try:
-                        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                        cursor = conn.cursor()
-                        mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='replace', flavor='mysql', index = False)
-                        conn.close()
-                    except:
-                        print "\n#######################################################################"
-                        print u'写入 MySQL 数据库出错'
-                        # self.onStop()
-                        # print u'停止策略 %s' %self.name
-                        print "#######################################################################\n"
-                ## -------------------------------------------------------------
-            elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
-                ## -------------------------------------------------------------
-                ## 1. 获取平仓的信息
-                ## -------------------------------------------------------------
-                if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
-                    tempPositionInfo = self.positionInfo[self.positionInfo.InstrumentID == self.stratTrade['InstrumentID']]
-                elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
-                    tempPositionInfo = self.failedInfo[self.failedInfo.InstrumentID == self.stratTrade['InstrumentID']]
-
-                ################################################################
-                ## 1. 更新 self.tradingOrders
-                ################################################################
-                if self.stratTrade['direction'] == 'long':
-                    tempKey = self.stratTrade['vtSymbol'] + '-' + 'cover'
-                elif self.stratTrade['direction'] == 'short':
-                    tempKey = self.stratTrade['vtSymbol'] + '-' + 'sell'
-                ## -------------------------------------------------------------
-                ## 更新 self.tradingOrders 的 volume
-                self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
-
-                ################################################################
-                ## 2. 更新 mysql.positionInfo
-                ################################################################
-                tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
-                if self.stratTrade['direction'] == 'long':
-                    tempDirection = 'short'
-                elif self.stratTrade['direction'] == 'short':
-                    tempDirection = 'long'
-                ## -------------------------------------------------------------
-                ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-                mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                        """
-                                        SELECT *
-                                        FROM positionInfo
-                                        WHERE strategyID = '%s'
-                                        """ %(self.strategyID))
-                tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
-                tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
-                mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
+        if self.stratTrade['offset'] == u'开仓':
+            ################################################################
+            ## 1. 更新 self.tradingOrders
+            ################################################################
+            # if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+            #     ## 更新 self.tradingOrders 的 volume
+            #     self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
+            # elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            #     self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
+            ################################################################
+            ## 2. 更新 mysql.positionInfo
+            ################################################################                ## 如果是开仓的话,直接添加
+            # tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','volume'])
+            tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+            ## -------------------------------------------------------------
+            ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
+            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT *
+                                    FROM positionInfo
+                                    WHERE strategyID = '%s'
+                                    """ %(self.strategyID))
+            ## 看看是不是已经在数据库里面了
+            tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempRes.loc[0,'InstrumentID']][mysqlPositionInfo.TradingDay == tempRes.loc[0,'TradingDay']][mysqlPositionInfo.direction == tempRes.loc[0,'direction']]
+            if len(tempPosInfo) == 0:
+                ## 如果不在
+                ## 则直接添加过去即可
+                try:
+                    conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                    cursor = conn.cursor()
+                    tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                    conn.close()
+                except:
+                    print "\n#######################################################################"
+                    print u'写入 MySQL 数据库出错'
+                    # self.onStop()
+                    # print u'停止策略 %s' %self.name
+                    print "#######################################################################\n"
+            else:
+                ## 如果在
+                ## 则需要更新数据
+                mysqlPositionInfo.at[tempPosInfo.index[0], 'volume'] += tempRes.loc[0,'volume']
                 mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
                 try:
                     conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
@@ -939,66 +903,116 @@ class YYStrategy(CtaTemplate):
                     # self.onStop()
                     # print u'停止策略 %s' %self.name
                     print "#######################################################################\n"
+            ## -------------------------------------------------------------
+        elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
+            ## -------------------------------------------------------------
+            ## 1. 获取平仓的信息
+            ## -------------------------------------------------------------
+            # if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+            #     tempPositionInfo = self.positionInfo[self.positionInfo.InstrumentID == self.stratTrade['InstrumentID']]
+            # elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            #     tempPositionInfo = self.failedInfo[self.failedInfo.InstrumentID == self.stratTrade['InstrumentID']]
 
-            else:
-                pass
+            ################################################################
+            ## 1. 更新 self.tradingOrders
+            ################################################################
 
-            #===================================================================
-            if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
-                ## 更新 tradingOrdersFailedInfo 的数量
-                self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
-                if self.tradingOrdersFailedInfo[tempKey]['volume'] == 0:
-                    self.tradingOrdersFailedInfo.pop(tempKey, None)
-                #-------------------------------------------------------------------
-                mysqlFailInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                        """
-                        SELECT *
-                        FROM failedInfo
-                        WHERE strategyID = '%s'
-                        """ %(self.strategyID))
-                #-------------------------------------------------------------------
+            # if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+            #     ## 更新 self.tradingOrders 的 volume
+            #     self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
+            # elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            #     self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
 
-                tempPosInfo = self.mysqlFailInfo.loc[self.mysqlFailInfo.InstrumentID == self.stratTrade['InstrumentID']][self.mysqlFailInfo.direction == self.stratTrade['direction']][self.mysqlFailInfo.offset == self.stratTrade['offset']]
+            ################################################################
+            ## 2. 更新 mysql.positionInfo
+            ################################################################
+            tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+            if self.stratTrade['direction'] == 'long':
+                tempDirection = 'short'
+            elif self.stratTrade['direction'] == 'short':
+                tempDirection = 'long'
+            ## -------------------------------------------------------------
+            ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
+            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT *
+                                    FROM positionInfo
+                                    WHERE strategyID = '%s'
+                                    """ %(self.strategyID))
+            tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
+            tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
+            mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
+            mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
+            try:
+                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='replace', flavor='mysql', index = False)
+                conn.close()
+            except:
+                print "\n#######################################################################"
+                print u'写入 MySQL 数据库出错'
+                # self.onStop()
+                # print u'停止策略 %s' %self.name
+                print "#######################################################################\n"
 
-                mysqlFailInfo.at[tempPosInfo.index[0], 'volume'] -= stratTrade['volume']
-                mysqlFailInfo = mysqlFailInfo.loc[mysqlFailInfo.volume != 0]
+        else:
+            pass
 
-                try:
-                    conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                    cursor = conn.cursor()
-                    mysqlFailInfo.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
-                    conn.close()
-                except:
-                    print "\n#######################################################################"
-                    print u'写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print u'停止策略 %s' %self.name
-                    print "#######################################################################\n"
-                #-------------------------------------------------------------------
-                self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                        """
-                        SELECT *
-                        FROM failedInfo
-                        WHERE strategyID = '%s'
-                        """ %(self.strategyID))
+        #===================================================================
+        if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            ## 更新 tradingOrdersFailedInfo 的数量
+            if self.tradingOrdersFailedInfo[tempKey]['volume'] == 0:
+                self.tradingOrdersFailedInfo.pop(tempKey, None)
             #-------------------------------------------------------------------
-            #===================================================================
+            mysqlFailInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                    """
+                    SELECT *
+                    FROM failedInfo
+                    WHERE strategyID = '%s'
+                    """ %(self.strategyID))
+            #-------------------------------------------------------------------
 
-            tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
-            tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
-            ## -----------------------------------------------------------------
-            self.updateTradingInfo(tempTradingInfo)
-            self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
-            ## -----------------------------------------------------------------
+            tempPosInfo = mysqlFailInfo.loc[mysqlFailInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlFailInfo.direction == self.stratTrade['direction']][mysqlFailInfo.offset == self.stratTrade['offset']]
 
-            ## =================================================================
-            ## 3. 更新 self.tradingOrders
-            ## =================================================================
-            if len(self.tradingOrders) != 0:
-                for k in self.tradingOrders.keys():
-                    if self.tradingOrders[k]['volume'] == 0:
-                        self.tradedOrders[k] = k
-                        self.tradingOrders.pop(k, None)
+            mysqlFailInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
+            mysqlFailInfo = mysqlFailInfo.loc[mysqlFailInfo.volume != 0]
+
+            try:
+                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                mysqlFailInfo.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
+                conn.close()
+            except:
+                print "\n#######################################################################"
+                print u'写入 MySQL 数据库出错'
+                # self.onStop()
+                # print u'停止策略 %s' %self.name
+                print "#######################################################################\n"
+            #-------------------------------------------------------------------
+            self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                    """
+                    SELECT *
+                    FROM failedInfo
+                    WHERE strategyID = '%s'
+                    """ %(self.strategyID))
+        #-------------------------------------------------------------------
+        #===================================================================
+
+        tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
+        tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
+        ## -----------------------------------------------------------------
+        self.updateTradingInfo(tempTradingInfo)
+        self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
+        ## -----------------------------------------------------------------
+
+        ## =================================================================
+        ## 3. 更新 self.tradingOrders
+        ## =================================================================
+        if len(self.tradingOrders) != 0:
+            for k in self.tradingOrders.keys():
+                if self.tradingOrders[k]['volume'] == 0:
+                    self.tradedOrders[k] = k
+                    self.tradingOrders.pop(k, None)
 
         # ######################################################################
         # 发出状态更新事件
