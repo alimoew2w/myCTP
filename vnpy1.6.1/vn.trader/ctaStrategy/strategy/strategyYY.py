@@ -16,6 +16,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 import codecs
+from tabulate import tabulate
 
 cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
@@ -520,7 +521,6 @@ class YYStrategy(CtaTemplate):
         self.writeCtaLog(u'%s策略初始化' %self.name)
         print self.vtSymbolList
         print '#################################################################'
-
         ########################################################################
         ## william
         self.putEvent()
@@ -528,7 +528,6 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onStart(self):
         """启动策略（必须由用户继承实现）"""
-
         ## =====================================================================
         ## 策略启动
         ## =====================================================================
@@ -577,8 +576,6 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## ---------------------------------------------------------------------
         if datetime.now().hour == 14 and datetime.now().minute >= 10:
-        # if datetime.now().hour >= 9:
-            # if tick.vtSymbol in self.vtSymbolList:
             if len(self.failedOrders) != 0:
                 if tick.vtSymbol in tempFailedOrdersSymbol:
                     self.lastTickData[tick.vtSymbol] = tempTick
@@ -593,11 +590,10 @@ class YYStrategy(CtaTemplate):
             ## william
             ## 存储有 self.lastTickData
             ## 保证有 tick data
-            if len(self.failedOrders) != 0:
+            if (len(self.failedOrders) != 0) and (len(self.tradingOrders) != 0):
                 if tick.vtSymbol in tempFailedOrdersSymbol:
                     if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds >= 3:
                         self.prepareTradingOrder(tick.vtSymbol)
-                # pass
         ## =====================================================================
 
         ########################################################################
@@ -642,7 +638,6 @@ class YYStrategy(CtaTemplate):
                 for i in range(len(tempWorkingOrder)):
                     if tempWorkingOrder[i] not in self.failedInfoWorkingOrders:
                         self.failedInfoWorkingOrders.append(tempWorkingOrder[i])
-
             # ## -----------------------------------------------------------------
 
         ## =====================================================================
@@ -655,19 +650,17 @@ class YYStrategy(CtaTemplate):
                 self.tickTimer[vtSymbol]    = datetime.now()
             ####################################################################
         else:
-            tempSymbolList = [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]
-            tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
-
             tempTradingList = [k for k in self.tradingOrdersFailedInfo.keys() if self.tradingOrdersFailedInfo[k]['vtSymbol'] == vtSymbol]
 
             ####################################################################
-            for i in tempTradingList:
-                ## -------------------------------------------------------------
-                ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
-                ## -------------------------------------------------------------
-                if self.tradingOrdersFailedInfo[i]['volume'] != 0:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i],
-                                          my_vtOrderIDList = self.vtOrderIDListFailedInfo)
+            if len(tempTradingList) != 0:
+                for i in tempTradingList:
+                    ## -------------------------------------------------------------
+                    ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
+                    ## -------------------------------------------------------------
+                    if self.tradingOrdersFailedInfo[i]['volume'] != 0:
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrdersFailedInfo[i],
+                                              my_vtOrderIDList = self.vtOrderIDListFailedInfo)
             ####################################################################
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -719,22 +712,18 @@ class YYStrategy(CtaTemplate):
             ####################################################################
             ## 如果没有未成交订单，则进行下面的订单管理操作
             ## -----------------------------------------------------------------
-            tempSymbolList = [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()]
-            tempSymbolList = [i for i in tempSymbolList if i == vtSymbol]
-            ## -----------------------------------------------------------------
             ## 生成交易列表
             tempTradingList = [k for k in self.tradingOrders.keys() if self.tradingOrders[k]['vtSymbol'] == vtSymbol]
-
             ####################################################################
-            for i in tempTradingList:
-                ## -------------------------------------------------------------
-                ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
-                ## -------------------------------------------------------------
-                if self.tradingOrders[i]['volume'] != 0:
-                    self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
-                                          my_vtOrderIDList = self.vtOrderIDList)
+            if len(tempTradingList) != 0:
+                for i in tempTradingList:
+                    ## -------------------------------------------------------------
+                    ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
+                    ## -------------------------------------------------------------
+                    if self.tradingOrders[i]['volume'] != 0:
+                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
+                                              my_vtOrderIDList = self.vtOrderIDList)
             ####################################################################
-
         ## .....................................................................
         self.putEvent()
         ## .....................................................................
@@ -786,13 +775,13 @@ class YYStrategy(CtaTemplate):
     def stratTradeEvent(self, event):
         """处理策略交易与持仓信息
         """
-        self.stratTrade = event.dict_['data'].__dict__
-        self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
-
         ## =====================================================================
-        if self.stratTrade['vtOrderID'] not in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
+        if event.dict_['data'].vtOrderID not in list(set(self.vtOrderIDList) | set(self.vtOrderIDListFailedInfo)):
             return
         ## =====================================================================
+
+        self.stratTrade = event.dict_['data'].__dict__
+        self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
 
         ## =================================================================
         ## 1. stratTrade['vtOrderID'] 是唯一标识
@@ -825,30 +814,44 @@ class YYStrategy(CtaTemplate):
         self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " +  self.stratTrade['tradeTime']
         ## -----------------------------------------------------------------
 
-
-        ## ---------------------------------------------------------------------
-        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
-        ## ---------------------------------------------------------------------
-
         ########################################################################
         ## william
         ## 更新数量
+        ## 更新交易日期
         if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+            # ------------------------------------------------------------------
             self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
+            if self.tradingOrders[tempKey]['volume'] == 0:
+                self.tradingOrders.pop(tempKey, None)
             # ------------------------------------------------------------------
             self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
+            # ------------------------------------------------------------------
 
         elif self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
+            # ------------------------------------------------------------------
             self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
+            # ------------------------------------------------------------------
+            ## 如果是平仓，需要再把当天的 tradingOrders 相关的合约持仓数量做调整
+            if (self.stratTrade['offset'] == u'平仓') and (tempKey in self.tradingOrders.keys()):
+                if self.tradingOrders[tempKey]['TradingDay'] == datetime.strptime(self.tradingOrdersFailedInfo[tempKey]['TradingDay'], "%Y%m%d").date():
+                    self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
+                    if self.tradingOrders[tempKey]['volume'] == 0:
+                        self.tradingOrders.pop(tempKey, None)
+            # ------------------------------------------------------------------
             # ------------------------------------------------------------------
             tempPosInfo = self.failedInfo.loc[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']][self.failedInfo.offset == self.stratTrade['offset']].reset_index(drop = True)
             self.stratTrade['TradingDay']  = tempPosInfo.at[0, 'TradingDay']
             # ------------------------------------------------------------------
 
-            ## =================================================================
-            ## 2. 更新 positionInfo
-            ## =================================================================
+        ## ---------------------------------------------------------------------
+        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
+        tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+        ## ---------------------------------------------------------------------
 
+
+        ## =================================================================
+        ## 2. 更新 positionInfo
+        ## =================================================================
         if self.stratTrade['offset'] == u'开仓':
             ################################################################
             ## 1. 更新 self.tradingOrders
@@ -862,7 +865,7 @@ class YYStrategy(CtaTemplate):
             ## 2. 更新 mysql.positionInfo
             ################################################################                ## 如果是开仓的话,直接添加
             # tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','volume'])
-            tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+            # tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
             ## -------------------------------------------------------------
             ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
             mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
@@ -926,37 +929,40 @@ class YYStrategy(CtaTemplate):
             ################################################################
             ## 2. 更新 mysql.positionInfo
             ################################################################
-            tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+            # tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
             if self.stratTrade['direction'] == 'long':
                 tempDirection = 'short'
             elif self.stratTrade['direction'] == 'short':
                 tempDirection = 'long'
             ## -------------------------------------------------------------
-            ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                    """
-                                    SELECT *
-                                    FROM positionInfo
-                                    WHERE strategyID = '%s'
-                                    """ %(self.strategyID))
-            tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
-            tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
-            mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
-            mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-            try:
-                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                cursor = conn.cursor()
-                mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='replace', flavor='mysql', index = False)
-                conn.close()
-            except:
-                print "\n#######################################################################"
-                print u'写入 MySQL 数据库出错'
-                # self.onStop()
-                # print u'停止策略 %s' %self.name
-                print "#######################################################################\n"
+            if self.stratTrade['vtOrderID'] in self.vtOrderIDList:
+                ## 只有在 tradingOrders 的平仓信息，需要更新到数据库
+                ## 因为 failedInfo 已经把未成交的订单记录下来了
+                ## =================================================================================
+                ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
+                mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                        """
+                                        SELECT *
+                                        FROM positionInfo
+                                        WHERE strategyID = '%s'
+                                        """ %(self.strategyID))
+                tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
+                tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
+                mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
+                mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
+                try:
+                    conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                    cursor = conn.cursor()
+                    mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='replace', flavor='mysql', index = False)
+                    conn.close()
+                except:
+                    print "\n#######################################################################"
+                    print u'写入 MySQL 数据库出错'
+                    # self.onStop()
+                    # print u'停止策略 %s' %self.name
+                    print "#######################################################################\n"
+                ## =================================================================================
 
-        else:
-            pass
 
         #===================================================================
         if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
@@ -964,31 +970,32 @@ class YYStrategy(CtaTemplate):
             if self.tradingOrdersFailedInfo[tempKey]['volume'] == 0:
                 self.tradingOrdersFailedInfo.pop(tempKey, None)
             #-------------------------------------------------------------------
-            mysqlFailInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+            mysqlFailedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                     """
                     SELECT *
                     FROM failedInfo
                     WHERE strategyID = '%s'
                     """ %(self.strategyID))
             #-------------------------------------------------------------------
+            if len(mysqlFailedInfo) != 0:
+                #-------------------------------------------------------------------
+                tempPosInfo = mysqlFailedInfo.loc[mysqlFailedInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlFailedInfo.direction == self.stratTrade['direction']][mysqlFailedInfo.offset == self.stratTrade['offset']]
 
-            tempPosInfo = mysqlFailInfo.loc[mysqlFailInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlFailInfo.direction == self.stratTrade['direction']][mysqlFailInfo.offset == self.stratTrade['offset']]
+                mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
+                mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
 
-            mysqlFailInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
-            mysqlFailInfo = mysqlFailInfo.loc[mysqlFailInfo.volume != 0]
-
-            try:
-                conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                cursor = conn.cursor()
-                mysqlFailInfo.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
-                conn.close()
-            except:
-                print "\n#######################################################################"
-                print u'写入 MySQL 数据库出错'
-                # self.onStop()
-                # print u'停止策略 %s' %self.name
-                print "#######################################################################\n"
-            #-------------------------------------------------------------------
+                try:
+                    conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                    cursor = conn.cursor()
+                    mysqlFailedInfo.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
+                    conn.close()
+                except:
+                    print "\n#######################################################################"
+                    print u'写入 MySQL 数据库出错'
+                    # self.onStop()
+                    # print u'停止策略 %s' %self.name
+                    print "#######################################################################\n"
+                #-------------------------------------------------------------------
             self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                     """
                     SELECT *
@@ -1152,16 +1159,16 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             ## -----------------------------------------------------------------------------
             sender = self.strategyID + '@hicloud.com'
-            receivers = self.ctaEngine.mainEngine.mailReceiver
+            ## 公司内部人员
+            receiversMain = self.ctaEngine.mainEngine.mailReceiverMain
+            ## 其他人员
+            receiversOthers = self.ctaEngine.mainEngine.mailReceiverOthers
+            ## 抄送
             ccReceivers = self.ctaEngine.mainEngine.mailCC
-            ## -----------------------------------------------------------------------------
 
             ## -----------------------------------------------------------------------------
-            # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
-            ## 内容，例如
-            # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
-            ## -----------------------------------------------------------------------------
-            with codecs.open("/tmp/tradingRecord.txt", "w", "utf-8") as f:
+            ## 发送给其他人
+            with codecs.open("/tmp/tradingRecordOthers.txt", "w", "utf-8") as f:
                 # f.write('{0}'.format(40*'='))
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 策略信息'))
@@ -1170,44 +1177,93 @@ class YYStrategy(CtaTemplate):
                 f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                 f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
                 f.write('{0}'.format('\n[TraderName]: ' + self.author))
-                f.write('{0}'.format('\n' + 120*'-' + '\n'))
+                f.write('{0}'.format('\n' + 100*'-' + '\n'))
                 ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 基金净值'))
                 f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
-                f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountBalance))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
+                                    headers = ['Index','Value'], tablefmt = 'rst'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                ## -----------------------------------------------------------------------------
+                # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+                fp = open("/tmp/tradingRecordOthers.txt", "r")
+                message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+                fp.close()
+
+                ## 显示:发件人
+                message['From'] = Header(sender, 'utf-8')
+                ## 显示:收件人
+                message['To'] =  Header('汉云管理员', 'utf-8')
+
+                ## 主题
+                subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
+                message['Subject'] = Header(subject, 'utf-8')
+
+                try:
+                    smtpObj = smtplib.SMTP('localhost')
+                    smtpObj.sendmail(sender, receiversOthers, message.as_string())
+                    print "邮件发送成功"
+                except smtplib.SMTPException:
+                    print "Error: 无法发送邮件"
+                ## 间隔 1 秒
+                time.sleep(3)
+
+
+            ## -----------------------------------------------------------------------------
+            # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
+            ## 内容，例如
+            # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
+            ## -----------------------------------------------------------------------------
+            with codecs.open("/tmp/tradingRecordMain.txt", "w", "utf-8") as f:
+                # f.write('{0}'.format(40*'='))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 策略信息'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n[TradingDay]: ' + self.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
+                f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
+                f.write('{0}'.format('\n[TraderName]: ' + self.author))
+                f.write('{0}'.format('\n' + 100*'-' + '\n'))
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 基金净值'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
+                                    headers = ['Index','Value'], tablefmt = 'rst'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 基金持仓'))
                 f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountPosition))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format('\n## 当日已交易'))
                 f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 if len(self.tradingInfo) != 0:
                     tempTradingInfo = self.tradingInfo
                     tempTradingInfo.index += 1
                     f.write('{0}'.format(tempTradingInfo))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 ## -------------------------------------------------------------------------
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format('\n## 当日未交易'))
                 f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
                 if len(self.failedOrders) != 0:
                     f.write('{0}'.format(pd.DataFrame(self.failedOrders).transpose()))
-                f.write('{0}'.format('\n' + 120*'-') + '\n')
-
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
 
             ## -----------------------------------------------------------------------------
             # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
-            fp = open("/tmp/tradingRecord.txt", "r")
+            fp = open("/tmp/tradingRecordMain.txt", "r")
             message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
             fp.close()
 
@@ -1217,12 +1273,12 @@ class YYStrategy(CtaTemplate):
             message['To'] =  Header('汉云交易员', 'utf-8')
 
             ## 主题
-            subject = self.ctaEngine.tradingDay + u'：云扬1号交易播报'
+            subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
             message['Subject'] = Header(subject, 'utf-8')
 
             try:
                 smtpObj = smtplib.SMTP('localhost')
-                smtpObj.sendmail(sender, receivers+ccReceivers, message.as_string())
+                smtpObj.sendmail(sender, receiversMain, message.as_string())
                 print "邮件发送成功"
             except smtplib.SMTPException:
                 print "Error: 无法发送邮件"
