@@ -443,8 +443,19 @@ class DrEngine(object):
         ## =====================================================================
         ## 账户基金净值
         accInfo = copy.copy(self.accountInfo.__dict__)
+        if len(accInfo['datetime']) != 0:
+            try:
+                accInfo['datetime'] = datetime.strptime(accInfo['datetime'], '%Y-%m-%d %H:%M:%S').strftime('%H:%M:%S')
+            except:
+                pass
 
-        accInfo['marginPct'] = accInfo['margin'] / accInfo['balance'] * 100
+        accInfo['availableMoney'] = accInfo['available']
+        accInfo['totalMoney'] = accInfo['balance']
+
+        if accInfo['balance'] != 0:
+            accInfo['marginPct'] = accInfo['margin'] / accInfo['balance'] * 100
+        else:
+            accInfo['marginPct'] = 0
 
         accInfo['balance'] = accInfo['balance'] / initCapital
         accInfo['preBalance'] = accInfo['preBalance'] / initCapital
@@ -458,7 +469,7 @@ class DrEngine(object):
         for k in tempFields:
             accInfo[k] = round(accInfo[k],4)
 
-        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit']
+        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney']
         self.accountBalance = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
 
         ## =====================================================================
@@ -471,10 +482,12 @@ class DrEngine(object):
             cursor.execute('truncate table report_position')
             conn.commit()
         ## ---------------------------------------------------------------------
-        self.accountBalance.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
+        ## 保证能够连 CTP 成功
+        if len(accInfo['accountID']) != 0:
+            self.accountBalance.to_sql(con=conn, name='report_account', if_exists='replace', flavor='mysql', index = False)
         ## ---------------------------------------------------------------------
         # if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 10):
-        if (9 <= datetime.now().hour <= 20):
+        if (8 <= datetime.now().hour <= 17) and (len(accInfo['accountID']) != 0):
         # ----------------------------------------------------------------------
             if len(tempPosInfo) != 0:
                 ## -------------------------------------------------------------
