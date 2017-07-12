@@ -570,12 +570,12 @@ class YYStrategy(CtaTemplate):
         if len(self.failedInfo) != 0 and self.trading:
             if tick.vtSymbol in self.failedInfo.InstrumentID.values and tick.vtSymbol in self.tickTimer.keys():
                 self.lastTickData[tick.vtSymbol] = tempTick
-                if (datetime.now().second % 2 == 0) and ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds >= 3):
+                if (datetime.now().second % 2 == 0) and ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds > 3):
                     self.processFailedInfo(tick.vtSymbol)
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 10:
+        if datetime.now().hour == 14 and datetime.now().minute >= 30:
             if len(self.failedOrders) != 0:
                 if tick.vtSymbol in tempFailedOrdersSymbol:
                     self.lastTickData[tick.vtSymbol] = tempTick
@@ -584,7 +584,7 @@ class YYStrategy(CtaTemplate):
 
         ## =====================================================================
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= ( 59 - max(10, len(self.tradingOrders)*1.1)) ) and datetime.now().second % 2 == 0 and self.trading:
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= ( 59 - max(10, len(self.tradingOrders)*1.1)) ) and datetime.now().second % 1 == 0 and self.trading:
         # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
             ################################################################
             ## william
@@ -592,7 +592,7 @@ class YYStrategy(CtaTemplate):
             ## 保证有 tick data
             if (len(self.failedOrders) != 0) and (len(self.tradingOrders) != 0):
                 if tick.vtSymbol in tempFailedOrdersSymbol:
-                    if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds >= 3:
+                    if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds > 3:
                         self.prepareTradingOrder(tick.vtSymbol)
         ## =====================================================================
 
@@ -797,7 +797,7 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             if self.stratTrade['offset'] == u'开仓':
                 tempKey = self.stratTrade['vtSymbol'] + '-' + 'buy'
-            elif self.stratTrade['offset'] == u'平仓':
+            elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
                 tempKey = self.stratTrade['vtSymbol'] + '-' + 'cover'
             ## -----------------------------------------------------------------
         elif self.stratTrade['direction'] == u'空':
@@ -805,9 +805,13 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             if self.stratTrade['offset'] == u'开仓':
                 tempKey = self.stratTrade['vtSymbol'] + '-' + 'short'
-            elif self.stratTrade['offset'] == u'平仓':
+            elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
                 tempKey = self.stratTrade['vtSymbol'] + '-' + 'sell'
             ## -----------------------------------------------------------------
+        if self.stratTrade['offset'] == u'开仓':
+            tempOffset = u'开仓'
+        elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
+            tempOffset = u'平仓'
         ## -----------------------------------------------------------------
 
         ## -----------------------------------------------------------------
@@ -823,6 +827,7 @@ class YYStrategy(CtaTemplate):
             self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
             if self.tradingOrders[tempKey]['volume'] == 0:
                 self.tradingOrders.pop(tempKey, None)
+                self.tradedOrders[tempKey] = tempKey
             # ------------------------------------------------------------------
             self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
             # ------------------------------------------------------------------
@@ -832,14 +837,15 @@ class YYStrategy(CtaTemplate):
             self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
             # ------------------------------------------------------------------
             ## 如果是平仓，需要再把当天的 tradingOrders 相关的合约持仓数量做调整
-            if (self.stratTrade['offset'] == u'平仓') and (tempKey in self.tradingOrders.keys()):
+            if (self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']) and (tempKey in self.tradingOrders.keys()):
                 if self.tradingOrders[tempKey]['TradingDay'] == datetime.strptime(self.tradingOrdersFailedInfo[tempKey]['TradingDay'], "%Y%m%d").date():
                     self.tradingOrders[tempKey]['volume'] -= self.stratTrade['volume']
                     if self.tradingOrders[tempKey]['volume'] == 0:
                         self.tradingOrders.pop(tempKey, None)
+                        self.tradedOrders[tempKey] = tempKey
             # ------------------------------------------------------------------
             # ------------------------------------------------------------------
-            tempPosInfo = self.failedInfo.loc[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']][self.failedInfo.offset == self.stratTrade['offset']].reset_index(drop = True)
+            tempPosInfo = self.failedInfo.loc[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']][self.failedInfo.offset == tempOffset].reset_index(drop = True)
             self.stratTrade['TradingDay']  = tempPosInfo.at[0, 'TradingDay']
             # ------------------------------------------------------------------
 
@@ -979,7 +985,7 @@ class YYStrategy(CtaTemplate):
             #-------------------------------------------------------------------
             if len(mysqlFailedInfo) != 0:
                 #-------------------------------------------------------------------
-                tempPosInfo = mysqlFailedInfo.loc[mysqlFailedInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlFailedInfo.direction == self.stratTrade['direction']][mysqlFailedInfo.offset == self.stratTrade['offset']]
+                tempPosInfo = mysqlFailedInfo.loc[mysqlFailedInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlFailedInfo.direction == self.stratTrade['direction']][mysqlFailedInfo.offset == tempOffset]
 
                 mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
                 mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
@@ -1018,8 +1024,8 @@ class YYStrategy(CtaTemplate):
         if len(self.tradingOrders) != 0:
             for k in self.tradingOrders.keys():
                 if self.tradingOrders[k]['volume'] == 0:
-                    self.tradedOrders[k] = k
                     self.tradingOrders.pop(k, None)
+                    self.tradedOrders[k] = k
 
         # ######################################################################
         # 发出状态更新事件
