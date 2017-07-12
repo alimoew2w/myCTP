@@ -509,20 +509,18 @@ class MarketMonitor(BasicMonitor):
         ## william
         ## 开始监听,反馈有更新的 Tick Data
         # 注册事件监听
-        '''
-        if d['symbol'] in [re.sub('-long|-short','', k) for k in mainEngine.drEngine.getPositionInfo().keys()]:
-            self.registerEvent()
-        '''
-        self.registerEvent()
-
+        ## 关闭更新功能
+        ## =====================================================================
+        # self.registerEvent()
         self.clearContents()
+        ## =====================================================================
+        
         '''
         print "#######################################################################"
         print u"'行情'窗口:==>",d 
         print "#######################################################################"
         '''
 
-## [re.sub('-long|-short','', k) for k in temp2.keys()]
 ################################################################################
 ## william
 ## '日志'窗口
