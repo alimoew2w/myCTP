@@ -409,7 +409,7 @@ class DrEngine(object):
         return self.tradeInfo.__dict__
 
     ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def getIndicatorInfo(self, dbName, initCapital, moneyCapital):
+    def getIndicatorInfo(self, dbName, initCapital, flowCapitalPre, flowCapitalToday):
         """读取指标并写入相应的数据库"""
         ## =====================================================================
         ## 持仓合约信息
@@ -451,14 +451,16 @@ class DrEngine(object):
 
         accInfo['availableMoney'] = accInfo['available']
         accInfo['totalMoney'] = accInfo['balance']
+        accInfo['flowMoney']  = flowCapitalPre + flowCapitalToday
+        accInfo['allMoney'] = accInfo['totalMoney'] + accInfo['flowMoney']
 
         if accInfo['balance'] != 0:
             accInfo['marginPct'] = accInfo['margin'] / accInfo['balance'] * 100
         else:
             accInfo['marginPct'] = 0
 
-        accInfo['balance'] = accInfo['balance'] / (initCapital - moneyCapital)
-        accInfo['preBalance'] = (accInfo['preBalance'] - moneyCapital) / (initCapital - moneyCapital)
+        accInfo['balance'] = (accInfo['balance'] + flowCapitalToday) / initCapital
+        accInfo['preBalance'] = (accInfo['preBalance'] + flowCapitalPre) / initCapital
         if accInfo['preBalance'] != 0:
             accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
         else:
@@ -469,7 +471,7 @@ class DrEngine(object):
         for k in tempFields:
             accInfo[k] = round(accInfo[k],4)
 
-        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney']
+        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney','flowMoney','allMoney']
         self.accountBalance = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
 
         ## =====================================================================
