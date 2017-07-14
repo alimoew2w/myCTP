@@ -418,7 +418,7 @@ class DrEngine(object):
 
         if len(posInfo) != 0:
             for key in posInfo.keys():
-                if posInfo[key]['position'] > 0:
+                if (posInfo[key]['position'] > 0) and (posInfo[key]['price'] != 0):
                     tempFields = ['symbol','direction','price','position','positionProfit','size']
                     tempPosInfo[key] = {k:posInfo[key][k] for k in tempFields}
                     tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
