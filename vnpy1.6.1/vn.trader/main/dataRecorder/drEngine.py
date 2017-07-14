@@ -409,7 +409,7 @@ class DrEngine(object):
         return self.tradeInfo.__dict__
 
     ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def getIndicatorInfo(self, dbName, initCapital):
+    def getIndicatorInfo(self, dbName, initCapital, moneyCapital):
         """读取指标并写入相应的数据库"""
         ## =====================================================================
         ## 持仓合约信息
@@ -457,8 +457,8 @@ class DrEngine(object):
         else:
             accInfo['marginPct'] = 0
 
-        accInfo['balance'] = accInfo['balance'] / initCapital
-        accInfo['preBalance'] = accInfo['preBalance'] / initCapital
+        accInfo['balance'] = accInfo['balance'] / (initCapital - moneyCapital)
+        accInfo['preBalance'] = (accInfo['preBalance'] - moneyCapital) / (initCapital - moneyCapital)
         if accInfo['preBalance'] != 0:
             accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
         else:
