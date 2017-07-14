@@ -167,7 +167,7 @@ class CtpGateway(VtGateway):
     def connectCTPAccount(self, accountInfo):
         """连接 CTP 指定的账户"""
         # 载入json文件
-        fileName = self.gatewayName + '_connect' + '_' + accountInfo + '.json'
+        fileName = self.gatewayName + '_connect_account_' + accountInfo + '.json'
         path     = os.path.dirname(__file__)
         path     = os.path.normpath(os.path.join(path, '..', '..'))
         fileName = os.path.join(path, 'setting', fileName)
@@ -448,7 +448,7 @@ class CtpMdApi(MdApi):
         # if not data['Volume']:
         #     return
         # 忽略无效的报价单
-        if data['LastPrice'] > 1e+99:
+        if data['LastPrice'] > 1.79e+99:
             return
 
         # 创建对象
@@ -906,7 +906,7 @@ class CtpTdApi(TdApi):
         exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
         volumeMultiple = int(vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values)
 
-        if pos.position:
+        if pos.position and volumeMultiple:
             if exchangeID != 'SHFE':
                 pos.price = (cost + data['PositionCost']) / pos.position / volumeMultiple
             else:
