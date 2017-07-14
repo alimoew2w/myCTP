@@ -1084,7 +1084,8 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if self.trading == True and datetime.now().minute % 14 == 0 and datetime.now().second == 59:
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
-                                                                initCapital = self.ctaEngine.mainEngine.initCapital)
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital,
+                                                                moneyCapital = self.ctaEngine.mainEngine.moneyCapital)
         ## =====================================================================
 
         if (datetime.now().hour == 15) and (datetime.now().minute >= 2) and (datetime.now().second == 59):
@@ -1161,7 +1162,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             ## -----------------------------------------------------------------
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
-                                                                initCapital = self.ctaEngine.mainEngine.initCapital)
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital,
+                                                                moneyCapital = self.ctaEngine.mainEngine.moneyCapital)
             ## -----------------------------------------------------------------
             ## -----------------------------------------------------------------------------
             sender = self.strategyID + '@hicloud.com'
