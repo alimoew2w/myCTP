@@ -1085,7 +1085,8 @@ class YYStrategy(CtaTemplate):
         if self.trading == True and datetime.now().minute % 14 == 0 and datetime.now().second == 59:
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
                                                                 initCapital = self.ctaEngine.mainEngine.initCapital,
-                                                                moneyCapital = self.ctaEngine.mainEngine.moneyCapital)
+                                                                flowCapitalPre = self.ctaEngine.mainEngine.flowCapitalPre,
+                                                                flowCapitalToday = self.ctaEngine.mainEngine.flowCapitalToday)
         ## =====================================================================
 
         if (datetime.now().hour == 15) and (datetime.now().minute >= 2) and (datetime.now().second == 59):
@@ -1163,7 +1164,8 @@ class YYStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
                                                                 initCapital = self.ctaEngine.mainEngine.initCapital,
-                                                                moneyCapital = self.ctaEngine.mainEngine.moneyCapital)
+                                                                flowCapitalPre = self.ctaEngine.mainEngine.flowCapitalPre,
+                                                                flowCapitalToday = self.ctaEngine.mainEngine.flowCapitalToday)
             ## -----------------------------------------------------------------
             ## -----------------------------------------------------------------------------
             sender = self.strategyID + '@hicloud.com'
@@ -1174,58 +1176,11 @@ class YYStrategy(CtaTemplate):
             ## 抄送
             ccReceivers = self.ctaEngine.mainEngine.mailCC
 
-            ## -----------------------------------------------------------------------------
-            ## 发送给其他人
-            with codecs.open("/tmp/tradingRecordOthers.txt", "w", "utf-8") as f:
-                # f.write('{0}'.format(40*'='))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format(u'\n## 策略信息'))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n[TradingDay]: ' + self.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
-                f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
-                f.write('{0}'.format('\n[TraderName]: ' + self.author))
-                f.write('{0}'.format('\n' + 100*'-' + '\n'))
-                ## -------------------------------------------------------------------------
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format(u'\n## 基金净值'))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 100*'-') + '\n')
-                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
-                                    headers = ['Index','Value'], tablefmt = 'rst'))
-                f.write('{0}'.format('\n' + 100*'-') + '\n')
-                ## -------------------------------------------------------------------------
-                ## -----------------------------------------------------------------------------
-                # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
-                fp = open("/tmp/tradingRecordOthers.txt", "r")
-                message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
-                fp.close()
-
-                ## 显示:发件人
-                message['From'] = Header(sender, 'utf-8')
-                ## 显示:收件人
-                message['To'] =  Header('汉云管理员', 'utf-8')
-
-                ## 主题
-                subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
-                message['Subject'] = Header(subject, 'utf-8')
-
-                try:
-                    smtpObj = smtplib.SMTP('localhost')
-                    smtpObj.sendmail(sender, receiversOthers, message.as_string())
-                    print "邮件发送成功"
-                except smtplib.SMTPException:
-                    print "Error: 无法发送邮件"
-                ## 间隔 1 秒
-                time.sleep(3)
-
-
-            ## -----------------------------------------------------------------------------
             # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
             ## 内容，例如
             # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
             ## -----------------------------------------------------------------------------
-            with codecs.open("/tmp/tradingRecordMain.txt", "w", "utf-8") as f:
+            with codecs.open("/tmp/tradingRecord.txt", "w", "utf-8") as f:
                 # f.write('{0}'.format(40*'='))
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 策略信息'))
@@ -1271,7 +1226,7 @@ class YYStrategy(CtaTemplate):
 
             ## -----------------------------------------------------------------------------
             # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
-            fp = open("/tmp/tradingRecordMain.txt", "r")
+            fp = open("/tmp/tradingRecord.txt", "r")
             message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
             fp.close()
 
@@ -1281,12 +1236,38 @@ class YYStrategy(CtaTemplate):
             message['To'] =  Header('汉云交易员', 'utf-8')
 
             ## 主题
-            subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
+            subject = self.ctaEngine.tradingDay + u'：云扬1号交易播报'
             message['Subject'] = Header(subject, 'utf-8')
 
             try:
                 smtpObj = smtplib.SMTP('localhost')
                 smtpObj.sendmail(sender, receiversMain, message.as_string())
+                print "邮件发送成功"
+            except smtplib.SMTPException:
+                print "Error: 无法发送邮件"
+            ## 间隔 1 秒
+            time.sleep(1)
+
+            ## -----------------------------------------------------------------------------
+            # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+            fp = open("/tmp/tradingRecord.txt", "r")
+            lines = fp.readlines()
+            l = lines[0:([i for i in range(len(lines)) if '当日已交易' in lines[i]][0] - 1)]
+            message = MIMEText(''.join(l).decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+            fp.close()
+
+            ## 显示:发件人
+            message['From'] = Header(sender, 'utf-8')
+            ## 显示:收件人
+            message['To'] =  Header('汉云管理员', 'utf-8')
+
+            ## 主题
+            subject = self.ctaEngine.tradingDay + u'：云扬1号交易播报'
+            message['Subject'] = Header(subject, 'utf-8')
+
+            try:
+                smtpObj = smtplib.SMTP('localhost')
+                smtpObj.sendmail(sender, receiversOthers, message.as_string())
                 print "邮件发送成功"
             except smtplib.SMTPException:
                 print "Error: 无法发送邮件"
