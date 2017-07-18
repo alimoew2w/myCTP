@@ -127,6 +127,7 @@ class CtaEngine(object):
 
         ## 信号的合约
         self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
+        self.signalContracts2 = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t_2;""")
 
         ## 前一个交易日未成交的合约
         self.failedContracts_Fl_SimNow = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from failedInfo;""")
@@ -141,9 +142,13 @@ class CtaEngine(object):
                                        set(self.positionContracts_YY_SimNow.InstrumentID.values) |
                                        set(self.positionContracts_HiCloud.InstrumentID.values) |
                                        set(self.signalContracts.InstrumentID.values) |
+                                       set(self.signalContracts2.InstrumentID.values) |
                                        set(self.failedContracts_Fl_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_YY_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_HiCloud.InstrumentID.values) )
+        self.tickInfo = {}
+        for i in self.subscribeContracts:
+            self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
         # self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) |
         #                                set(self.signalContracts.InstrumentID.values) |
         #                                set(self.failedContracts.InstrumentID.values))
@@ -408,6 +413,7 @@ class CtaEngine(object):
             ####################################################################
             ## william
             # 逐个推送到策略实例中
+            # 使用 mainEngine.ctaEngine.tickStrategyDict 来获取 tick
             l = self.tickStrategyDict[tick.vtSymbol]
             for strategy in l:
                 self.callStrategyFunc(strategy, strategy.onTick, ctaTick)
