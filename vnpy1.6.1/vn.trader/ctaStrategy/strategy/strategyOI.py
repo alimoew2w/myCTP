@@ -35,7 +35,7 @@ from eventType import *
 
 ################################################################################
 class OIStrategy(CtaTemplate):
-    """ 云扬一号 交易策略 """
+    """ oiRank 交易策略 """
     ############################################################################
     ## william
     # 策略类的名称和作者
@@ -48,6 +48,8 @@ class OIStrategy(CtaTemplate):
     ## william
     ############################################################################
     trading        = False                  # 是否启动交易
+    tradingOpen    = False                  # 开盘启动交易
+    tradingClose   = False                  # 收盘开启交易
     sendMailStatus = False                  # 是否已经发送邮件
 
     ############################################################################
@@ -68,13 +70,13 @@ class OIStrategy(CtaTemplate):
     ############################################################################
     ## william
     # 参数列表，保存了参数的名称
-    paramList = ['name',
-                 'className',
-                 'author']
+    # paramList = ['name',
+    #              'className',
+    #              'author']
 
-    # 变量列表，保存了变量的名称
-    varList = ['inited',
-               'trading']
+    # # 变量列表，保存了变量的名称
+    # varList = ['inited',
+    #            'trading']
     ############################################################################
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -122,11 +124,20 @@ class OIStrategy(CtaTemplate):
                             FROM positionInfo
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
+        self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM positionInfo
+                            WHERE strategyID = '%s'
+                            """ %(self.strategyID))
+
         self.vtSymbolList = []
         ## ---------------------------------------------------------------------
         ## 计时器, 用于记录单个合约发单的间隔时间
+        ## key   : vtSymbol
+        ## values: datetime
         ## ---------------------------------------------------------------------
-        self.tickTimer    = {}
+        self.tickTimer = {}
 
 
         ## ---------------------------------------------------------------------
@@ -136,14 +147,15 @@ class OIStrategy(CtaTemplate):
                              'bidVolume1', 'askVolume1','upperLimit','lowerLimit']
         ## ---------------------------------------------------------------------
         ## 交易订单存放位置
-        self.tradingOrders = {}             ## 当日订单, 正常需要处理的
-        self.tradingOrdersOpen  = {}        ## 当日开盘的订单
-        self.tradingOrdersClose = {}        ## 当日收盘的订单
         ## 字典格式如下
         ## 1. vtSymbol
         ## 2. direction: buy, sell, short, cover
         ## 3. volume
         ## 4. TradingDay
+        self.tradingOrders = {}             ## 当日订单, 正常需要处理的
+        self.tradingOrdersOpen  = {}        ## 当日开盘的订单
+        self.tradingOrdersClose = {}        ## 当日收盘的订单
+
 
         self.tradingOrdersFailedInfo = {}   ## 上一个交易日没有完成的订单,需要优先处理
                                             ##
@@ -357,6 +369,7 @@ class OIStrategy(CtaTemplate):
         self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
                                  set(self.failedInfo.InstrumentID.values)
                                  # | set(self.positionInfo.InstrumentID.values)
+                                 | set(self.positionInfoClose.InstrumentID.values)
                                 )
         for i in self.vtSymbolList:
             self.tickTimer[i] = datetime.now()
@@ -409,36 +422,31 @@ class OIStrategy(CtaTemplate):
         """收到行情TICK推送（必须由用户继承实现）"""
         # tempTick = tick.__dict__
         tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
-        tempFailedOrdersSymbol = [self.failedOrdersClose[k]['vtSymbol'] for k in self.failedOrdersClose.keys()]
+
+        ## =====================================================================
+        if not self.trading:
+            return 
+        elif tick.vtSymbol not in [self.tradingOrdersOpen[k]['vtSymbol'] for k in self.tradingOrdersOpen.keys()] + [self.tradingOrdersClose[k]['vtSymbol'] for k in self.tradingOrdersClose.keys()]:
+            return 
+        elif ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds <= 8):
+            return
+        ## =====================================================================
         
+        ## ---------------------------------------------------------------------
+        self.lastTickData[tick.vtSymbol] = tempTick
+        self.updateCancelOrders(tick.vtSymbol)
+        ## ---------------------------------------------------------------------
+
         ########################################################################
-        ## william
+        tempFailedOrdersSymbolOpen = [self.failedOrdersOpen[k]['vtSymbol'] for k in self.failedOrdersOpen.keys()] 
+        tempFailedOrdersSymbolClose = [self.failedOrdersClose[k]['vtSymbol'] for k in self.failedOrdersClose.keys()]
+        ########################################################################
 
         ## =====================================================================
-        ## ---------------------------------------------------------------------
-        if tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] for k in self.tradingOrdersOpen.keys()] + [tradingOrdersClose[k]['vtSymbol'] for k in self.tradingOrdersClose.keys()]:
-            self.lastTickData[tick.vtSymbol] = tempTick
-
-        ## ---------------------------------------------------------------------
-        if datetime.now().hour >= 9 and self.trading:
-        # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
-            ################################################################
-            if tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] for k in self.tradingOrdersOpen.keys()]:
-                if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds > 10:
-                    self.prepareTradingOrderOpen(tick.vtSymbol)
-
-        ## =====================================================================
-        ## ---------------------------------------------------------------------
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= ( 59 - max(10, len(self.tradingOrdersClose)*1.1)) ) and datetime.now().second % 1 == 0 and self.trading:
-        # if datetime.now().hour >= 9 and datetime.now().second % 2 == 0 and self.trading:
-            ################################################################
-            ## william
-            ## 存储有 self.lastTickData
-            ## 保证有 tick data
-            if (len(self.failedOrdersClose) != 0) and (len(self.tradingOrdersClose) != 0):
-                if tick.vtSymbol in tempFailedOrdersSymbol:
-                    if (datetime.now() - self.tickTimer[tick.vtSymbol]).seconds > 3:
-                        self.prepareTradingOrderClose(tick.vtSymbol)
+        if self.tradingOpen:
+            self.prepareTradingOrderOpen(tick.vtSymbol)
+        elif self.tradingClose:
+            self.prepareTradingOrderClose(tick.vtSymbol)
         ## =====================================================================
 
         ########################################################################
@@ -518,9 +526,9 @@ class OIStrategy(CtaTemplate):
                     ## -------------------------------------------------------------
                     ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
                     ## -------------------------------------------------------------
-                    if (self.tradingOrdersOpen[i]['volume'] != 0) and (i not in self.tradedOrdersOpen.keys()):
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrdersOpen[i],
-                                              my_vtOrderIDList = self.vtOrderIDListOpen)
+                    # if (self.tradingOrdersOpen[i]['volume'] != 0) and (i not in self.tradedOrdersOpen.keys()):
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersOpen[i],
+                                          my_vtOrderIDList = self.vtOrderIDListOpen)
             ####################################################################
         ## .....................................................................
         self.putEvent()
@@ -583,9 +591,9 @@ class OIStrategy(CtaTemplate):
                     ## -------------------------------------------------------------
                     ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
                     ## -------------------------------------------------------------
-                    if self.tradingOrdersClose[i]['volume'] != 0:
-                        self.sendTradingOrder(tradingOrderDict = self.tradingOrders[i],
-                                              my_vtOrderIDList = self.vtOrderIDListClose)
+                    # if self.tradingOrdersClose[i]['volume'] != 0:
+                    self.sendTradingOrder(tradingOrderDict = self.tradingOrdersClose[i],
+                                          my_vtOrderIDList = self.vtOrderIDListClose)
             ####################################################################
         ## .....................................................................
         self.putEvent()
@@ -598,31 +606,34 @@ class OIStrategy(CtaTemplate):
     def sendTradingOrder(self, tradingOrderDict, my_vtOrderIDList):
         """发送单个合约的订单"""
         tempInstrumentID = tradingOrderDict['vtSymbol']
-        tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+        # tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+        tempPriceTick    = self.ctaEngine.tickInfo[tradingOrderDict['vtSymbol']]['priceTick']
         tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
         tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
+        tempUpperLimit   = self.lastTickData[tempInstrumentID]['upperLimit']
+        tempLowerLimit   = self.lastTickData[tempInstrumentID]['lowerLimit']
         tempDirection    = tradingOrderDict['direction']
         tempVolume       = tradingOrderDict['volume']
 
         ########################################################################
         if tempDirection == 'buy':
             ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
-            tempPrice = tempAskPrice1 + tempPriceTick*2
+            tempPrice = min(tempAskPrice1 + tempPriceTick*2, tempUpperLimit)
             vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
             my_vtOrderIDList.append(vtOrderID)
         elif tempDirection == 'short':
             ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
-            tempPrice = tempBidPrice1 - tempPriceTick*2
+            tempPrice = max(tempBidPrice1 - tempPriceTick*2, tempLowerLimit)
             vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
             my_vtOrderIDList.append(vtOrderID)
         elif tempDirection == 'cover':
             ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
-            tempPrice = tempAskPrice1 + tempPriceTick*2
+            tempPrice = min(tempAskPrice1 + tempPriceTick*2, tempUpperLimit)
             vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
             my_vtOrderIDList.append(vtOrderID)
         elif tempDirection == 'sell':
             ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
-            tempPrice = tempBidPrice1 - tempPriceTick*2
+            tempPrice = max(tempBidPrice1 - tempPriceTick*2, tempLowerLimit)
             vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
             my_vtOrderIDList.append(vtOrderID)
         else:
@@ -883,37 +894,6 @@ class OIStrategy(CtaTemplate):
                     self.tradingOrdersClose.pop(k, None)
                     self.tradedOrdersClsoe[k] = k
 
-
-        ## =====================================================================
-        if datetime.now().hour == 14 and datetime.now().minute >= 50:
-            ## 持仓合约信息
-            self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                """
-                                SELECT *
-                                FROM positionInfo
-                                WHERE strategyID = '%s'
-                                """ %(self.strategyID))
-            if len(self.positionInfo) != 0:
-                for i in range(len(self.positionInfo)):
-                    ## ---------------------------------------------------------
-                    ## direction
-                    if self.positionInfo.loc[i,'direction'] == 'long':
-                        tempDirection = 'sell'
-                    elif self.positionInfo.loc[i,'direction'] == 'short':
-                        tempDirection = 'cover'
-                    else:
-                        pass
-                    ## ---------------------------------------------------------
-                    ## volume
-                    tempVolume = int(self.positionInfo.loc[i,'volume'])
-                    tempKey = self.positionInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                    tempTradingDay = self.positionInfo.loc[i,'TradingDay']
-                    self.tradingOrdersClose[tempKey] = {'vtSymbol':self.positionInfo.loc[i,'InstrumentID'],
-                                                   'direction':tempDirection,
-                                                   'volume':tempVolume,
-                                                   'TradingDay':tempTradingDay}
-        ## =====================================================================
-
         # ######################################################################
         # 发出状态更新事件
         self.putEvent()
@@ -925,7 +905,7 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingOrders)
-        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateCancelOrders)
+        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateCancelOrders)
         ## ---------------------------------------------------------------------
         ## 收盘发送邮件
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
@@ -967,7 +947,7 @@ class OIStrategy(CtaTemplate):
         # pass
         ## =====================================================================
         for k in self.tickTimer.keys():
-            if (datetime.now() - self.tickTimer[k]).seconds > 3:
+            if (datetime.now() - self.tickTimer[k]).seconds >= 10:
                 for vtOrderID in self.vtOrderIDList:
                     try:
                         tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
@@ -981,7 +961,7 @@ class OIStrategy(CtaTemplate):
                         for i in tempWorkingOrder:
                             ## =================================================
                             self.cancelOrder(i)
-                            # self.tickTimer[k] = datetime.now()
+                            self.tickTimer[k] = datetime.now()
                             ## =================================================
                     ## =========================================================
         ## =====================================================================
@@ -994,6 +974,50 @@ class OIStrategy(CtaTemplate):
         # pass
         # if 15 < datetime.now().hour < 17:
         #     self.failedOrders = {k:self.tradingOrders[k] for k in self.tradingOrders.keys() if k not in self.tradedOrders.keys()}
+        ## =====================================================================
+        ## 启动尾盘交易
+        
+        if (datetime.now().hour == 21 or datetime.now().hour == 9) and (datetime.now().minute <= 3):
+            self.tradingOpen = True
+        else:
+            self.tradingOpen = False
+
+        if datetime.now().hour == 14 and datetime.now().minute >= 59 and (datetime.now().second >= ( 59 - max(30, len(self.tradingOrdersClose)*1.5)) ):
+            self.tradingClose = True
+        else:
+            self.tradingClose = False
+        ## =====================================================================
+        ##
+        ## =====================================================================
+        if datetime.now().hour == 11 and datetime.now().minute >= 1 and datetime.now().second == 59:
+            ## 持仓合约信息
+            self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                """
+                                SELECT *
+                                FROM positionInfo
+                                WHERE strategyID = '%s'
+                                """ %(self.strategyID))
+            if len(self.positionInfoClose) != 0:
+                for i in range(len(self.positionInfoClose)):
+                    self.tickTimer[self.positionInfoClose.loc[i,'InstrumentID']] = datetime.now()
+                    ## ---------------------------------------------------------
+                    ## direction
+                    if self.positionInfoClose.loc[i,'direction'] == 'long':
+                        tempDirection = 'sell'
+                    elif self.positionInfoClose.loc[i,'direction'] == 'short':
+                        tempDirection = 'cover'
+                    else:
+                        pass
+                    ## ---------------------------------------------------------
+                    ## volume
+                    tempVolume = int(self.positionInfoClose.loc[i,'volume'])
+                    tempKey = self.positionInfoClose.loc[i,'InstrumentID'] + '-' + tempDirection
+                    tempTradingDay = self.positionInfoClose.loc[i,'TradingDay']
+                    self.tradingOrdersClose[tempKey] = {'vtSymbol':self.positionInfoClose.loc[i,'InstrumentID'],
+                                                   'direction':tempDirection,
+                                                   'volume':tempVolume,
+                                                   'TradingDay':tempTradingDay}
+        ## =====================================================================
 
         self.failedOrdersClose = {k:self.tradingOrdersClose[k] for k in self.tradingOrdersClose.keys() if k not in self.tradedOrdersClose.keys()}
 
@@ -1092,58 +1116,11 @@ class OIStrategy(CtaTemplate):
             ## 抄送
             ccReceivers = self.ctaEngine.mainEngine.mailCC
 
-            ## -----------------------------------------------------------------------------
-            ## 发送给其他人
-            with codecs.open("/tmp/tradingRecordOthers.txt", "w", "utf-8") as f:
-                # f.write('{0}'.format(40*'='))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format(u'\n## 策略信息'))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n[TradingDay]: ' + self.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
-                f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
-                f.write('{0}'.format('\n[TraderName]: ' + self.author))
-                f.write('{0}'.format('\n' + 100*'-' + '\n'))
-                ## -------------------------------------------------------------------------
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format(u'\n## 基金净值'))
-                f.write('{0}'.format('\n' + 20 * '#'))
-                f.write('{0}'.format('\n' + 100*'-') + '\n')
-                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
-                                    headers = ['Index','Value'], tablefmt = 'rst'))
-                f.write('{0}'.format('\n' + 100*'-') + '\n')
-                ## -------------------------------------------------------------------------
-                ## -----------------------------------------------------------------------------
-                # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
-                fp = open("/tmp/tradingRecordOthers.txt", "r")
-                message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
-                fp.close()
-
-                ## 显示:发件人
-                message['From'] = Header(sender, 'utf-8')
-                ## 显示:收件人
-                message['To'] =  Header('汉云管理员', 'utf-8')
-
-                ## 主题
-                subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
-                message['Subject'] = Header(subject, 'utf-8')
-
-                try:
-                    smtpObj = smtplib.SMTP('localhost')
-                    smtpObj.sendmail(sender, receiversOthers, message.as_string())
-                    print "邮件发送成功"
-                except smtplib.SMTPException:
-                    print "Error: 无法发送邮件"
-                ## 间隔 1 秒
-                time.sleep(3)
-
-
-            ## -----------------------------------------------------------------------------
             # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
             ## 内容，例如
             # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
             ## -----------------------------------------------------------------------------
-            with codecs.open("/tmp/tradingRecordMain.txt", "w", "utf-8") as f:
+            with codecs.open("/tmp/tradingRecord.txt", "w", "utf-8") as f:
                 # f.write('{0}'.format(40*'='))
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format(u'\n## 策略信息'))
@@ -1189,7 +1166,7 @@ class OIStrategy(CtaTemplate):
 
             ## -----------------------------------------------------------------------------
             # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
-            fp = open("/tmp/tradingRecordMain.txt", "r")
+            fp = open("/tmp/tradingRecord.txt", "r")
             message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
             fp.close()
 
@@ -1205,6 +1182,32 @@ class OIStrategy(CtaTemplate):
             try:
                 smtpObj = smtplib.SMTP('localhost')
                 smtpObj.sendmail(sender, receiversMain, message.as_string())
+                print "邮件发送成功"
+            except smtplib.SMTPException:
+                print "Error: 无法发送邮件"
+            ## 间隔 1 秒
+            time.sleep(1)
+
+            ## -----------------------------------------------------------------------------
+            # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+            fp = open("/tmp/tradingRecord.txt", "r")
+            lines = fp.readlines()
+            l = lines[0:([i for i in range(len(lines)) if '当日已交易' in lines[i]][0] - 1)]
+            message = MIMEText(''.join(l).decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+            fp.close()
+
+            ## 显示:发件人
+            message['From'] = Header(sender, 'utf-8')
+            ## 显示:收件人
+            message['To'] =  Header('汉云管理员', 'utf-8')
+
+            ## 主题
+            subject = self.ctaEngine.tradingDay + u'：云扬1号『Sim_Now』交易播报'
+            message['Subject'] = Header(subject, 'utf-8')
+
+            try:
+                smtpObj = smtplib.SMTP('localhost')
+                smtpObj.sendmail(sender, receiversOthers, message.as_string())
                 print "邮件发送成功"
             except smtplib.SMTPException:
                 print "Error: 无法发送邮件"
