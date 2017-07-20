@@ -49,6 +49,30 @@ class CtaTemplate(object):
         """Constructor"""
         self.ctaEngine = ctaEngine
 
+        ## =====================================================================
+        ## 把　MySQL 数据库的　TradingDay　调整为　datetime 格式
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        cursor.execute("""
+                        ALTER TABLE failedInfo
+                        MODIFY TradingDay date not null;
+                       """)
+        cursor.execute("""
+                        ALTER TABLE positionInfo
+                        MODIFY TradingDay date not null;
+                       """)
+        try:
+            cursor.execute("""ALTER TABLE positionInfo DROP primary key""")
+        except:
+            pass
+        cursor.execute("""
+                        ALTER TABLE positionInfo 
+                        ADD PRIMARY key (strategyID,InstrumentID,TradingDay,direction);
+                       """)
+        conn.commit()
+        conn.close()        
+        ## =====================================================================
+
         # 设置策略的参数
         if setting:
             d = self.__dict__
