@@ -50,9 +50,13 @@ sys.setdefaultencoding('utf8')
 ## 去掉 windows 的设置
 ################################################################################
 # 设置Windows底部任务栏图标
-if 'Windows' in platform.uname() :
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')
+# if 'Windows' in platform.uname() :
+#     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')
 
+############################################################################
+## william
+## 增加 “启动成功” 的提示。
+##
 # 初始化Qt应用对象
 app = QtGui.QApplication(sys.argv)
 app.setWindowIcon(QtGui.QIcon(ICON_FILENAME))
@@ -68,6 +72,7 @@ try:
     f.close()
 except:
     pass
+################################################################################
 
 # 初始化主引擎和主窗口对象
 ############################################################################
@@ -83,14 +88,6 @@ print "#######################################################################\n
 
 
 ############################################################################
-## william
-## 增加 “启动成功” 的提示。
-##'''
-mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-## mainWindow.showMaximized()
-mainWindow.showMinimized()
-
-
 gatewayName = 'CTP'
 # print U"GatewayName:", gatewayName
 
@@ -112,6 +109,11 @@ except:
 ############################################################################
 
 
+################################################################################
+mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+mainWindow.showMaximized()         # mainWindow.showMinimized()
+################################################################################
+
 
 ################################################################################
 ## william
@@ -121,6 +123,8 @@ except:
 ## 数据库名称
 mainEngine.dataBase    = 'YY_SimNow'
 mainEngine.initCapital = 1025245
+mainEngine.flowCapitalPre = 0
+mainEngine.flowCapitalToday = 0
 ## 公司内部人员
 mainEngine.mailReceiverMain = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
 ## 其他人员
@@ -148,6 +152,10 @@ mainEngine.ctaEngine.startStrategy('Yun Yang')
 ## 停止策略运行
 # mainEngine.ctaEngine.stopStrategy('Yun Yang')
 
+################################################################################
 mainEngine.drEngine.getIndicatorInfo(dbName = mainEngine.dataBase,
-                                    initCapital = mainEngine.initCapital)
+                                    initCapital = mainEngine.initCapital,
+                                    flowCapitalPre = mainEngine.flowCapitalPre,
+                                    flowCapitalToday = mainEngine.flowCapitalToday)
+
 
