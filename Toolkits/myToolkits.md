@@ -116,3 +116,8 @@
   ![navicat](/Toolkits/pic/navicat.png)
 
 - 'Rodeo', 这是一款由 `yhat` 出品的 `python IDE`, 整体界面跟 `Rstudio` 非常的相似, 实现了从脚本直接运行的操作, 并且可以输出画图, 相比于 `jupyter`, 更适合编写项目文件.
+
+- 'Github' 项目标签：在项目根目录，新建 `.gitattributes`:
+    
+    > *.html linguist-language=R
+    > *.pdf  linguist-language=R
