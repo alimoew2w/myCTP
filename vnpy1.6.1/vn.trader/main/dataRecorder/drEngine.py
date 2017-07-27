@@ -135,7 +135,6 @@ class DrEngine(object):
                     else:
                         print vtSymbol,'合约没有找到'
 
-
                     ############################################################
                     ## william
                     ##
@@ -143,40 +142,40 @@ class DrEngine(object):
                     drTick = DrTickData()           # 该tick实例可以用于缓存部分数据（目前未使用）
                     self.tickDict[vtSymbol] = drTick
 
-            if 'bar' in drSetting:
-                l = drSetting['bar']
+            # if 'bar' in drSetting:
+            #     l = drSetting['bar']
 
-                for setting in l:
-                    symbol = setting[0]
-                    vtSymbol = symbol
+            #     for setting in l:
+            #         symbol = setting[0]
+            #         vtSymbol = symbol
 
-                    req = VtSubscribeReq()
-                    req.symbol = symbol
+            #         req = VtSubscribeReq()
+            #         req.symbol = symbol
 
-                    if len(setting)>=3:
-                        req.exchange = setting[2]
-                        vtSymbol = '.'.join([symbol, req.exchange])
+            #         if len(setting)>=3:
+            #             req.exchange = setting[2]
+            #             vtSymbol = '.'.join([symbol, req.exchange])
 
-                    if len(setting)>=5:
-                        req.currency = setting[3]
-                        req.productClass = setting[4]
+            #         if len(setting)>=5:
+            #             req.currency = setting[3]
+            #             req.productClass = setting[4]
 
-                    self.mainEngine.subscribe(req, setting[1])
+            #         self.mainEngine.subscribe(req, setting[1])
 
-                    bar = DrBarData()
-                    self.barDict[vtSymbol] = bar
+            #         bar = DrBarData()
+            #         self.barDict[vtSymbol] = bar
 
             ####################################################################
             ## william
             ## 所有的都变成 active
             ####################################################################
 
-            if 'active' in drSetting:
-                d = drSetting['active']
+            # if 'active' in drSetting:
+            #     d = drSetting['active']
 
-                # 注意这里的vtSymbol对于IB和LTS接口，应该后缀.交易所
-                for activeSymbol, vtSymbol in d.items():
-                    self.activeSymbolDict[vtSymbol] = activeSymbol
+            #     # 注意这里的vtSymbol对于IB和LTS接口，应该后缀.交易所
+            #     for activeSymbol, vtSymbol in d.items():
+            #         self.activeSymbolDict[vtSymbol] = activeSymbol
 
             # 启动数据插入线程
             self.start()
@@ -220,11 +219,11 @@ class DrEngine(object):
             self.insertData(TICK_DB_NAME, vtSymbol, drTick)
             ####################################################################
             ## william
-            ## print u"更新Tick数据"
+            ## print "更新Tick数据"
             ## 这里使用了 insertData 插入到线程,原来用的是 mongoDB
-            if vtSymbol in self.activeSymbolDict:
-                activeSymbol = self.activeSymbolDict[vtSymbol]
-                self.insertData(TICK_DB_NAME, activeSymbol, drTick)
+            # if vtSymbol in self.activeSymbolDict:
+            #     activeSymbol = self.activeSymbolDict[vtSymbol]
+            #     self.insertData(TICK_DB_NAME, activeSymbol, drTick)
             ####################################################################
             ## william
             ## 在 UI 界面的 '行情记录里面' 打印
@@ -242,57 +241,57 @@ class DrEngine(object):
             ## william
             ## 处理 Tick Data
             """
-            print u"#######################################################################"
-            print u"处理行情推送:"
+            print "#######################################################################"
+            print "处理行情推送:"
             print text.TICK_LOGGING_MESSAGE.format(symbol=drTick.vtSymbol,
                                                              time=drTick.time,
                                                              last=drTick.lastPrice,
                                                              bid=drTick.bidPrice1,
                                                              ask=drTick.askPrice1)
-            print u"#######################################################################"
+            print "#######################################################################"
             """
             ####################################################################
 
         # 更新分钟线数据
-        if vtSymbol in self.barDict:
-            bar = self.barDict[vtSymbol]
+        # if vtSymbol in self.barDict:
+        #     bar = self.barDict[vtSymbol]
 
-            # 如果第一个TICK或者新的一分钟
-            if not bar.datetime or bar.datetime.minute != drTick.datetime.minute:
-                if bar.vtSymbol:
-                    newBar = copy.copy(bar)
-                    self.insertData(MINUTE_DB_NAME, vtSymbol, newBar)
+        #     # 如果第一个TICK或者新的一分钟
+        #     if not bar.datetime or bar.datetime.minute != drTick.datetime.minute:
+        #         if bar.vtSymbol:
+        #             newBar = copy.copy(bar)
+        #             self.insertData(MINUTE_DB_NAME, vtSymbol, newBar)
 
-                    if vtSymbol in self.activeSymbolDict:
-                        activeSymbol = self.activeSymbolDict[vtSymbol]
-                        self.insertData(MINUTE_DB_NAME, activeSymbol, newBar)
+        #             if vtSymbol in self.activeSymbolDict:
+        #                 activeSymbol = self.activeSymbolDict[vtSymbol]
+        #                 self.insertData(MINUTE_DB_NAME, activeSymbol, newBar)
 
-                    self.writeDrLog(text.BAR_LOGGING_MESSAGE.format(symbol=bar.vtSymbol,
-                                                                    time=bar.time,
-                                                                    open=bar.open,
-                                                                    high=bar.high,
-                                                                    low=bar.low,
-                                                                    close=bar.close))
+        #             self.writeDrLog(text.BAR_LOGGING_MESSAGE.format(symbol=bar.vtSymbol,
+        #                                                             time=bar.time,
+        #                                                             open=bar.open,
+        #                                                             high=bar.high,
+        #                                                             low=bar.low,
+        #                                                             close=bar.close))
 
-                bar.vtSymbol = drTick.vtSymbol
-                bar.symbol = drTick.symbol
-                bar.exchange = drTick.exchange
+        #         bar.vtSymbol = drTick.vtSymbol
+        #         bar.symbol = drTick.symbol
+        #         bar.exchange = drTick.exchange
 
-                bar.open = drTick.lastPrice
-                bar.high = drTick.lastPrice
-                bar.low = drTick.lastPrice
-                bar.close = drTick.lastPrice
+        #         bar.open = drTick.lastPrice
+        #         bar.high = drTick.lastPrice
+        #         bar.low = drTick.lastPrice
+        #         bar.close = drTick.lastPrice
 
-                bar.date = drTick.date
-                bar.time = drTick.time
-                bar.datetime = drTick.datetime
-                bar.volume = drTick.volume
-                bar.openInterest = drTick.openInterest
-            # 否则继续累加新的K线
-            else:
-                bar.high = max(bar.high, drTick.lastPrice)
-                bar.low = min(bar.low, drTick.lastPrice)
-                bar.close = drTick.lastPrice
+        #         bar.date = drTick.date
+        #         bar.time = drTick.time
+        #         bar.datetime = drTick.datetime
+        #         bar.volume = drTick.volume
+        #         bar.openInterest = drTick.openInterest
+        #     # 否则继续累加新的K线
+        #     else:
+        #         bar.high = max(bar.high, drTick.lastPrice)
+        #         bar.low = min(bar.low, drTick.lastPrice)
+        #         bar.close = drTick.lastPrice
 
     ############################################################################
     ## william
@@ -395,7 +394,7 @@ class DrEngine(object):
         # self.tradeInfo.tradeStatus = u'全部成交'
         self.tradeInfo.tradeStatus = self.mainEngine.dataEngine.orderDict[self.mainEngine.drEngine.tradeInfo.__dict__['vtOrderID']].status
         print "\n#######################################################################"
-        print u"当前成交订单的详细信息:"
+        print "当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
         print "-----------------------------------------------------------------------"
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
@@ -459,7 +458,7 @@ class DrEngine(object):
         else:
             accInfo['marginPct'] = 0
 
-        accInfo['balance'] = (accInfo['balance'] + flowCapitalToday) / initCapital
+        accInfo['balance'] = accInfo['allMoney'] / initCapital
         accInfo['preBalance'] = (accInfo['preBalance'] + flowCapitalPre) / initCapital
         if accInfo['preBalance'] != 0:
             accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
@@ -524,7 +523,12 @@ class DrEngine(object):
     #----------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
-        self.eventEngine.register(EVENT_TICK, self.processTickEvent)
+        ## =====================================================================
+        ## william
+        ## 这里不需要处理 processTickEvent
+        ## 所以我在这里注释掉。
+        # self.eventEngine.register(EVENT_TICK, self.processTickEvent)
+        ## =====================================================================
 
         ########################################################################
         ## william
@@ -574,15 +578,6 @@ class DrEngine(object):
         ########################################################################
         while self.active:
             ## 如果需要保存到 csv 文件
-            '''
-            if saveTickData:
-                try:
-                    dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                    ## print d
-                    self.mainEngine.dbWriteCSV(d)
-                except Empty:
-                    pass
-            '''
             try:
                 dbName, collectionName, d = self.queue.get(block=True, timeout=1)
                 ## print d
@@ -630,7 +625,7 @@ class DrEngine(object):
         t  = datetime.now()
         h  = t.hour
         m  = t.minute
-        if h == 2 and m > 35:
+        if (h == 2 and m > 35) or (h == 15 and m > 17):
             re = True
             print h,m,re
         return re
