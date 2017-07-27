@@ -1,0 +1,6 @@
+# m h dow mon dom
+## =============================================================================
+MAILTO=fl@hicloud-investment.com
+## =============================================================================
+
+55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
