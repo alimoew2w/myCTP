@@ -54,11 +54,11 @@ class MainEngine(object):
         # 记录今日日期
         self.todayDate = datetime.now().strftime('%Y%m%d')
         self.tradingDay = vtFunction.tradingDay()
-        
+
         # 创建事件引擎
         self.eventEngine = EventEngine2()
         self.eventEngine.start()
-        
+
         ########################################################################
         ## william
         ## dataEngine 继承 DataEngine
@@ -66,19 +66,19 @@ class MainEngine(object):
         ########################################################################
         # 创建数据引擎
         self.dataEngine = DataEngine(self.eventEngine)
-        
+
         # 调用一个个初始化函数
         self.initGateway()
 
         # 扩展模块
         self.drEngine = DrEngine(self, self.eventEngine)
-        
+
     #----------------------------------------------------------------------
     def initGateway(self):
         """初始化接口对象"""
         # 用来保存接口对象的字典
         self.gatewayDict = OrderedDict()
-        
+
         # 遍历接口字典并自动创建所有的接口对象
         for gatewayModule in GATEWAY_DICT.values():
             try:
@@ -88,11 +88,12 @@ class MainEngine(object):
             except Exception, e:
                 print e
 
+
     #----------------------------------------------------------------------
     def addGateway(self, gateway, gatewayName=None):
         """创建接口"""
         self.gatewayDict[gatewayName] = gateway(self.eventEngine, gatewayName)
-        
+
     ############################################################################
     ## william
     ## 启动登录 CTP 账户
@@ -128,25 +129,25 @@ class MainEngine(object):
             gateway = self.gatewayDict[gatewayName]
             gateway.subscribe(subscribeReq)
         else:
-            print text.GATEWAY_NOT_EXIST.format(gateway=gatewayName)     
+            print text.GATEWAY_NOT_EXIST.format(gateway=gatewayName)
     #----------------------------------------------------------------------
 
     #----------------------------------------------------------------------
     def exit(self):
-        """退出程序前调用，保证正常退出"""        
+        """退出程序前调用，保证正常退出"""
         # 安全关闭所有接口
-        for gateway in self.gatewayDict.values():        
+        for gateway in self.gatewayDict.values():
             gateway.close()
-        
+
         # 停止事件引擎
-        self.eventEngine.stop()      
-        
+        self.eventEngine.stop()
+
         # 停止数据记录引擎
         self.drEngine.stop()
-        
+
         # 保存数据引擎里的合约数据到硬盘
         self.dataEngine.saveContracts()
-    
+
     #----------------------------------------------------------------------
     def writeLog(self, content):
         """快速发出日志事件"""
@@ -154,13 +155,13 @@ class MainEngine(object):
         log.logContent = content
         event = Event(type_=EVENT_LOG)
         event.dict_['data'] = log
-        self.eventEngine.put(event)        
+        self.eventEngine.put(event)
 
     #---------------------------------------------------------------------------
     def getContract(self, vtSymbol):
         """查询合约"""
         return self.dataEngine.getContract(vtSymbol)
-    
+
     #---------------------------------------------------------------------------
     def getAllContracts(self):
         """查询所有合约（返回列表）"""
@@ -170,9 +171,9 @@ class MainEngine(object):
     def getAllGatewayNames(self):
         """查询引擎中所有可用接口的名称"""
         return self.gatewayDict.keys()
-    
+
     def saveContractInfo(self):
-        print "\n#######################################################################"
+        # print "\n#######################################################################"
         # mainEngine.dataEngine.contractDict.keys()
         # path = os.path.abspath(os.path.dirname(__file__))
         # main_path = os.path.normpath(os.path.join(path,".."))
@@ -186,11 +187,10 @@ class MainEngine(object):
         ## william
         ## 保存合约信息
         f2 = shelve.open(os.path.normpath(os.path.join(main_path,'..','..','vn.data','ContractInfo',(self.tradingDay + '_' + contractFileName) )))
-        # f2['data'] = self.dataEngine.contractDict
-        f2['data'] = 'hello, world'
+        f2['data'] = self.dataEngine.contractDict
         f2.close()
 
-        print "#######################################################################\n"
+        # print "#######################################################################\n"
     ############################################################################
     ## william
     ## DataEngine 类
@@ -211,10 +211,10 @@ class DataEngine(object):
     def __init__(self, eventEngine):
         """Constructor"""
         self.eventEngine = eventEngine
-        
+
         # 保存合约详细信息的字典
         self.contractDict = {}
-    
+
         ########################################################################
         ## william
         ## 通过 loadContracts() 来载入所有合约
@@ -222,10 +222,10 @@ class DataEngine(object):
         ########################################################################
         # 读取保存在硬盘的合约数据
         self.loadContracts()
-        
+
         # 注册事件监听
         self.registerEvent()
-        
+
     ############################################################################
     ## william
     ## 更新 Tick Data 的数据
@@ -237,7 +237,7 @@ class DataEngine(object):
         self.contractDict[contract.vtSymbol] = contract
         self.contractDict[contract.symbol] = contract       # 使用常规代码（不包括交易所）可能导致重复
         # print contract.__dict__
-        
+
     #----------------------------------------------------------------------
     def getContract(self, vtSymbol):
         """查询合约对象"""
@@ -245,12 +245,12 @@ class DataEngine(object):
             return self.contractDict[vtSymbol]
         except KeyError:
             return None
-        
+
     #----------------------------------------------------------------------
     def getAllContracts(self):
         """查询所有合约对象（返回列表）"""
         return self.contractDict.values()
-    
+
     ############################################################################
     ## william
     ## 保存合约品种
@@ -261,7 +261,7 @@ class DataEngine(object):
         f = shelve.open(self.contractFileName)
         f['data'] = self.contractDict
         f.close()
-    
+
     ############################################################################
     ## william
     ## 通过 loadContracts() 来载入所有合约
@@ -276,7 +276,7 @@ class DataEngine(object):
             for key, value in d.items():
                 self.contractDict[key] = value
         f.close()
-        
+
 
     #------------------------------------------=====----------------------------
     def registerEvent(self):
