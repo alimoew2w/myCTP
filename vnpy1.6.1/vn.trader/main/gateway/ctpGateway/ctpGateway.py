@@ -246,7 +246,7 @@ class CtpGateway(VtGateway):
         ## 发单信息:
         '''
         print "#######################################################################"
-        print u"ctaGateway.sendOrder():==>", orderReq
+        print "ctaGateway.sendOrder():==>", orderReq
         print "#######################################################################"
         '''
         ########################################################################
@@ -966,7 +966,7 @@ class CtpTdApi(TdApi):
                            data['Commission'])
         '''
         print "#######################################################################"
-        print u"资金账户查询回报"
+        print "资金账户查询回报"
         print account.vtAccountID, account.positionProfit
         print "#######################################################################"
         '''
@@ -1032,7 +1032,7 @@ class CtpTdApi(TdApi):
             contract.optionType = OPTION_PUT
 
         # print "\n#######################################################################"
-        # print u'contract.__dict__'
+        # print 'contract.__dict__'
         # print contract.__dict__
         # print "#######################################################################\n"
 
@@ -1670,16 +1670,16 @@ class CtpTdApi(TdApi):
         temp = ['InstrumentID','LimitPrice','VolumeTotalOriginal','OrderPriceType','Direction','OrderRef','InvestorID','UserID','BrokerID']
         temp = {k: req[k] for k in req.keys()}
         '''
-        print "\n#######################################################################"
-        print u"打印下单的详细信息"
+        print '\n' + '#'*80 
+        print "打印下单的详细信息"
         ## print temp
         ## print req
         # print pd.DataFrame([req.values()], columns = req.keys())
         # print orderReq.__dict__
-        print "-----------------------------------------------------------------------"
+        print '-'*80 
         tempFields = ['symbol','exchange','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
         print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
-        print "#######################################################################"
+        print '#'*80 
         ########################################################################
         self.reqOrderInsert(req, self.reqID)
 
@@ -1708,7 +1708,7 @@ class CtpTdApi(TdApi):
         ## 打印撤单的纤详细信息
         '''
         print "#######################################################################"
-        print u"撤单的详细信息:"
+        print "撤单的详细信息:"
         ## print req
         print pd.DataFrame([req.values()], columns = req.keys())
         print "#######################################################################"
