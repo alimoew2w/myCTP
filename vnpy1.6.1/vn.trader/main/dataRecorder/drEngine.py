@@ -393,13 +393,13 @@ class DrEngine(object):
 
         # self.tradeInfo.tradeStatus = u'全部成交'
         self.tradeInfo.tradeStatus = self.mainEngine.dataEngine.orderDict[self.mainEngine.drEngine.tradeInfo.__dict__['vtOrderID']].status
-        print "\n#######################################################################"
+        print '\n' + '#'*80 
         print "当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
-        print "-----------------------------------------------------------------------"
+        print '-'*80 
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
         print tempRes[['symbol','exchange','price','direction','offset','volume','tradeStatus','tradeTime','orderID']]
-        print "#######################################################################"
+        print '#'*80 
 
     def getTradeInfo(self):
         """获取成交订单信息"""
@@ -557,6 +557,7 @@ class DrEngine(object):
     #----------------------------------------------------------------------
     def run(self):
         """运行插入线程"""
+        pass
         ########################################################################
         ## william
         ## 获取 CTP 行情 mdApi 推送的 Tick Data
@@ -576,18 +577,18 @@ class DrEngine(object):
         ## 这里,当持仓的合约被鼠标激活后,
         ## 把合约的信息打印到终端
         ########################################################################
-        while self.active:
-            ## 如果需要保存到 csv 文件
-            try:
-                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                ## print d
-                ############################################################
-                ## william
-                ## 是不是要保存数据到 csv 文件
-                ## self.mainEngine.dbWriteCSV(d)
-                ############################################################
-            except Empty:
-                pass
+        # while self.active:
+        #     ## 如果需要保存到 csv 文件
+        #     try:
+        #         dbName, collectionName, d = self.queue.get(block=True, timeout=1)
+        #         ## print d
+        #         ############################################################
+        #         ## william
+        #         ## 是不是要保存数据到 csv 文件
+        #         ## self.mainEngine.dbWriteCSV(d)
+        #         ############################################################
+        #     except Empty:
+        #         pass
 
     #---------------------------------------------------------------------------
     def start(self):
