@@ -3,9 +3,26 @@
 '''
 本文件包含了CTA引擎中的策略开发用模板，开发策略时需要继承CtaTemplate类。
 '''
+from __future__ import division
+import os
+import sys
 
 from ctaBase import *
 from vtConstant import *
+
+## 发送邮件通知
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
+import codecs
+from tabulate import tabulate
+
+import numpy as np
+import pandas as pd
+from pandas.io import sql
+from datetime import *
+import time
+from eventType import *
 
 
 ########################################################################
@@ -28,11 +45,19 @@ class CtaTemplate(object):
     productClass = EMPTY_STRING    # 产品类型（只有IB接口需要）
     currency = EMPTY_STRING        # 货币（只有IB接口需要）
     
-    # 策略的基本变量，由引擎管理
-    inited = False                 # 是否进行了初始化
-    trading = False                # 是否启动交易，由引擎管理
-    pos = 0                        # 持仓情况
-    
+    ## -------------------------------------------------------------------------
+    ## 各种控制条件
+    ## 策略的基本变量，由引擎管理
+    inited         = False                    # 是否进行了初始化
+    trading        = False                    # 是否启动交易，由引擎管理
+    tradingOpen    = False                    # 开盘启动交易
+    tradingClose   = False                    # 收盘开启交易
+    pos            = 0                        # 持仓情况
+    sendMailStatus = False                    # 是否已经发送邮件
+    tradingClosePositionAll    = False        # 是否强制平仓所有合约
+    tradingClosePositionSymbol = False        # 是否强制平仓单个合约
+    ## -------------------------------------------------------------------------
+
     # 参数列表，保存了参数的名称
     paramList = ['name',
                  'className',
@@ -43,6 +68,16 @@ class CtaTemplate(object):
     varList = ['inited',
                'trading',
                'pos']
+
+    ## -------------------------------------------------------------------------
+    ## 从 TickData 提取的字段
+    ## -------------------------------------------------------------------------
+    tickFileds = ['symbol', 'vtSymbol', 'lastPrice', 'bidPrice1', 'askPrice1',
+                  'bidVolume1', 'askVolume1', 'upperLimit', 'lowerLimit']
+    lastTickData = {}                  # 保留最新的价格数据
+    tickTimer    = {}                  # 计时器, 用于记录单个合约发单的间隔时间
+    vtSymbolList = []                  # 策略的所有合约存放在这里
+    ## -------------------------------------------------------------------------
 
     #----------------------------------------------------------------------
     def __init__(self, ctaEngine, setting):
@@ -192,19 +227,151 @@ class CtaTemplate(object):
         content = self.name + ':' + content
         self.ctaEngine.writeCtaLog(content)
         
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def putEvent(self):
         """发出策略状态变化事件"""
         self.ctaEngine.putStrategyEvent(self.name)
         
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def getEngineType(self):
         """查询当前运行的环境"""
         return self.ctaEngine.engineType
     
+    ############################################################################
+    ## 收盘发送交易播报的邮件通知
+    ############################################################################
+    def sendMail(self, event):
+        """发送邮件通知给：汉云交易员"""
+        if datetime.now().strftime('%H:%M:%S') == '15:05:00' and self.trading:
+            self.sendMailStatus = True
+        ## -----------  ----------------------------------------------------------
+        if self.sendMailStatus and self.trading:
+            self.sendMailStatus = False
+            ## -----------------------------------------------------------------
+            ## -----------------------------------------------------------------
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital,
+                                                                flowCapitalPre = self.ctaEngine.mainEngine.flowCapitalPre,
+                                                                flowCapitalToday = self.ctaEngine.mainEngine.flowCapitalToday)
+            ## -----------------------------------------------------------------
+            ## -----------------------------------------------------------------------------
+            sender = self.strategyID + '@hicloud.com'
+            ## 公司内部人员
+            receiversMain = self.ctaEngine.mainEngine.mailReceiverMain
+            ## 其他人员
+            receiversOthers = self.ctaEngine.mainEngine.mailReceiverOthers
+            ## 抄送
+            # ccReceivers = self.ctaEngine.mainEngine.mailCC
+
+            # 三个参数：第一个为文本内容，第二个 plain 设置文本格式，第三个 utf-8 设置编码
+            ## 内容，例如
+            # message = MIMEText('Python 邮件发送测试...', 'plain', 'utf-8')
+            ## -----------------------------------------------------------------------------
+            tempFile = os.path.join('/tmp',('tradingRecord_' + self.strategyID + '.txt'))
+            with codecs.open(tempFile, "w", "utf-8") as f:
+                # f.write('{0}'.format(40*'='))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 策略信息'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n[TradingDay]: ' + self.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
+                f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                f.write('{0}'.format('\n[StrategyID]: ' + self.strategyID))
+                f.write('{0}'.format('\n[TraderName]: ' + self.author))
+                f.write('{0}'.format('\n' + 100*'-' + '\n'))
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 基金净值'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
+                                    headers = ['Index','Value'], tablefmt = 'rst'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format(u'\n## 基金持仓'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                f.write('{0}'.format(self.ctaEngine.mainEngine.drEngine.accountPosition))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n## 当日已交易'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                if len(self.tradingInfo) != 0:
+                    tempTradingInfo = self.tradingInfo
+                    tempTradingInfo.index += 1
+                    f.write('{0}'.format(tempTradingInfo))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                ## -------------------------------------------------------------------------
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n## 当日未交易'))
+                f.write('{0}'.format('\n' + 20 * '#'))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+                if len(self.failedOrders) != 0:
+                    f.write('{0}'.format(pd.DataFrame(self.failedOrders).transpose()))
+                f.write('{0}'.format('\n' + 100*'-') + '\n')
+
+            ## -----------------------------------------------------------------------------
+            # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+            fp = open(tempFile, "r")
+            message = MIMEText(fp.read().decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+            fp.close()
+
+            ## 显示:发件人
+            message['From'] = Header(sender, 'utf-8')
+            ## 显示:收件人
+            message['To']   =  Header('汉云交易员', 'utf-8')
+
+            ## 主题
+            subject = self.ctaEngine.tradingDay + u'：云扬1号『' + self.ctaEngine.mainEngine.dataBase + '』交易播报'
+            message['Subject'] = Header(subject, 'utf-8')
+
+            try:
+                smtpObj = smtplib.SMTP('localhost')
+                smtpObj.sendmail(sender, receiversMain, message.as_string())
+                print '\n' + '#'*80
+                print "邮件发送成功"
+                print '#'*80
+            except smtplib.SMTPException:
+                print '\n' + '#'*80
+                print "Error: 无法发送邮件"
+                print '#'*80
+            ## 间隔 1 秒
+            time.sleep(1)
+
+            ## -----------------------------------------------------------------------------
+            # message = MIMEText(stratYY.strategyID, 'plain', 'utf-8')
+            fp      = open(tempFile, "r")
+            lines   = fp.readlines()
+            l       = lines[0:([i for i in range(len(lines)) if '当日已交易' in lines[i]][0] - 1)]
+            message = MIMEText(''.join(l).decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+            fp.close()
+
+            ## 显示:发件人
+            message['From'] = Header(sender, 'utf-8')
+            ## 显示:收件人
+            message['To']   =  Header('汉云管理员', 'utf-8')
+
+            ## 主题
+            subject = self.ctaEngine.tradingDay + u'：云扬1号『' + self.ctaEngine.mainEngine.dataBase + '』交易播报'
+            message['Subject'] = Header(subject, 'utf-8')
+
+            try:
+                smtpObj = smtplib.SMTP('localhost')
+                smtpObj.sendmail(sender, receiversOthers, message.as_string())
+                print '\n' + '#'*80
+                print "邮件发送成功"
+                print '#'*80
+            except smtplib.SMTPException:
+                print '#'*80
+                print "Error: 无法发送邮件"
+                print '\n' + '#'*80
+            ## 间隔 1 秒
+            time.sleep(1)
 
 
-########################################################################
+################################################################################
 class TargetPosTemplate(CtaTemplate):
     """
     允许直接通过修改目标持仓来实现交易的策略模板
