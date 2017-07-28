@@ -617,14 +617,14 @@ class DrEngine(object):
     ## 增加程序退出的设定
     ## exitfun()
     def exitFun(self,event):
-        if self.exittime():
+        if self.exitTime():
             print '#'*80
             print "亲, 赌场已经收摊打烊啦......!!!"
             print '#'*80
             self.stop()
             os._exit(0)
     #---------------------------------------------------------------------------
-    def exittime(self):
+    def exitTime(self):
         """退出标志"""
         re = False
         t  = datetime.now()
