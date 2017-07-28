@@ -92,6 +92,9 @@ class CtaEngine(object):
         # 由于可能多个strategy交易同一个vtSymbol，因此key为vtSymbol
         # value为包含所有相关strategy对象的list
         self.tickStrategyDict = {}
+        self.lastTick = {}
+        self.lastTickFileds = ['symbol', 'vtSymbol', 'lastPrice', 'bidPrice1', 'askPrice1',
+                               'bidVolume1', 'askVolume1','upperLimit','lowerLimit']
 
         # 保存vtOrderID和strategy对象映射的字典（用于推送order和trade数据）
         # key为vtOrderID，value为strategy对象
@@ -124,6 +127,7 @@ class CtaEngine(object):
         self.positionContracts_FL_SimNow = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from positionInfo;""")
         self.positionContracts_YY_SimNow = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from positionInfo;""")
         self.positionContracts_HiCloud = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from positionInfo;""")
+        self.positionContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from positionInfo;""")
 
         ## 信号的合约
         self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
@@ -133,6 +137,7 @@ class CtaEngine(object):
         self.failedContracts_Fl_SimNow = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from failedInfo;""")
         self.failedContracts_YY_SimNow = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from failedInfo;""")
         self.failedContracts_HiCloud = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from failedInfo;""")
+        self.failedContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from failedInfo;""")
 
         ## -----------------------------------------------------------------------------------------
         ## william
@@ -141,10 +146,12 @@ class CtaEngine(object):
         self.subscribeContracts = list(set(self.positionContracts_FL_SimNow.InstrumentID.values) |
                                        set(self.positionContracts_YY_SimNow.InstrumentID.values) |
                                        set(self.positionContracts_HiCloud.InstrumentID.values) |
+                                       set(self.positionContracts_LXO_SimNow.InstrumentID.values) |
                                        set(self.signalContracts.InstrumentID.values) |
                                        set(self.signalContracts2.InstrumentID.values) |
                                        set(self.failedContracts_Fl_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_YY_SimNow.InstrumentID.values) |
+                                       set(self.failedContracts_LXO_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_HiCloud.InstrumentID.values) )
         self.tickInfo = {}
         for i in self.subscribeContracts:
@@ -267,7 +274,7 @@ class CtaEngine(object):
         self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
 
         print "\n#######################################################################"
-        print u'策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
+        print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
         print "#######################################################################\n"
         self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
                          %(strategy.name, vtSymbol, req.direction, volume, price))
@@ -301,16 +308,16 @@ class CtaEngine(object):
                 self.mainEngine.cancelOrder(req, order.gatewayName)
             else:
                 if order.status == STATUS_ALLTRADED:
-                    print u'委托单({0}已执行，无法撤销'.format(vtOrderID)
+                    print '委托单({0}已执行，无法撤销'.format(vtOrderID)
                     self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
                 if order.status == STATUS_CANCELLED:
-                    print u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
+                    print '委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
                     self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
         ## =====================================================================
         # 查询不成功
         ## =====================================================================
         else:
-            print u'委托单({0}不存在'.format(vtOrderID)
+            print '委托单({0}不存在'.format(vtOrderID)
             self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
 
     #----------------------------------------------------------------------
@@ -385,12 +392,17 @@ class CtaEngine(object):
         """处理行情推送"""
         tick = event.dict_['data']
 
+        # 使用 mainEngine.ctaEngine.lastTick 来获取 tick
+        # ======================================================================
+        self.lastTick[tick.symbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
+        # ======================================================================
+
         # 收到tick行情后，先处理本地停止单（检查是否要立即发出）
         self.processStopOrder(tick)
         ####################################################################
         ## william
         # print "\n#######################################################################"
-        # print u"tick = event.dict_['data'] :==> ", tick.symbol
+        # print "tick = event.dict_['data'] :==> ", tick.symbol
         # print tick.__dict__
         # print "#######################################################################\n"
         # 推送tick到对应的策略实例进行处理
@@ -413,7 +425,6 @@ class CtaEngine(object):
             ####################################################################
             ## william
             # 逐个推送到策略实例中
-            # 使用 mainEngine.ctaEngine.tickStrategyDict 来获取 tick
             l = self.tickStrategyDict[tick.vtSymbol]
             for strategy in l:
                 self.callStrategyFunc(strategy, strategy.onTick, ctaTick)
@@ -536,10 +547,10 @@ class CtaEngine(object):
                           'Volume','Turnover',
                           # 'OpenOpenInterest','HighOpenInterest','LowOpenInterest','CloseOpenInterest',
                           'UpperLimitPrice','LowerLimitPrice','SettlementPrice']
-            print u"MySQL 查询成功!!!"
+            print "MySQL 查询成功!!!"
             return mysqlData[tempFields]
         except:
-            print u"MySQL 查询失败!!!"
+            print "MySQL 查询失败!!!"
 
     ############################################################################
     ## william
@@ -561,10 +572,10 @@ class CtaEngine(object):
                           'OpenPrice','HighPrice','LowPrice','ClosePrice',
                           'Volume','Turnover',
                           'UpperLimitPrice','LowerLimitPrice']
-            print u"MySQL 查询成功!!!"
+            print "MySQL 查询成功!!!"
             return mysqlData[tempFields]
         except:
-            print u"MySQL 查询失败!!!"
+            print "MySQL 查询失败!!!"
 
     #----------------------------------------------------------------------
     def writeCtaLog(self, content):
@@ -589,7 +600,7 @@ class CtaEngine(object):
             className = setting['className']
         except Exception, e:
             print "\n#######################################################################"
-            print u'载入策略出错：%s' %e
+            print '载入策略出错：%s' %e
             print "#######################################################################\n"
             self.writeCtaLog(u'载入策略出错：%s' %e)
             return
@@ -606,7 +617,7 @@ class CtaEngine(object):
         # 防止策略重名
         if name in self.strategyDict:
             print "\n#######################################################################"
-            print u'策略实例重名：%s' %name
+            print '策略实例重名：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例重名：%s' %name)
         else:
@@ -679,7 +690,7 @@ class CtaEngine(object):
                     ############################################################
                     ## william
                     print "\n#######################################################################"
-                    print u'%s的交易合约%s无法找到' %(name, vtSymbol)
+                    print '%s的交易合约%s无法找到' %(name, vtSymbol)
                     print "#######################################################################\n"
                     self.writeCtaLog(u'%s的交易合约%s无法找到' %(name, vtSymbol))
 
@@ -692,17 +703,17 @@ class CtaEngine(object):
             if not strategy.inited:
                 strategy.inited = True
                 print "\n#######################################################################"
-                print u'初始化成功：%s' %name
+                print '初始化成功：%s' %name
                 print "#######################################################################\n"
                 self.callStrategyFunc(strategy, strategy.onInit)
             else:
                 print "\n#######################################################################"
-                print u'请勿重复初始化策略实例：%s' %name
+                print '请勿重复初始化策略实例：%s' %name
                 print "#######################################################################\n"
                 self.writeCtaLog(u'请勿重复初始化策略实例：%s' %name)
         else:
             print "\n#######################################################################"
-            print u'策略实例不存在：%s' %name
+            print '策略实例不存在：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例不存在：%s' %name)
 
@@ -726,7 +737,7 @@ class CtaEngine(object):
                 self.callStrategyFunc(strategy, strategy.onStart)
         else:
             print "\n#######################################################################"
-            print u'策略实例不存在：%s' %name
+            print '策略实例不存在：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例不存在：%s' %name)
 
@@ -761,7 +772,7 @@ class CtaEngine(object):
                         self.cancelStopOrder(stopOrderID)
         else:
             print "\n#######################################################################"
-            print u'策略实例不存在：%s' %name
+            print '策略实例不存在：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例不存在：%s' %name)
 
@@ -796,7 +807,7 @@ class CtaEngine(object):
         self.loadPosition()
 
         print "\n#######################################################################"
-        print u"CTA_setting.json 加载成功!!!"
+        print "CTA_setting.json 加载成功!!!"
         print "#######################################################################\n"
 
     #----------------------------------------------------------------------
@@ -812,7 +823,7 @@ class CtaEngine(object):
             return varDict
         else:
             print "\n#######################################################################"
-            print u'策略实例不存在：%s' %name
+            print '策略实例不存在：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例不存在：' + name)
             return None
@@ -830,7 +841,7 @@ class CtaEngine(object):
             return paramDict
         else:
             print "\n#######################################################################"
-            print u'策略实例不存在：%s' %name
+            print '策略实例不存在：%s' %name
             print "#######################################################################\n"
             self.writeCtaLog(u'策略实例不存在：' + name)
             return None
