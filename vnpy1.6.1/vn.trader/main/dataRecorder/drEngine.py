@@ -81,7 +81,7 @@ class DrEngine(object):
         ## william
         ## DrEngine 关闭,则不再保存数据到 CSV 文件
         ########################################################################
-        self.loadSetting()
+        # self.loadSetting()
 
     #----------------------------------------------------------------------
     def loadSetting(self):
@@ -398,7 +398,8 @@ class DrEngine(object):
         temp = self.tradeInfo.__dict__
         print '-'*80 
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
-        print tempRes[['symbol','exchange','price','direction','offset','volume','tradeStatus','tradeTime','orderID']]
+        print tempRes[['symbol','price','direction','offset',
+                       'volume','tradeStatus','tradeTime','orderID']]
         print '#'*80 
 
     def getTradeInfo(self):
@@ -547,7 +548,7 @@ class DrEngine(object):
         ## Ref: /vn.trader/dataRecorder/drEngine.py/ def exitfun()
         ########################################################################
         """ 退出 DataRecorder 的程序"""
-        self.eventEngine.register(EVENT_TIMER,self.exitfun)
+        self.eventEngine.register(EVENT_TIMER,self.exitFun)
 
     #----------------------------------------------------------------------
     def insertData(self, dbName, collectionName, data):
@@ -615,9 +616,12 @@ class DrEngine(object):
     ## william
     ## 增加程序退出的设定
     ## exitfun()
-    def exitfun(self,event):
+    def exitFun(self,event):
         if self.exittime():
-            print 'exit0'
+            print '#'*80
+            print "亲, 赌场已经收摊打烊啦......!!!"
+            print '#'*80
+            self.stop()
             os._exit(0)
     #---------------------------------------------------------------------------
     def exittime(self):
@@ -626,8 +630,8 @@ class DrEngine(object):
         t  = datetime.now()
         h  = t.hour
         m  = t.minute
-        if (h == 2 and m > 35) or (h == 15 and m > 17):
-            re = True
-            print h,m,re
+        # if (h == 2 and m > 35) or (h == 15 and m > 17):
+        #     re = True
+        #     print h,m,re
         return re
     ############################################################################
