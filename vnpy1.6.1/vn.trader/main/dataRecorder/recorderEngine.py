@@ -20,7 +20,7 @@ from Queue import Queue
 from threading import Thread
 
 from eventEngine import *
-from vtGateway import * 
+from vtGateway import *
 from drBase import *
 from vtFunction import todayDate
 from language import text
@@ -28,6 +28,7 @@ from language import text
 import pandas as pd
 import csv
 import shelve
+import json
 ################################################################################
 
 
@@ -40,23 +41,24 @@ class DrEngine(object):
         self.mainEngine = mainEngine
         self.eventEngine = eventEngine
 
+        self.FILE_PATH = os.path.abspath(os.path.dirname(__file__))
         ########################################################################
         ## william
-        ## 
-        self.accountInfo = VtAccountData()
+        ##
+        # self.accountInfo = VtAccountData()
         ## 多个合约的持仓信息
         ## 返回一个字典,避免重复
         ## key 是 vtGateway/VtPositionData/ 下面的 symbolPosition
         ## symbolPosition 格式:i1709-long(short), 代表合约多空
-        self.positionInfo = {}
+        # self.positionInfo = {}
 
-        self.tradeInfo = VtTradeData()
+        # self.tradeInfo = VtTradeData()
         ########################################################################
-   
+
         # 当前日期
         self.today = self.mainEngine.todayDate
         self.tradingDay = self.mainEngine.tradingDay
-        
+
         ########################################################################
         ## william
         ## 是否激活 self.active
@@ -70,7 +72,28 @@ class DrEngine(object):
         ## DrEngine 关闭,则不再保存数据到 CSV 文件
         ########################################################################
         self.loadSetting()
-        
+
+        self.myFields   = ['timeStamp','date','time','symbol','exchange',\
+                          'lastPrice','preSettlementPrice','preClosePrice',\
+                          'openPrice','highestPrice','lowestPrice','closePrice',\
+                          'upperLimit','lowerLimit','settlementPrice','volume','turnover',\
+                          'preOpenInterest','openInterest','preDelta','currDelta',\
+                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
+                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
+                          'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',\
+                          'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',\
+                          'averagePrice']
+        self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',\
+                          'upperLimit','lowerLimit','openInterest','preDelta','currDelta',\
+                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
+                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
+                          'settlementPrice','averagePrice']
+        ########################################################################
+        self.SETTING_FILE = os.path.normpath(os.path.join(self.FILE_PATH,'../setting','VT_setting.json'))
+        self.MAIN_SETTING = json.load(file(self.SETTING_FILE))
+        self.DATA_PATH = os.path.normpath(os.path.join(self.MAIN_SETTING['DATA_PATH'],'TickData'))
+        self.dataFile = os.path.join(self.DATA_PATH,(str(self.mainEngine.todayDate) + '.csv'))
+
     #----------------------------------------------------------------------
     def loadSetting(self):
         # """载入设置"""
@@ -88,12 +111,13 @@ class DrEngine(object):
             if contract.symbol:
                 self.mainEngine.subscribe(req, contract.gatewayName)
             else:
+                # pass
                 print contract.symbol,'合约没有找到'
         ## ---------------------------------------------------------------------
         # 启动数据插入线程
         self.start()
         # 注册事件监听
-        self.registerEvent()    
+        self.registerEvent()
 
     ############################################################################
     ## william
@@ -112,7 +136,7 @@ class DrEngine(object):
         """处理行情推送"""
 
         tick = event.dict_['data']
-        vtSymbol = tick.vtSymbol
+        # vtSymbol = tick.vtSymbol
         ########################################################################
         ## william
         ## Tick Data
@@ -127,54 +151,38 @@ class DrEngine(object):
                 d[key] = tick.__getattribute__(key)
         drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
 
-        tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',\
-                      'upperLimit','lowerLimit','openInterest','preDelta','currDelta',\
-                      'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
-                      'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
-                      'settlementPrice','averagePrice']   
-        for i in tempFields:
-            if d[i] > 1.79e+99:
+        for i in self.tempFields:
+            if d[i] > 1.79e+200:
                 d[i] = 0
 
-        print "\n#######################################################################"
-        # print u"在这里获取 Tick Data !!!==>  ",drTick.__dict__['symbol']
-        # print drTick.__dict__
-        print '在这里获取 Tick Data !!!==>', d['symbol']
-        print d
+        # print "\n"+'#'*80
+        # # print u"在这里获取 Tick Data !!!==>  ",drTick.__dict__['symbol']
+        # # print drTick.__dict__
+        # print '在这里获取 Tick Data !!!==>', d['symbol']
+        # print d
         ########################################################################
         ## william
         ## 保存到 csv
         ## Ref: /vn.trader/vtEngine/def dbWriteCSV(self,d)
-        self.dbWriteCSV(d)
-        print "#######################################################################\n"
+        # ----------------------------------------------------------------------
+        # self.dbWriteCSV(d)
+        # ----------------------------------------------------------------------
+        with open(self.dataFile, 'a') as f:
+            wr = csv.writer(f)
+            wr.writerow([d[k] for k in self.myFields])
+        # print "#######################################################################\n"
 
     ## 向 csv 文件写入数据
-    ############################################################################   
+    ############################################################################
     def dbWriteCSV(self, d):
         """向 csv 文件写入数据，d是具体数据"""
         ########################################################################
         ## william
         ## d 从 /vn.trader/gateway/ctpGateway/ctpGateway.py 获取
         ########################################################################
-        myFields = ['timeStamp','date','time','symbol','exchange',\
-                    'lastPrice','preSettlementPrice','preClosePrice',\
-                    'openPrice','highestPrice','lowestPrice','closePrice',\
-                    'upperLimit','lowerLimit','settlementPrice','volume','turnover',\
-                    'preOpenInterest','openInterest','preDelta','currDelta',\
-                    'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
-                    'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
-                    'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',\
-                    'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',\
-                    'averagePrice']
-        values = [d[k] for k in myFields]
+        values = [d[k] for k in self.myFields]
 
-        #print d
-        path = os.path.abspath(os.path.dirname(__file__))
-        tick_recorder_path = os.path.normpath(os.path.join(path,"../../..",'vn.data','TickData'))
-        ########################################################################
-        dataFile = os.path.join(tick_recorder_path,(str(self.mainEngine.todayDate) + '.csv'))
-
-        with open(dataFile, 'a') as f:
+        with open(self.dataFile, 'a') as f:
             wr = csv.writer(f)
             wr.writerow(values)
     ############################################################################
@@ -192,7 +200,7 @@ class DrEngine(object):
         ########################################################################
         """ 退出 DataRecorder 的程序"""
         self.eventEngine.register(EVENT_TIMER,self.exitFun)
- 
+
     #----------------------------------------------------------------------
     def run(self):
         """运行插入线程"""
@@ -202,42 +210,44 @@ class DrEngine(object):
         """启动"""
         self.active = True
         self.thread.start()
-        
+
     #---------------------------------------------------------------------------
     def stop(self):
         """退出"""
         if self.active:
             self.active = False
             self.thread.join()
-        
+
     #---------------------------------------------------------------------------
-    def writeDrLog(self, content):
-        """快速发出日志事件"""
-        log = VtLogData()
-        log.logContent = content
-        event = Event(type_=EVENT_DATARECORDER_LOG)
-        event.dict_['data'] = log
-        self.eventEngine.put(event)   
+    # def writeDrLog(self, content):
+    #     """快速发出日志事件"""
+    #     log = VtLogData()
+    #     log.logContent = content
+    #     event = Event(type_=EVENT_DATARECORDER_LOG)
+    #     event.dict_['data'] = log
+    #     self.eventEngine.put(event)
     ############################################################################
     ## william
     ## 增加程序退出的设定
     ## exitfun()
     def exitFun(self,event):
-        if self.exittime():
-            print u"亲, 赌场已经收摊打烊啦......!!!"
+        if self.exitTime():
+            print '#'*80
+            print "亲, 赌场已经收摊打烊啦......!!!"
+            print '#'*80
             ####################################################################
             ## william
             ## 退出程序
-            self.mainEngine.exit()
+            self.stop()
             os._exit(0)
     #---------------------------------------------------------------------------
-    def exittime(self):
+    def exitTime(self):
         """退出标志"""
         re = False
         t  = datetime.now()
         h  = t.hour
         m  = t.minute
-        if h == 2 and m > 35:
+        if (h == 2 and m > 35) or (h == 15 and m > 16):
             re = True
             print h,m,re
         return re
