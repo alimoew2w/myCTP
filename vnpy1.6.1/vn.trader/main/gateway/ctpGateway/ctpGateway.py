@@ -616,7 +616,11 @@ class CtpMdApi(MdApi):
 ########################################################################
 class CtpTdApi(TdApi):
     """CTP交易API实现"""
-
+    ## =========================================================================
+    ## 打印订单的信息
+    tempOrderFields = ['symbol','price','priceType','direction',
+                       'offset','volume','tradeStatus','orderTime','orderID']
+    ## =========================================================================
     #----------------------------------------------------------------------
     def __init__(self, gateway):
         """API对象的初始化函数"""
@@ -1677,8 +1681,8 @@ class CtpTdApi(TdApi):
         # print pd.DataFrame([req.values()], columns = req.keys())
         # print orderReq.__dict__
         print '-'*80 
-        tempFields = ['symbol','exchange','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
-        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
+        # tempFields = ['symbol','exchange','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
+        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[self.tempOrderFields]
         print '#'*80 
         ########################################################################
         self.reqOrderInsert(req, self.reqID)
