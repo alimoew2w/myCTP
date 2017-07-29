@@ -45,7 +45,9 @@ TradingDay.pop(0)
 # print TradingDay
 
 if datetime.now().strftime("%Y%m%d") not in TradingDay:
-    sys.exit("Not TradingDaY!!!")
+    print '#'*80
+    sys.exit("启禀圣上，今日赌场不开张!!!")
+    # sys.exit("Not TradingDaY!!!")
 ################################################################################
 
 
@@ -115,7 +117,8 @@ mainEngine.saveContractInfo()
 import pandas as pd
 contractInfo = mainEngine.dataEngine.getAllContracts()
 
-dfHeader = ['symbol','name','exchange','gatewayName','productClass','size','priceTick','longMarginRatio','shortMarginRatio']
+dfHeader = ['symbol','name','exchange','gatewayName','productClass',
+            'size','priceTick','longMarginRatio','shortMarginRatio']
 dfData = []
 
 for contract in contractInfo:
@@ -131,7 +134,8 @@ df = pd.DataFrame(dfData, columns = dfHeader)
 reload(sys) # reload 才能调用 setdefaultencoding 方法
 sys.setdefaultencoding('utf-8')
 
-df.to_csv(os.path.join(mainEngine.DATA_PATH,'ContractInfo', ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
+df.to_csv(os.path.join(mainEngine.DATA_PATH,'ContractInfo', 
+    ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
 ################################################################################
 
 
