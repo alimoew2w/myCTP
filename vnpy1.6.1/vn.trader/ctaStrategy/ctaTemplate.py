@@ -3,6 +3,7 @@
 '''
 本文件包含了CTA引擎中的策略开发用模板，开发策略时需要继承CtaTemplate类。
 '''
+
 from __future__ import division
 import os
 import sys
@@ -24,26 +25,25 @@ from datetime import *
 import time
 from eventType import *
 
-
 ########################################################################
 class CtaTemplate(object):
     """CTA策略模板"""
     
     # 策略类的名称和作者
-    name = EMPTY_UNICODE           # 策略实例名称
-    className = 'CtaTemplate'
-    strategyID = EMPTY_STRING      ## william:暂时与 className 一样
-    author = EMPTY_UNICODE
+    name       = EMPTY_UNICODE              # 策略实例名称
+    className  = 'CtaTemplate'
+    strategyID = EMPTY_STRING               # william:暂时与 className 一样
+    author     = EMPTY_UNICODE
     
     # MongoDB数据库的名称，K线数据库默认为1分钟
     tickDbName = TICK_DB_NAME
-    barDbName = MINUTE_DB_NAME
+    barDbName  = MINUTE_DB_NAME
     ############################################################################
     ## william
     ## 多合约组合
-    vtSymbol = EMPTY_STRING     
-    productClass = EMPTY_STRING    # 产品类型（只有IB接口需要）
-    currency = EMPTY_STRING        # 货币（只有IB接口需要）
+    vtSymbol     = EMPTY_STRING     
+    productClass = EMPTY_STRING              # 产品类型（只有IB接口需要）
+    currency     = EMPTY_STRING              # 货币（只有IB接口需要）
     
     ## -------------------------------------------------------------------------
     ## 各种控制条件
@@ -79,6 +79,59 @@ class CtaTemplate(object):
     vtSymbolList = []                  # 策略的所有合约存放在这里
     ## -------------------------------------------------------------------------
 
+    ## -------------------------------------------------------------------------
+    ## 各种交易订单的合成
+    ## 交易订单存放位置
+    ## 字典格式如下
+    ## 1. vtSymbol
+    ## 2. direction: buy, sell, short, cover
+    ## 3. volume
+    ## 4. TradingDay
+    ## 5. vtOrderID
+    ## -------------------------------------------------------------------------
+    tradingOrders      = {}            # 单日的订单
+    tradingOrdersOpen  = {}            # 当日开盘的订单
+    tradingOrdersClose = {}            # 当日收盘的订单
+    ## -------------------------------------------------------------------------
+    tradingOrdersFailedInfo = {}       # 上一个交易日没有完成的订单,需要优先处理
+    ## -------------------------------------------------------------------------
+    tradedOrders           = {}        # 当日订单完成的情况
+    tradedOrdersOpen       = {}        # 当日开盘完成的已订单
+    tradedOrdersClose      = {}        # 当日收盘完成的已订单
+    tradedOrdersFailedInfo = {}        # 昨天未成交订单的已交易订单
+    ## -------------------------------------------------------------------------
+    failedOrders      = {}             # 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
+    failedOrdersOpen  = {}             # 开盘时候的未完成订单
+    failedOrdersClose = {}             # 收盘时候的未完成订单
+    ## -------------------------------------------------------------------------
+    tradingOrdersClosePositionAll    = {}     ## 一键全平仓的交易订单
+    tradingOrdersClosePositionSymbol = {}     ## 一键平仓合约的交易订单
+
+    ## -------------------------------------------------------------------------
+    ## 各种交易订单的合成
+    ## -------------------------------------------------------------------------
+    vtOrderIDList      = []                   # 保存委托代码的列表
+    vtOrderIDListOpen  = []                   # 开盘的订单
+    vtOrderIDListClose = []                   # 收盘的订单
+    ## -------------------------------------------------------------------------
+    vtOrderIDListFailedInfo          = []     # 失败的合约订单存储
+    vtOrderIDListClosePositionAll    = []     # 一键全平仓
+    vtOrderIDListClosePositionSymbol = []     # 一键全平仓
+    ## -------------------------------------------------------------------------
+    vtOrderIDListAll   = []                   # 所有订单集合
+
+    ## -------------------------------------------------------------------------
+    ## 保存交易记录: tradingInfo
+    ## 保存订单记录: orderInfo
+    ## -------------------------------------------------------------------------
+    tradingInfoFields = ['strategyID','InstrumentID','TradingDay','tradeTime',
+                         'direction','offset','volume','price']
+    orderInfoFields   = ['strategyID', 'vtOrderID', 'symbol', 'orderTime',
+                         'status', 'direction', 'cancelTime', 'tradedVolume',
+                         'frontID', 'sessionID', 'offset', 'price', 'totalVolume']
+    failedInfoFields  = ['strategyID','InstrumentID','TradingDay',
+                         'direction','offset','volume']
+
     #----------------------------------------------------------------------
     def __init__(self, ctaEngine, setting):
         """Constructor"""
@@ -108,27 +161,68 @@ class CtaTemplate(object):
         conn.close()        
         ## =====================================================================
 
-        # 设置策略的参数
+        ## 设置策略的参数
         if setting:
             d = self.__dict__
             for key in self.paramList:
                 if key in setting:
                     d[key] = setting[key]
+
     
     #----------------------------------------------------------------------
     def onInit(self):
         """初始化策略（必须由用户继承实现）"""
         raise NotImplementedError
     
-    #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    # def onStart(self):
+    #     """启动策略（必须由用户继承实现）"""
+    #     raise NotImplementedError
+    
+    # #----------------------------------------------------------------------
+    # def onStop(self):
+    #     """停止策略（必须由用户继承实现）"""
+    #     raise NotImplementedError
+
     def onStart(self):
         """启动策略（必须由用户继承实现）"""
-        raise NotImplementedError
-    
-    #----------------------------------------------------------------------
+        ## =====================================================================
+        ## 策略启动
+        ## =====================================================================
+        print '\n'+'#'*80
+        print '%s策略启动' %self.name
+        # self.writeCtaLog(u'%s策略启动' %self.name)
+        self.trading = True
+        print '#'*80
+        self.putEvent()
+        
+
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onStop(self):
         """停止策略（必须由用户继承实现）"""
-        raise NotImplementedError
+        ## =====================================================================
+        ## 策略停止
+        ## =====================================================================
+        print '\n'+'#'*80
+        print '%s策略停止' %self.name
+        self.trading = False
+        ## ---------------------------------------------------------------------
+        ## 取消所有的订单
+        self.vtOrderIDListAll = list(set(self.vtOrderIDList) | 
+                                     set(self.vtOrderIDListOpen) |
+                                     set(self.vtOrderIDListClose) |
+                                     set(self.vtOrderIDListFailedInfo) |
+                                     set(self.vtOrderIDListClosePositionAll) |
+                                     set(self.vtOrderIDListClosePositionSymbol))
+        ## ---------------------------------------------------------------------
+        if len(self.vtOrderIDListAll) != 0:
+            for vtOrderID in self.vtOrderIDListAll:
+                self.cancelOrder(vtOrderID)
+        ## ---------------------------------------------------------------------
+        print '#'*80
+        # self.writeCtaLog(u'%s策略停止' %self.name)
+        self.putEvent()
+
 
     #----------------------------------------------------------------------
     def onTick(self, tick):
@@ -227,16 +321,530 @@ class CtaTemplate(object):
         content = self.name + ':' + content
         self.ctaEngine.writeCtaLog(content)
         
-    #---------------------------------------------------------------------------
+    #----------------------------------------------------------------------
     def putEvent(self):
         """发出策略状态变化事件"""
         self.ctaEngine.putStrategyEvent(self.name)
         
-    #---------------------------------------------------------------------------
+    #----------------------------------------------------------------------
     def getEngineType(self):
         """查询当前运行的环境"""
         return self.ctaEngine.engineType
     
+
+    ############################################################################
+    ## 处理订单，并生成相应的字典格式
+    ## @param vtSymbol: 合约代码
+    ## @param orderDict: 订单的字典格式
+    ## @param orderIDList: 订单列表
+    ############################################################################
+    def prepareTradingOrder(self, vtSymbol, orderDict, orderIDList):
+        """处理订单"""
+        ## =====================================================================
+        ## 对订单进行预处理
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 1. 取消当前的活跃订单
+        ## =====================================================================
+        ## .....................................................................
+        self.vtSymbolWorkingOrders     = []     ## 未成交
+                                                
+        for vtOrderID in orderIDList:
+            ## -----------------------------------------------------------------
+            ## 未成交
+            ## -----------------------------------------------------------------
+            try:
+                tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
+                                        (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+            except:
+                tempWorkingOrder = None
+
+            if (tempWorkingOrder is not None) and len(tempWorkingOrder) != 0:
+                for i in range(len(tempWorkingOrder)):
+                    if tempWorkingOrder[i] not in self.vtSymbolWorkingOrders:
+                        self.vtSymbolWorkingOrders.append(tempWorkingOrder[i])
+            ## -----------------------------------------------------------------
+
+        ## =====================================================================
+        ## 2. 根据已经成交的订单情况, 重新处理生成新的订单
+        ## =====================================================================
+        if len(self.vtSymbolWorkingOrders) != 0:
+            ####################################################################
+            ## 如果有未成交的订单，则先取消原来的订单
+            ## 因为有可能是价格有变化，原来的报价不适合成交
+            ## -----------------------------------------------------------------
+            for vtOrderID in self.vtSymbolWorkingOrders:
+                self.cancelOrder(vtOrderID)
+                self.tickTimer[vtSymbol]    = datetime.now()
+            ####################################################################
+        elif len(self.vtSymbolWorkingOrders) == 0:
+            ####################################################################
+            ## 如果没有未成交订单，则进行下面的订单管理操作
+            ## -----------------------------------------------------------------
+            ## 生成交易列表
+            tempTradingList = [k for k in orderDict.keys() if orderDict[k]['vtSymbol'] == vtSymbol]
+            ####################################################################
+            if len(tempTradingList) != 0:
+                for i in tempTradingList:
+                    ## -------------------------------------------------------------
+                    ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
+                    ## -------------------------------------------------------------
+                    # if (self.tradingOrders[i]['volume'] != 0):
+                    if (self.ctaEngine.mainEngine.getAllOrders() is not None) and ('vtOrderID' in orderDict[i].keys()):
+                        if orderDict[i]['vtOrderID'] not in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status == '已撤销','vtOrderID'].values:
+                            self.cancelOrder(orderDict[i]['vtOrderID'])
+                        else:
+                            self.sendTradingOrder(orderDict   = orderDict[i],
+                                                  orderIDList = orderIDList)
+                    else:
+                        self.sendTradingOrder(orderDict   = orderDict[i],
+                                              orderIDList = orderIDList)
+            ####################################################################
+        ## .....................................................................
+        self.putEvent()
+        ## .....................................................................
+
+
+    ############################################################################
+    ## 根据订单的字典格式，发送订单给 CTP
+    ## @param stratTrade: 交易事件数据
+    ## @param orderDict: 订单的字典格式
+    ## @param orderIDList: 订单列表
+    ## @param addTick 控制增加的价格
+    ############################################################################
+    def sendTradingOrder(self, orderDict, orderIDList, addTick = 1):
+        """发送单个合约的订单"""
+        tempInstrumentID = orderDict['vtSymbol']
+        # tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+        tempPriceTick    = self.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
+        tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
+        tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
+        tempUpperLimit   = self.lastTickData[tempInstrumentID]['upperLimit']
+        tempLowerLimit   = self.lastTickData[tempInstrumentID]['lowerLimit']
+        tempDirection    = orderDict['direction']
+        tempVolume       = orderDict['volume']
+
+        ########################################################################
+        if tempDirection == 'buy':
+            ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+            tempPrice = min(tempAskPrice1 + tempPriceTick * addTick, tempUpperLimit)
+            vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+        elif tempDirection == 'short':
+            ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+            tempPrice = max(tempBidPrice1 - tempPriceTick * addTick, tempLowerLimit)
+            vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+        elif tempDirection == 'cover':
+            ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
+            tempPrice = min(tempAskPrice1 + tempPriceTick * addTick, tempUpperLimit)
+            vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+        elif tempDirection == 'sell':
+            ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
+            tempPrice = max(tempBidPrice1 - tempPriceTick * addTick, tempLowerLimit)
+            vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
+        ## ---------------------------------------------------------------------
+        orderIDList.append(vtOrderID)
+        ########################################################################
+        self.tickTimer[tempInstrumentID]    = datetime.now()
+        ## ---------------------------------------------------------------------
+        tempKey = tempInstrumentID + '-' + tempDirection
+        ## ---------------------------------------------------------------------
+        if tempKey in orderDict.keys():
+            orderDict[tempKey]['vtOrderID'] = vtOrderID
+        ## .....................................................................
+        self.putEvent()
+        ## .....................................................................
+
+
+    def closePositionEvent(self, event):
+        """
+        处理一键全平仓的成交事件
+        """
+        ## =====================================================================
+        if event.dict_['data'].vtOrderID not in list(set(self.vtOrderIDListClosePositionAll) |
+                                                     set(self.vtOrderIDListClosePositionSymbol)):
+            return
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 连接 MySQL 设置
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 0. 数据预处理
+        ## =====================================================================
+        self.stratTrade = event.dict_['data'].__dict__
+        self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
+        self.stratTrade['strategyID'] = self.strategyID
+        self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
+        self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
+
+        ## ---------------------------------------------------------------------
+        if self.stratTrade['offset'] == u'开仓':
+            tempOffset = u'开仓'
+            if self.stratTrade['direction'] == u'多':
+                self.stratTrade['direction'] = 'long'
+                tempDirection = 'buy'
+            elif self.stratTrade['direction'] == u'空':
+                self.stratTrade['direction'] = 'short'
+                tempDirection = 'short'
+        elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
+            tempOffset = u'平仓'
+            if self.stratTrade['direction'] == u'多':
+                self.stratTrade['direction'] = 'long'
+                tempDirection = 'cover'
+            elif self.stratTrade['direction'] == u'空':
+                self.stratTrade['direction'] = 'short'
+                tempDirection = 'sell'
+        ## ---------------------------------------------------------------------
+
+        tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
+        ## ---------------------------------------------------------------------
+
+        ## ---------------------------------------------------------------------
+        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
+        tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 1. 修改 orderDict 的数量
+        ## =====================================================================
+        if self.stratTrade['vtOrderID'] in self.vtOrderIDListClosePositionAll:
+            # ------------------------------------------------------------------
+            self.tradingOrdersClosePositionAll[tempKey]['volume'] -= self.stratTrade['volume']
+            if self.tradingOrdersClosePositionAll[tempKey]['volume'] == 0:
+                self.tradingOrdersClosePositionAll.pop(tempKey, None)   
+        elif self.stratTrade['vtOrderID'] in self.vtOrderIDListClosePositionSymbol:
+            # ------------------------------------------------------------------
+            self.tradingOrdersClosePositionSymbol[tempKey]['volume'] -= self.stratTrade['volume']
+            if self.tradingOrdersClosePositionSymbol[tempKey]['volume'] == 0:
+                self.tradingOrdersClosePositionSymbol.pop(tempKey, None)
+
+        ## =====================================================================
+        ## 2. 更新 positionInfo
+        ## =====================================================================
+        if tempOffset == u'平仓':
+            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT *
+                                    FROM positionInfo
+                                    WHERE strategyID = '%s'
+                                    AND InstrumentID = '%s'
+                                    """ %(self.strategyID, self.stratTrade['InstrumentID'])).sort_values(by='TradingDay').reset_index()      
+            if len(mysqlPositionInfo) != 0:
+                cursor.execute("""
+                                DELETE FROM positionInfo
+                                WHERE strategyID = %s
+                                AND InstrumentID = %s
+                               """, (self.strategyID, self.stratTrade['InstrumentID']))
+                conn.commit()
+                for i in range(len(mysqlPositionInfo)):
+                    tempVolume = mysqlPositionInfo.loc[0:i,'volume'].sum() - self.stratTrade['volume']
+                    if tempVolume >= 0:
+                        mysqlPositionInfo.at[i,'volume'] = tempVolume
+                        mysqlPositionInfo = mysqlPositionInfo[i:]
+                        mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
+                        break
+                ## =============================================================================
+                try:
+                    mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                except:
+                    print '\n' + '#'*80 
+                    print '写入 MySQL 数据库出错'
+                    # self.onStop()
+                    # print '停止策略 %s' %self.name
+                    print '#'*80 + '\n'
+
+        ## =====================================================================
+        ## 3. 保存交易记录
+        ## =====================================================================
+        tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
+            columns = self.tradingInfoFields)
+        ## -----------------------------------------------------------------
+        self.updateTradingInfo(tempTradingInfo)
+        self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
+        ## -----------------------------------------------------------------
+
+        # ######################################################################
+        conn.close()
+        # 发出状态更新事件
+        self.putEvent()
+
+    ###########################################################################
+    # 一键全平仓
+    ###########################################################################
+    def closePositionAll(self):
+        """ 一键全平仓 """
+        ## =====================================================================
+        ## 开启
+        self.tradingClosePositionAll = True
+        ## =====================================================================
+        self.stratPositionAll = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM positionInfo
+                            WHERE strategyID = '%s'
+                            """ %(self.strategyID))
+        # print stratPositionAll
+
+        tempClosePositionAll = self.stratPositionAll.groupby(['InstrumentID','direction'])['volume'].sum().reset_index()
+
+        if len(tempClosePositionAll) != 0:
+            for i in range(len(tempClosePositionAll)):
+                ## direction
+                if tempClosePositionAll.at[i,'direction'] == 'long':
+                    tempDirection = 'sell'
+                elif tempClosePositionAll.at[i,'direction'] == 'short':
+                    tempDirection = 'cover'
+                ##
+                self.tradingOrdersClosePositionAll[tempClosePositionAll.at[i,'InstrumentID'] + '-' + tempDirection] = {
+                    'vtSymbol': tempClosePositionAll.at[i, 'InstrumentID'],
+                    'direction': tempDirection,
+                    'volume': tempClosePositionAll.at[i, 'volume'],
+                }
+                self.tickTimer[tempClosePositionAll.at[i, 'InstrumentID']] = datetime.now()
+        # print self.tradingOrdersClosePositionAll.keys()
+
+    ############################################################################
+    ## 对单一的合约进行强制平仓
+    ############################################################################
+    def closePositionSymbol(self, vtSymbol):
+        """ 一键全平仓 """
+        ## =====================================================================
+        ## =====================================================================
+        self.stratPositionSymbol = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM positionInfo
+                            WHERE strategyID = '%s'
+                            AND InstrumentID = '%s'
+                            """ %(self.strategyID,vtSymbol))
+        # print stratPositionAll
+
+        tempClosePositionSymbol = self.stratPositionSymbol.groupby(['direction'])['volume'].sum().reset_index()
+
+        if len(tempClosePositionSymbol) != 0:
+            for i in range(len(tempClosePositionSymbol)):
+                ## direction
+                if tempClosePositionSymbol.at[i,'direction'] == 'long':
+                    tempDirection = 'sell'
+                elif tempClosePositionSymbol.at[i,'direction'] == 'short':
+                    tempDirection = 'cover'
+                ##
+                self.tradingOrdersClosePositionSymbol[vtSymbol + '-' + tempDirection] = {
+                    'vtSymbol': vtSymbol,
+                    'direction': tempDirection,
+                    'volume': tempClosePositionSymbol.at[i, 'volume'],
+                }
+                self.tickTimer[vtSymbol] = datetime.now()
+
+    ############################################################################
+    ## 更新取消的订单
+    ############################################################################
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    def updateCancelOrders(self, vtSymbol):
+        """ 更新取消未成交订单 """
+        # pass
+        ## =====================================================================
+        if vtSymbol in self.tickTimer.keys():
+            if (datetime.now() - self.tickTimer[vtSymbol]).seconds >= 8:
+                for vtOrderID in self.vtOrderIDList:
+                    try:
+                        tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
+                                                (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == k) &
+                                                (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
+                                                (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
+                    except:
+                        tempWorkingOrder = None
+                    ## =========================================================
+                    if (tempWorkingOrder is not None) and len(tempWorkingOrder) != 0:
+                        for i in tempWorkingOrder:
+                            ## =================================================
+                            self.cancelOrder(i)
+                            self.tickTimer[k] = datetime.now()
+                            ## =================================================
+                    ## =========================================================
+        ## =====================================================================
+    
+    ############################################################################
+    ## 更新交易记录的数据表
+    ############################################################################
+    def updateTradingInfo(self, df):
+        """更新交易记录"""
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        df.to_sql(con=conn, name='tradingInfo', if_exists='append', flavor='mysql', index = False)
+        conn.close()
+    
+
+    ############################################################################
+    ## 更新交易日期
+    ############################################################################
+    def updateTradingDay(self, strategyID, InstrumentID, 
+                         oldTradingDay, newTradingDay, 
+                         direction, volume):
+        """更新交易日历"""
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        cursor.execute("""
+                        UPDATE positionInfo
+                        SET TradingDay = %s, volume = %s
+                        WHERE strategyID = %s
+                        AND InstrumentID = %s
+                        AND TradingDay = %s
+                        AND direction = %s
+                       """, (newTradingDay, volume, strategyID,
+                             InstrumentID, oldTradingDay, direction))
+        conn.commit()
+        conn.close()
+        ## =====================================================================
+
+    ############################################################################
+    ## 更新订单字典
+    ############################################################################
+    def updateTradingOrders(self, tradingOrders, tradedOrders):
+        """
+        更新订单字典
+        """
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        ## =====================================================================
+        ## 1. 更新账户信息
+        ## 2. 更新 orderInfo
+        ## =====================================================================
+        if ((datetime.now().minute % 9 == 0) or \
+            (datetime.now().hour in [9,15,21] and datetime.now().minute in [3,5,7,10,15])) and \
+            self.trading and datetime.now().second == 59:
+            ## 把账户信息写入 MysQL 数据库
+            ## =====================================================================================
+            self.ctaEngine.mainEngine.drEngine.getIndicatorInfo(dbName = self.ctaEngine.mainEngine.dataBase,
+                                                                initCapital = self.ctaEngine.mainEngine.initCapital,
+                                                                flowCapitalPre = self.ctaEngine.mainEngine.flowCapitalPre,
+                                                                flowCapitalToday = self.ctaEngine.mainEngine.flowCapitalToday)
+            ## =====================================================================================
+            ## 把所有下单记录写入 MySQL 数据库
+            # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+            # cursor = conn.cursor()
+            tempOrderInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM orderInfo
+                            WHERE strategyID = '%s'
+                            AND TradingDay = %s
+                           """ %(self.strategyID, self.ctaEngine.tradingDay))
+            stratOrderIDListAll = self.vtOrderIDList + self.vtOrderIDListOpen + self.vtOrderIDListClose + self.vtOrderIDListFailedInfo
+            tempOrderIDList = [k for k in stratOrderIDListAll if k not in tempOrderInfo['vtOrderID'].values]
+            ## -------------------------------------------------------------------------------------
+            if len(tempOrderIDList) != 0:
+                ## -------------------------------------------------------------
+                # dfHeader = ['strategyID', 'vtOrderID', 'symbol', 'orderTime', 'status', 'direction', 'cancelTime', 'tradedVolume', 'frontID', 'sessionID', 'offset', 'price', 'totalVolume']
+                # dfData = []
+                df = pd.DataFrame([], columns = self.orderInfoFields)
+                for i in tempOrderIDList:
+                    df = df.append(self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().vtOrderID == i][self.orderInfoFields], ignore_index=True)
+                df = df[self.orderInfoFields]
+                df['TradingDay'] = self.ctaEngine.tradingDate
+                df['strategyID'] = self.strategyID
+                df = df[['TradingDay'] + self.orderInfoFields]
+                ## 改名字
+                df.columns.values[3] = 'InstrumentID'
+                # print df
+                if len(tempOrderInfo) != 0:
+                    df = df.append(tempOrderInfo, ignore_index=True)
+                if len(df) != 0:
+                    ## -----------------------------------------------------------------------------
+                    ## 清空记录
+                    cursor.execute("""
+                                    DELETE FROM orderInfo
+                                    WHERE strategyID = %s
+                                    AND TradingDay = %s
+                                   """, (self.strategyID, self.ctaEngine.tradingDay))
+                    conn.commit()
+                    df.to_sql(con=conn, name='orderInfo', if_exists='append', flavor='mysql', index = False)
+                    ## -----------------------------------------------------------------------------
+            # conn.close()
+            ## =====================================================================================
+
+        ## =====================================================================
+        ## 1. 更新未成交订单，并保存到 MySQL 数据库
+        ## ===================================================================== 
+        if (datetime.now().hour == 15) and (datetime.now().minute >= 2) and \
+           (datetime.now().second == 59) and self.trading:
+            ## -----------------------------------------------------------------
+            self.failedOrders = {k:tradingOrders[k] \
+                for k in tradingOrders.keys() if k not in tradedOrders.keys()}
+            ## -----------------------------------------------------------------
+            if len(self.failedOrders) != 0:
+                dfData = []
+                ## -------------------------------------------------------------
+                for k in self.failedOrders.keys():
+                    ## ---------------------------------------------------------
+                    if self.failedOrders[k]['direction'] == 'buy':
+                        tempDirection = 'long'
+                        tempOffset    = u'开仓'
+                    elif self.failedOrders[k]['direction'] == 'sell':
+                        tempDirection = 'short'
+                        tempOffset    = u'平仓'
+                    elif self.failedOrders[k]['direction'] == 'short':
+                        tempDirection = 'short'
+                        tempOffset    = u'开仓'
+                    elif self.failedOrders[k]['direction'] == 'cover':
+                        tempDirection = 'long'
+                        tempOffset    = u'平仓'
+                    ## ---------------------------------------------------------
+                    tempRes = [self.strategyID, self.failedOrders[k]['vtSymbol'], 
+                               self.failedOrders[k]['TradingDay'], 
+                               tempDirection, tempOffset, self.failedOrders[k]['volume']]
+                    dfData.append(tempRes)
+                    ## ---------------------------------------------------------
+                    df = pd.DataFrame(dfData, columns = self.failedInfoFields)
+                ## -------------------------------------------------------------
+                # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                # cursor = conn.cursor()
+                df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
+                # conn.close()         
+                ## -------------------------------------------------------------
+                ####################################################################################
+                ## 记得要从 positionInfo 持仓里面删除
+                ####################################################################################
+                for k in self.failedOrders.keys():
+                    ## -----------------------------------------------------------------------------
+                    ## 只有需要平仓的，才需要从 positionInfo 数据表剔除
+                    ## -----------------------------------------------------------------------------
+                    if self.failedOrders[k]['direction'] in ['sell', 'cover']:
+                        ## -----------------------------------------------------
+                        if self.failedOrders[k]['direction'] == 'sell':
+                            tempDirection = 'long'
+                        elif self.failedOrders[k]['direction'] == 'cover':
+                            tempDirection = 'short'
+                        ## -----------------------------------------------------
+
+                        ## -------------------------------------------------------------------------
+                        try:
+                            # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                            # cursor = conn.cursor()
+                            cursor.execute("""
+                                            DELETE FROM positionInfo
+                                            WHERE strategyID = %s
+                                            AND InstrumentID = %s
+                                            AND TradingDay = %s
+                                            AND direction  = %s
+                                           """, (self.strategyID, self.failedOrders[k]['vtSymbol'], self.failedOrders[k]['vtSymbol'], tempDirection))
+                            conn.commit()
+                            # conn.close()
+                        except:
+                            None
+                        ## -------------------------------------------------------------------------
+        ##
+        ## =====================================================================
+        conn.close()
+        ## =====================================================================
+
+
     ############################################################################
     ## 收盘发送交易播报的邮件通知
     ############################################################################
@@ -371,7 +979,9 @@ class CtaTemplate(object):
             time.sleep(1)
 
 
-################################################################################
+
+
+########################################################################
 class TargetPosTemplate(CtaTemplate):
     """
     允许直接通过修改目标持仓来实现交易的策略模板
