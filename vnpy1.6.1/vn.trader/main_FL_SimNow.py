@@ -70,16 +70,16 @@ except:
     pass
 
 # 初始化主引擎和主窗口对象
-############################################################################
+################################################################################
 ## william
 ## 继承 vtEngine::MainEngine
 mainEngine = MainEngine()
 
-print "\n#######################################################################"
+print "\n"+'#'*80
 print u"main 主函数启动成功！！！"
 time.sleep(2.0)
-print "#######################################################################\n"
-############################################################################
+print '#'*80+"\n"
+################################################################################
 
 
 gatewayName = 'CTP'
@@ -89,26 +89,26 @@ try:
     # mainEngine.connect(gatewayName)
     mainEngine.connectCTPAccount(accountInfo = 'FL_SimNow')
     print u"CTP 正在登录!!!",
-    for i in range(50):
+    for i in range(33):
         print ".",
         time.sleep(.1)
 
-    print "\n#---------------------------------------------------------------"
+    print "\n"+'#'*80
     print u"CTP 连接成功!!!"
-    print "#---------------------------------------------------------------"
+    print '#'*80
 except:
-    print "#---------------------------------------------------------------"
+    print "\n"+'#'*80
     print u"CTP 连接失败!!!"
-    print "#---------------------------------------------------------------"
-############################################################################
+    print '#'*80
+################################################################################
 
-############################################################################
+################################################################################
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-## mainWindow.showMaximized()
-mainWindow.showMinimized()
+# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+# ## mainWindow.showMaximized()
+# mainWindow.showMinimized()
 
 
 ################################################################################
@@ -119,30 +119,51 @@ mainWindow.showMinimized()
 ## 数据库名称
 mainEngine.dataBase     = 'FL_SimNow'
 mainEngine.initCapital  = 1000000
-mainEngine.mailReceiver = ['fl@hicloud-investment.com']
+mainEngine.flowCapitalPre = 0
+mainEngine.flowCapitalToday = 0
+## 公司内部人员
+mainEngine.mailReceiverMain = ['fl@hicloud-investment.com']
+## 其他人员
+mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
 ## ==============================
 
+## =============================================================================
 # 加载设置
 mainEngine.ctaEngine.loadSetting()
 
-# print mainEngine.ctaEngine.__dict__
 print mainEngine.ctaEngine.strategyDict
-# print mainEngine.ctaEngine.tickStrategyDict
+## 所有的策略字典
+strat = mainEngine.ctaEngine.strategyDict
+## =============================================================================
+
 
 
 ################################################################################
 # 初始化策略
 ## YYStrategy
-
 mainEngine.ctaEngine.initStrategy('Yun Yang')
-
-strat = mainEngine.ctaEngine.strategyDict
 stratYY = strat['Yun Yang']
-# time.sleep(30)
+print stratYY.tradingOrders
 mainEngine.ctaEngine.startStrategy('Yun Yang')
-## 停止策略运行
+# ## 停止策略运行
 # mainEngine.ctaEngine.stopStrategy('Yun Yang')
 
 
+################################################################################
+# 初始化策略
+## YYStrategy
+# mainEngine.ctaEngine.initStrategy('OiRank')
+# stratOI = strat['OiRank']
+# print stratOI.tradingOrdersOpen
+
+# mainEngine.ctaEngine.startStrategy('OiRank')
+## 停止策略运行
+# mainEngine.ctaEngine.stopStrategy('OiRank')
+
+# mainEngine.cancelOrderAll()
+
+################################################################################
 mainEngine.drEngine.getIndicatorInfo(dbName = mainEngine.dataBase,
-                                    initCapital = mainEngine.initCapital)
+                                    initCapital = mainEngine.initCapital,
+                                    flowCapitalPre = mainEngine.flowCapitalPre,
+                                    flowCapitalToday = mainEngine.flowCapitalToday)
