@@ -460,8 +460,14 @@ class CtaEngine(object):
                 strategy.pos += trade.volume
             else:
                 strategy.pos -= trade.volume
-
+            ## =================================================================
+            ## william
             self.callStrategyFunc(strategy, strategy.onTrade, trade)
+
+            ## 成交事件的处理
+            self.callStrategyFunc(strategy, strategy.stratTradeEvent, trade)
+            self.callStrategyFunc(strategy, strategy.closePositionTradeEvent, trade)
+            ## =================================================================
 
         # 更新持仓缓存数据
         if trade.vtSymbol in self.tickStrategyDict:
