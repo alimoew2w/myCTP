@@ -368,11 +368,11 @@ class OIStrategy(CtaTemplate):
     ## 以下用来处理持仓仓位的问题
     ############################################################################
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def stratTradeEvent(self, event):
+    def stratTradeEvent(self, trade):
         """处理策略交易与持仓信息
         """
         ## =====================================================================
-        if event.dict_['data'].vtOrderID not in list(set(self.vtOrderIDListOpen) | set(self.vtOrderIDListClose)):
+        if trade.vtOrderID not in list(set(self.vtOrderIDListOpen) | set(self.vtOrderIDListClose)):
             return
         ## =====================================================================
 
@@ -385,7 +385,7 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         ## 0. 数据预处理
         ## =====================================================================
-        self.stratTrade = event.dict_['data'].__dict__
+        self.stratTrade = trade.__dict__
         self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
         self.stratTrade['strategyID'] = self.strategyID
         self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
@@ -557,9 +557,9 @@ class OIStrategy(CtaTemplate):
                 ## =================================================================================
              ## =====================================================================================
 
-        tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
-        tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], 
-            columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
+        # tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
+        tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
+            columns = self.tradingInfoFields)
         ## -----------------------------------------------------------------
         self.updateTradingInfo(tempTradingInfo)
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
@@ -573,15 +573,15 @@ class OIStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def registerEvent(self):
         """注册事件监听"""
-        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TICK, self.onClosePosition)
-        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
-        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.closePositionEvent)
+        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TICK, self.onClosePosition)
+        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
+        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.closePositionTradeEvent)
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingStatus)
         ## ---------------------------------------------------------------------
         ## 收盘发送邮件
-        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
+        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
         ## ---------------------------------------------------------------------
 
     #---------------------------------------------------------------------------
@@ -592,12 +592,12 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         ## 启动尾盘交易
         ## =====================================================================
-        if datetime.now().hour in [9,21] and  datetime.now().minute <= 30:
+        if datetime.now().hour in [9,22] and  datetime.now().minute <= 55:
             self.tradingOpen = True
         else:
             self.tradingOpen = False
         ## ---------------------------------------------------------------------
-        if datetime.now().hour == 21 and datetime.now().minute == 33 and \
+        if datetime.now().hour == 22 and datetime.now().minute == 59 and \
            (datetime.now().second >= ( 59 - max(30, len(self.tradingOrdersClose)*1.5)) ):
             self.tradingClose = True
         else:
@@ -607,7 +607,7 @@ class OIStrategy(CtaTemplate):
         ## 从 MySQL 数据库提取尾盘需要平仓的持仓信息
         ## postionInfoClose
         ## =====================================================================
-        if datetime.now().hour == 21 and datetime.now().minute >= 31 and datetime.now().second == 59:
+        if datetime.now().hour == 22 and datetime.now().minute >= 55 and datetime.now().second == 59:
             ## 持仓合约信息
             self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                                 """
