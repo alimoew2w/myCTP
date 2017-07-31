@@ -479,21 +479,22 @@ class YYStrategy(CtaTemplate):
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
         ## =====================================================================
-        tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
+        # tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
         # print tempTick
         ## =====================================================================
         
         ## =====================================================================
         if not self.trading:
             return 
-        elif tick.vtSymbol not in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()] + [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()] + [self.tradingOrdersClosePositionAll[k]['vtSymbol'] for k in self.tradingOrdersClosePositionAll.keys()] + [self.tradingOrdersClosePositionSymbol[k]['vtSymbol'] for k in self.tradingOrdersClosePositionSymbol.keys()]:
+        # elif tick.vtSymbol not in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()] + [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()] + [self.tradingOrdersClosePositionAll[k]['vtSymbol'] for k in self.tradingOrdersClosePositionAll.keys()] + [self.tradingOrdersClosePositionSymbol[k]['vtSymbol'] for k in self.tradingOrdersClosePositionSymbol.keys()]:
+        elif tick.vtSymbol not in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()] + [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]:
             return 
-        elif ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds <= 4):
+        elif ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds <= 5):
             return 
         ## =====================================================================
 
         ## ---------------------------------------------------------------------
-        self.lastTickData[tick.vtSymbol] = tempTick
+        self.lastTickData[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.tickFileds}
         self.updateCancelOrders(tick.vtSymbol)
         ## ---------------------------------------------------------------------
 
@@ -502,30 +503,30 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if len(self.failedInfo) != 0 and self.trading:
             ####################################################################
-            self.prepareTradingOrder(vtSymbol    = tick.vtSymbol, 
-                                     orderDict   = self.tradingOrdersFailedInfo, 
-                                     orderIDList = self.vtOrderIDListFailedInfo)
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
+                                     tradingOrders = self.tradingOrdersFailedInfo, 
+                                     orderIDList   = self.vtOrderIDListFailedInfo)
         ## =====================================================================
 
 
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrders[k]['vtSymbol'] for k in self.tradingOrders.keys()] and self.tradingClose):
             ####################################################################
-            self.prepareTradingOrder(vtSymbol    = tick.vtSymbol, 
-                                     orderDict   = self.tradingOrders, 
-                                     orderIDList = self.vtOrderIDList)
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
+                                     tradingOrders = self.tradingOrders, 
+                                     orderIDList   = self.vtOrderIDList)
         ## =====================================================================
 
         ############################################################################################
-        if tick.symbol in [self.tradingOrdersClosePositionAll[k]['vtSymbol'] for k in self.tradingOrdersClosePositionAll.keys()] and self.tradingClosePositionAll:
-            self.prepareTradingOrder(vtSymbol    = tick.vtSymbol, 
-                                     orderDict   = self.tradingOrdersClosePositionAll, 
-                                     orderIDList = self.vtOrderIDListClosePositionAll)
-        ############################################################################################
-        if tick.symbol in [self.tradingOrdersClosePositionSymbol[k]['vtSymbol'] for k in self.tradingOrdersClosePositionSymbol.keys()]:
-            self.prepareTradingOrder(vtSymbol    = tick.vtSymbol, 
-                                     orderDict   = self.tradingOrdersClosePositionSymbol, 
-                                     orderIDList = self.vtOrderIDListClosePositionSymbol)
+        # if tick.symbol in [self.tradingOrdersClosePositionAll[k]['vtSymbol'] for k in self.tradingOrdersClosePositionAll.keys()] and self.tradingClosePositionAll:
+        #     self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
+        #                              tradingOrders = self.tradingOrdersClosePositionAll, 
+        #                              orderIDList   = self.vtOrderIDListClosePositionAll)
+        # ############################################################################################
+        # if tick.symbol in [self.tradingOrdersClosePositionSymbol[k]['vtSymbol'] for k in self.tradingOrdersClosePositionSymbol.keys()]:
+        #     self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
+        #                              tradingOrders = self.tradingOrdersClosePositionSymbol, 
+        #                              orderIDList   = self.vtOrderIDListClosePositionSymbol)
         ############################################################################################
         
         ## =====================================================================
@@ -561,7 +562,7 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if event.dict_['data'].vtOrderID not in list(set(self.vtOrderIDList) | 
                                                      set(self.vtOrderIDListFailedInfo) ):
-            return
+            return None
         ## =====================================================================
 
         ## =====================================================================
@@ -763,6 +764,7 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def registerEvent(self):
         """注册事件监听"""
+        self.ctaEngine.mainEngine.eventEngine.register(EVENT_TICK, self.onClosePosition)
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.closePositionEvent)
         ## ---------------------------------------------------------------------
@@ -786,7 +788,7 @@ class YYStrategy(CtaTemplate):
         # pass
         ## =====================================================================
         ## 启动尾盘交易
-        if datetime.now().hour == 14 and datetime.now().minute >= 59 and \
+        if datetime.now().hour == 21 and datetime.now().minute >= 1 and \
            (datetime.now().second >= ( 59 - max(10, len(self.tradingOrders)*1.0)) ):
         # if datetime.now().hour == 1 and datetime.now().minute >= 1:
             self.tradingClose = True
