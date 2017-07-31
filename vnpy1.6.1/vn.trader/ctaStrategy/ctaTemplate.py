@@ -338,133 +338,8 @@ class CtaTemplate(object):
     ## @param orderDict: 订单的字典格式
     ## @param orderIDList: 订单列表
     ############################################################################
-    def prepareTradingOrder2(self, vtSymbol, tradingDict, orderIDList):
-        """处理订单"""
-        ## =====================================================================
-        ## 对订单进行预处理
-        ## =====================================================================
-
-        ## =====================================================================
-        ## 1. 取消当前的活跃订单
-        ## =====================================================================
-        ## .....................................................................
-        self.vtSymbolWorkingOrders     = []     ## 未成交
-                                                
-        for vtOrderID in orderIDList:
-            ## -----------------------------------------------------------------
-            ## 未成交
-            ## -----------------------------------------------------------------
-            try:
-                tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
-                                        (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
-                                        (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
-            except:
-                tempWorkingOrder = None
-
-            if (tempWorkingOrder is not None) and len(tempWorkingOrder) != 0:
-                for i in range(len(tempWorkingOrder)):
-                    if tempWorkingOrder[i] not in self.vtSymbolWorkingOrders:
-                        self.vtSymbolWorkingOrders.append(tempWorkingOrder[i])
-            ## -----------------------------------------------------------------
-
-        ## =====================================================================
-        ## 2. 根据已经成交的订单情况, 重新处理生成新的订单
-        ## =====================================================================
-        if len(self.vtSymbolWorkingOrders) != 0:
-            ####################################################################
-            ## 如果有未成交的订单，则先取消原来的订单
-            ## 因为有可能是价格有变化，原来的报价不适合成交
-            ## -----------------------------------------------------------------
-            for vtOrderID in self.vtSymbolWorkingOrders:
-                self.cancelOrder(vtOrderID)
-                self.tickTimer[vtSymbol]    = datetime.now()
-            ####################################################################
-        elif len(self.vtSymbolWorkingOrders) == 0:
-            ####################################################################
-            ## 如果没有未成交订单，则进行下面的订单管理操作
-            ## -----------------------------------------------------------------
-            ## 生成交易列表
-            tempTradingList = [k for k in tradingDict.keys() if tradingDict[k]['vtSymbol'] == vtSymbol]
-            ####################################################################
-            if len(tempTradingList) != 0:
-                for i in tempTradingList:
-                    ## -------------------------------------------------------------
-                    ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
-                    ## -------------------------------------------------------------
-                    # if (self.tradingOrders[i]['volume'] != 0):
-                    if (self.ctaEngine.mainEngine.getAllOrders() is not None) and ('vtOrderID' in orderDict[i].keys()):
-                        if tradingDict[i]['vtOrderID'] not in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'已撤销'])].vtOrderID.values:
-                            self.cancelOrder(tradingDict[i]['vtOrderID'])
-                        # if orderDict[i]['vtOrderID'] not in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'已撤销'])][self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values:
-                        #     self.cancelOrder(orderDict[i]['vtOrderID'])
-                        # elif orderDict[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'拒单',u'全部成交'])][self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values:
-                        #     return None
-                        else:
-                            self.sendTradingOrder(tradingDict = tradingDict,
-                                                  orderDict   = tradingDict[i],
-                                                  orderIDList = orderIDList)
-                    else:
-                        self.sendTradingOrder(tradingDict = tradingDict,
-                                              orderDict   = orderDict[i],
-                                              orderIDList = orderIDList)
-            ####################################################################
-        ## .....................................................................
-        self.putEvent()
-        ## .....................................................................
-
-
     def prepareTradingOrder(self, vtSymbol, tradingOrders, orderIDList):
         """处理订单"""
-        ## =====================================================================
-        ## 对订单进行预处理
-        ## =====================================================================
-
-        ## =====================================================================
-        ## 1. 取消当前的活跃订单
-        ## =====================================================================
-        ## .....................................................................
-        # self.vtSymbolWorkingOrders     = []     ## 未成交
-                                                
-        # for vtOrderID in orderIDList:
-        #     ## -----------------------------------------------------------------
-        #     ## 未成交
-        #     ## -----------------------------------------------------------------
-        #     try:
-        #         tempWorkingOrder = self.ctaEngine.mainEngine.getAllOrders()[
-        #                                 (self.ctaEngine.mainEngine.getAllOrders().vtSymbol == vtSymbol) &
-        #                                 (self.ctaEngine.mainEngine.getAllOrders().vtOrderID == vtOrderID ) &
-        #                                 (self.ctaEngine.mainEngine.getAllOrders().status == u'未成交')].vtOrderID.values
-        #         self.cancelOrder(vtOrderID)
-        #         self.vtSymbolWorkingOrders.append(tempWorkingOrder[i])
-        #     except:
-        #         pass
-        #     finally:
-        #         self.tickTimer[vtSymbol]    = datetime.now()
-        #     #     tempWorkingOrder = None
-
-        #     # if (tempWorkingOrder is not None) and len(tempWorkingOrder) != 0:
-        #     #     for i in range(len(tempWorkingOrder)):
-        #     #         if tempWorkingOrder[i] not in self.vtSymbolWorkingOrders:
-        #     #             self.vtSymbolWorkingOrders.append(tempWorkingOrder[i])
-        #     ## -----------------------------------------------------------------
-
-        # ## =====================================================================
-        # ## 2. 根据已经成交的订单情况, 重新处理生成新的订单
-        # ## =====================================================================
-        # # if len(self.vtSymbolWorkingOrders) != 0:
-        # #     ####################################################################
-        # #     ## 如果有未成交的订单，则先取消原来的订单
-        # #     ## 因为有可能是价格有变化，原来的报价不适合成交
-        # #     ## -----------------------------------------------------------------
-        # #     for vtOrderID in self.vtSymbolWorkingOrders:
-        # #         self.cancelOrder(vtOrderID)
-        # #         self.tickTimer[vtSymbol]    = datetime.now()
-        # #     ####################################################################
-        # if len(self.vtSymbolWorkingOrders) == 0:
-        ####################################################################
-        ## 如果没有未成交订单，则进行下面的订单管理操作
-        ## -----------------------------------------------------------------
         ## 生成交易列表
         tempTradingList = [k for k in tradingOrders.keys() if tradingOrders[k]['vtSymbol'] == vtSymbol]
         ####################################################################
@@ -595,14 +470,16 @@ class CtaTemplate(object):
         # =====================================================================
 
 
-    def closePositionEvent(self, event):
+    def closePositionTradeEvent(self, trade):
         """
         处理一键全平仓的成交事件
+        Ref: ctaEngine.py, 把成交信息推送到策略函数
+        self.callStrategyFunc(strategy, strategy.closePositionTradeEvent, trade)
         """
         ## =====================================================================
         if not ((self.tradingClosePositionAll or self.tradingClosePositionSymbol) and self.trading):
             return None
-        elif event.dict_['data'].vtOrderID not in \
+        elif trade.vtOrderID not in \
             list(set(self.vtOrderIDListClosePositionAll) | 
                  set(self.vtOrderIDListClosePositionSymbol)):
             return None
@@ -617,7 +494,7 @@ class CtaTemplate(object):
         ## =====================================================================
         ## 0. 数据预处理
         ## =====================================================================
-        self.stratTrade = event.dict_['data'].__dict__
+        self.stratTrade = trade.__dict__
         self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
         self.stratTrade['strategyID'] = self.strategyID
         # self.stratTrade['strategyID'] = 'hello'
@@ -713,6 +590,7 @@ class CtaTemplate(object):
         conn.close()
         # 发出状态更新事件
         self.putEvent()
+
 
     ############################################################################
     # 一键全平仓
@@ -987,11 +865,16 @@ class CtaTemplate(object):
         conn.close()
         ## =====================================================================
 
+        ## =====================================================================
+        ## sendMail
+        if (datetime.now().hour == 15) and (4 <= datetime.now().minute <= 5) and (datetime.now().second % 10 == 0) and self.trading:
+            self.sendMail()
+        ## =====================================================================
 
     ############################################################################
     ## 收盘发送交易播报的邮件通知
     ############################################################################
-    def sendMail(self, event):
+    def sendMail(self):
         """发送邮件通知给：汉云交易员"""
         if datetime.now().strftime('%H:%M:%S') == '15:05:00' and self.trading:
             self.sendMailStatus = True
