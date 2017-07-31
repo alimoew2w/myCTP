@@ -551,9 +551,13 @@ class CtaTemplate(object):
     ############################################################################
     ## onClosePosition
     ############################################################################
-    def onClosePosition(self, event):
-        tick = event.dict_['data']
-        """收到行情TICK推送（必须由用户继承实现）"""
+    def onClosePosition(self, tick):
+        """
+        收到行情TICK推送（必须由用户继承实现）
+        Ref: ctaEngine.py, 通过把 Tick 数据推送到策略函数里面
+        self.callStrategyFunc(strategy, strategy.onClosePosition, ctaTick)
+        """
+
         ## =====================================================================
         # tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
         # print tempTick
@@ -585,10 +589,10 @@ class CtaTemplate(object):
                                      orderIDList     = self.vtOrderIDListClosePositionSymbol)
         ############################################################################################
 
-        ## =====================================================================
+        # =====================================================================
         # 发出状态更新事件
-        # self.putEvent()
-        ## =====================================================================
+        self.putEvent()
+        # =====================================================================
 
 
     def closePositionEvent(self, event):
