@@ -62,7 +62,8 @@ class CtaEngine(object):
         ## __格式是 date, 即 2017-01-01, 需要用 date 格式来匹配__
         ## nights: 夜盘日期,
         ## days:   日盘日期,
-        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', """select * from ChinaFuturesCalendar where days >= 20170101;""")
+        self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 
+            """select * from ChinaFuturesCalendar where days >= 20170101;""")
         ## -----------------------------------------------------------------------------------------
         '''
         for i in range(len(self.ChinaFuturesCalendar)):
@@ -70,6 +71,7 @@ class CtaEngine(object):
             self.ChinaFuturesCalendar.loc[i, 'days'] = str(self.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
         '''
         ## -----------------------------------------------------------------------------------------
+
 
         ## 当前日历的日期
         self.todayDate = vtFunction.todayDate().date()
@@ -116,6 +118,7 @@ class CtaEngine(object):
         # 成交号集合，用来过滤已经收到过的成交推送
         self.tradeSet = set()
 
+
         ############################################################################################
         ## william
         ## 有关订阅合约行情
@@ -160,6 +163,7 @@ class CtaEngine(object):
         #                                set(self.signalContracts.InstrumentID.values) |
         #                                set(self.failedContracts.InstrumentID.values))
         ############################################################################################
+
 
         ## MySQL 储存的不同策略的持仓信息
         ## Usage
@@ -273,11 +277,11 @@ class CtaEngine(object):
         vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
         self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
 
-        print "\n#######################################################################"
+        print "\n"+'#'*80
         print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
-        print "#######################################################################\n"
-        self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
-                         %(strategy.name, vtSymbol, req.direction, volume, price))
+        print '#'*80+'\n'
+        # self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
+        #                  %(strategy.name, vtSymbol, req.direction, volume, price))
         ########################################################################
         ## william
         ## 同样，返回订单号
@@ -308,17 +312,17 @@ class CtaEngine(object):
                 self.mainEngine.cancelOrder(req, order.gatewayName)
             else:
                 if order.status == STATUS_ALLTRADED:
-                    print '委托单({0}已执行，无法撤销'.format(vtOrderID)
-                    self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
+                    print u'委托单({0}已执行，无法撤销'.format(vtOrderID)
+                    # self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
                 if order.status == STATUS_CANCELLED:
-                    print '委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
-                    self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
+                    print u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
+                    # self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
         ## =====================================================================
         # 查询不成功
         ## =====================================================================
         else:
-            print '委托单({0}不存在'.format(vtOrderID)
-            self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
+            print u'委托单({0}不存在'.format(vtOrderID)
+            # self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
 
     #----------------------------------------------------------------------
     def sendStopOrder(self, vtSymbol, orderType, price, volume, strategy):
@@ -392,19 +396,14 @@ class CtaEngine(object):
         """处理行情推送"""
         tick = event.dict_['data']
 
-        # 使用 mainEngine.ctaEngine.lastTick 来获取 tick
-        # ======================================================================
-        self.lastTick[tick.symbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
-        # ======================================================================
-
         # 收到tick行情后，先处理本地停止单（检查是否要立即发出）
         self.processStopOrder(tick)
         ####################################################################
         ## william
-        # print "\n#######################################################################"
-        # print "tick = event.dict_['data'] :==> ", tick.symbol
+        # print "\n"+'#'*80
+        # print u"tick = event.dict_['data'] :==> ", tick.symbol
         # print tick.__dict__
-        # print "#######################################################################\n"
+        # print '#'*80+"\n"
         # 推送tick到对应的策略实例进行处理
         if tick.vtSymbol in self.tickStrategyDict:
             # 将vtTickData数据转化为ctaTickData
@@ -418,17 +417,21 @@ class CtaEngine(object):
 
             ####################################################################
             ## william
-            # print "\n#######################################################################"
+            # print "\n"+'#'*80
             # print 'strategy.onTick() 在这里获取 tick !!!==>', ctaTick.symbol
             # print ctaTick.__dict__
-            # print "#######################################################################\n"
+            # print '#'*80+"\n"
             ####################################################################
             ## william
             # 逐个推送到策略实例中
             l = self.tickStrategyDict[tick.vtSymbol]
             for strategy in l:
                 self.callStrategyFunc(strategy, strategy.onTick, ctaTick)
-
+                ## =============================================================
+                ## william
+                ## 把 TickData 数据推送到策略函数里面
+                self.callStrategyFunc(strategy, strategy.onClosePosition, ctaTick)
+                ## =============================================================
     #----------------------------------------------------------------------
     def processOrderEvent(self, event):
         """处理委托推送"""
@@ -599,10 +602,10 @@ class CtaEngine(object):
             name = setting['name']
             className = setting['className']
         except Exception, e:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '载入策略出错：%s' %e
-            print "#######################################################################\n"
-            self.writeCtaLog(u'载入策略出错：%s' %e)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'载入策略出错：%s' %e)
             return
 
         ########################################################################
@@ -611,15 +614,15 @@ class CtaEngine(object):
         # 获取策略类
         strategyClass = STRATEGY_CLASS.get(className, None)
         if not strategyClass:
-            self.writeCtaLog(u'找不到策略类：%s' %className)
+            # self.writeCtaLog(u'找不到策略类：%s' %className)
             return
 
         # 防止策略重名
         if name in self.strategyDict:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例重名：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例重名：%s' %name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例重名：%s' %name)
         else:
             ####################################################################
             ## william
@@ -689,10 +692,10 @@ class CtaEngine(object):
                 else:
                     ############################################################
                     ## william
-                    print "\n#######################################################################"
+                    print "\n"+'#'*80
                     print '%s的交易合约%s无法找到' %(name, vtSymbol)
-                    print "#######################################################################\n"
-                    self.writeCtaLog(u'%s的交易合约%s无法找到' %(name, vtSymbol))
+                    print '#'*80+"\n"
+                    # self.writeCtaLog(u'%s的交易合约%s无法找到' %(name, vtSymbol))
 
     #----------------------------------------------------------------------
     def initStrategy(self, name):
@@ -702,20 +705,20 @@ class CtaEngine(object):
 
             if not strategy.inited:
                 strategy.inited = True
-                print "\n#######################################################################"
+                print "\n"+'#'*80
                 print '初始化成功：%s' %name
-                print "#######################################################################\n"
+                print '#'*80+"\n"
                 self.callStrategyFunc(strategy, strategy.onInit)
             else:
-                print "\n#######################################################################"
+                print "\n"+'#'*80
                 print '请勿重复初始化策略实例：%s' %name
-                print "#######################################################################\n"
-                self.writeCtaLog(u'请勿重复初始化策略实例：%s' %name)
+                print '#'*80+"\n"
+                # self.writeCtaLog(u'请勿重复初始化策略实例：%s' %name)
         else:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例不存在：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例不存在：%s' %name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例不存在：%s' %name)
 
     #---------------------------------------------------------------------------
     def startStrategy(self, name):
@@ -736,10 +739,10 @@ class CtaEngine(object):
                 ## 5.启动策略
                 self.callStrategyFunc(strategy, strategy.onStart)
         else:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例不存在：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例不存在：%s' %name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例不存在：%s' %name)
 
     #----------------------------------------------------------------------
     def stopStrategy(self, name):
@@ -771,10 +774,10 @@ class CtaEngine(object):
                     if so.strategy is strategy:
                         self.cancelStopOrder(stopOrderID)
         else:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例不存在：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例不存在：%s' %name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例不存在：%s' %name)
 
     #----------------------------------------------------------------------
     def saveSetting(self):
@@ -806,9 +809,9 @@ class CtaEngine(object):
 
         self.loadPosition()
 
-        print "\n#######################################################################"
+        print "\n"+'#'*80
         print "CTA_setting.json 加载成功!!!"
-        print "#######################################################################\n"
+        print '#'*80+"\n"
 
     #----------------------------------------------------------------------
     def getStrategyVar(self, name):
@@ -822,10 +825,10 @@ class CtaEngine(object):
 
             return varDict
         else:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例不存在：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例不存在：' + name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例不存在：' + name)
             return None
 
     #----------------------------------------------------------------------
@@ -840,10 +843,10 @@ class CtaEngine(object):
 
             return paramDict
         else:
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print '策略实例不存在：%s' %name
-            print "#######################################################################\n"
-            self.writeCtaLog(u'策略实例不存在：' + name)
+            print '#'*80+"\n"
+            # self.writeCtaLog(u'策略实例不存在：' + name)
             return None
 
     #----------------------------------------------------------------------
@@ -868,10 +871,10 @@ class CtaEngine(object):
             # 发出日志
             content = '\n'.join([u'策略%s触发异常已停止' %strategy.name,
                                 traceback.format_exc()])
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print content
-            print "#######################################################################\n"
-            self.writeCtaLog(content)
+            print '#'*80+"\n"
+            # self.writeCtaLog(content)
 
     #----------------------------------------------------------------------
     def savePosition(self):
@@ -888,10 +891,10 @@ class CtaEngine(object):
                                      d, flt, True)
 
             content = '策略%s持仓保存成功' %strategy.name
-            print "\n#######################################################################"
+            print "\n"+'#'*80
             print content
-            print "#######################################################################\n"
-            self.writeCtaLog(content)
+            print '#'*80+"\n"
+            # self.writeCtaLog(content)
 
     #----------------------------------------------------------------------
     def loadPosition(self):
