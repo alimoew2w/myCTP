@@ -28,7 +28,7 @@ from ctaBase import *
 from strategy import STRATEGY_CLASS
 from eventEngine import *
 from vtConstant import *
-from vtGateway import VtSubscribeReq, VtOrderReq, VtCancelOrderReq, VtLogData
+from vtGateway import VtSubscribeReq, VtOrderReq, VtCancelOrderReq, VtLogData, VtPositionData
 from vtFunction import todayDate
 ################################################################################
 ## william
@@ -90,11 +90,16 @@ class CtaEngine(object):
         # key为策略名称，value为策略实例，注意策略名称不允许重复
         self.strategyDict = {}
 
+        ## =====================================================================
+        self.positionInfo = {}
+        self.accountContracts = []
+        ## =====================================================================
+
         # 保存vtSymbol和策略实例映射的字典（用于推送tick数据）
         # 由于可能多个strategy交易同一个vtSymbol，因此key为vtSymbol
         # value为包含所有相关strategy对象的list
         self.tickStrategyDict = {}
-        self.lastTick = {}
+        self.lastTickData = {}
         self.lastTickFileds = ['symbol', 'vtSymbol', 'lastPrice', 'bidPrice1', 'askPrice1',
                                'bidVolume1', 'askVolume1','upperLimit','lowerLimit']
 
@@ -155,7 +160,8 @@ class CtaEngine(object):
                                        set(self.failedContracts_Fl_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_YY_SimNow.InstrumentID.values) |
                                        set(self.failedContracts_LXO_SimNow.InstrumentID.values) |
-                                       set(self.failedContracts_HiCloud.InstrumentID.values) )
+                                       set(self.failedContracts_HiCloud.InstrumentID.values) |
+                                       set(self.accountContracts))
         self.tickInfo = {}
         for i in self.subscribeContracts:
             self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
@@ -275,11 +281,17 @@ class CtaEngine(object):
         ## william
         ## 从主函数口发单,使用 ctpGateway
         vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
-        self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
+        
+        ## =====================================================================
+        ## 如果是一键全平仓，不要使用以下的命令
+        ## =====================================================================
+        if strategy.name != 'CLOSE_ALL':
+            self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
 
-        print "\n"+'#'*80
-        print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
-        print '#'*80+'\n'
+            print "\n"+'#'*80
+            print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
+            print '#'*80+'\n'
+        ## =====================================================================
         # self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
         #                  %(strategy.name, vtSymbol, req.direction, volume, price))
         ########################################################################
@@ -395,7 +407,10 @@ class CtaEngine(object):
     def processTickEvent(self, event):
         """处理行情推送"""
         tick = event.dict_['data']
-
+        ## =====================================================================
+        if tick.vtSymbol in self.subscribeContracts:
+            self.lastTickData[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
+        ## =====================================================================
         # 收到tick行情后，先处理本地停止单（检查是否要立即发出）
         self.processStopOrder(tick)
         ####################################################################
@@ -432,6 +447,7 @@ class CtaEngine(object):
                 ## 把 TickData 数据推送到策略函数里面
                 self.callStrategyFunc(strategy, strategy.onClosePosition, ctaTick)
                 ## =============================================================
+ 
     #----------------------------------------------------------------------
     def processOrderEvent(self, event):
         """处理委托推送"""
@@ -491,6 +507,33 @@ class CtaEngine(object):
                 posBuffer.vtSymbol = pos.vtSymbol
                 self.posBufferDict[pos.vtSymbol] = posBuffer
             posBuffer.updatePositionData(pos)
+        ##
+
+        ## =====================================================================
+        ## 查询账户持仓
+        ## =====================================================================
+        tempRes = VtPositionData()
+        d = tempRes.__dict__
+        for key in d.keys():
+            if key != 'datetime':
+                d[key] = pos.__getattribute__(key)
+
+        if tempRes.direction == u"多":
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'long'
+        elif tempRes.direction == u"空":
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'short'
+        else:
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'unknown'
+
+        tempRes.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        self.positionInfo[tempRes.__dict__['symbolPosition']] = tempRes.__dict__
+
+        self.accountContracts = [self.positionInfo[k]['vtSymbol'] for k in self.positionInfo.keys() if int(self.positionInfo[k]['position']) != 0]
+        ## =====================================================================
+
+
+
 
     #----------------------------------------------------------------------
     def registerEvent(self):
