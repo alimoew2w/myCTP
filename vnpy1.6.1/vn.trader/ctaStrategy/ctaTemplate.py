@@ -25,6 +25,9 @@ from datetime import *
 import time
 from eventType import *
 
+# pd.set_option('display.height', 500)
+pd.set_option('display.max_rows', 1000)
+
 ########################################################################
 class CtaTemplate(object):
     """CTA策略模板"""
@@ -793,7 +796,7 @@ class CtaTemplate(object):
         ## =====================================================================
         ## 1. 更新未成交订单，并保存到 MySQL 数据库
         ## ===================================================================== 
-        if (datetime.now().hour == 15) and (datetime.now().minute >= 2) and \
+        if (datetime.now().hour == 15) and (2 <= datetime.now().minute <= 4) and \
            (datetime.now().second == 59) and self.trading:
             ## -----------------------------------------------------------------
             self.failedOrders = {k:tradingOrders[k] \
@@ -867,7 +870,8 @@ class CtaTemplate(object):
 
         ## =====================================================================
         ## sendMail
-        if (datetime.now().hour == 15) and (4 <= datetime.now().minute <= 5) and (datetime.now().second % 10 == 0) and self.trading:
+        if (datetime.now().hour == 15) and (datetime.now().minute == 5) and \
+           (datetime.now().second % 10 == 0) and self.trading:
             self.sendMail()
         ## =====================================================================
 
