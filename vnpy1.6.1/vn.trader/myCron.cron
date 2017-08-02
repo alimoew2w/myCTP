@@ -3,4 +3,21 @@
 MAILTO=fl@hicloud-investment.com
 ## =============================================================================
 
-55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
+#22 10,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
+
+#57 10 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainNoUI_FL_SimNow.py
+
+## 55 13 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_FL_SimNow.py
+
+## =============================================================================
+## LXO_SimNow
+## =============================================================================
+50 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_LXO_SimNow.py
+50 14 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_LXO_SimNow.py
+
+
+## =============================================================================
+## YY_SimNow
+## =============================================================================
+55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_YY_SimNow.py
+55 14 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_YY_SimNow.py
