@@ -4,8 +4,12 @@ import sys
 import os
 import ctypes
 import platform
+from datetime import datetime
 
 import re
+os.putenv('DISPLAY', ':0.0')
+
+import subprocess
 ################################################################################
 ##　william
 ## 加载包
@@ -76,29 +80,29 @@ except:
 mainEngine = MainEngine()
 
 print "\n"+'#'*80
-print u"main 主函数启动成功！！！"
+print "main 主函数启动成功！！！"
 time.sleep(2.0)
 print '#'*80+"\n"
 ################################################################################
 
 
 gatewayName = 'CTP'
-# print U"GatewayName:", gatewayName
+# print "GatewayName:", gatewayName
 
 try:
     # mainEngine.connect(gatewayName)
     mainEngine.connectCTPAccount(accountInfo = 'FL_SimNow')
-    print u"CTP 正在登录!!!",
+    print "CTP 正在登录!!!",
     for i in range(33):
         print ".",
-        time.sleep(.1)
+        time.sleep(.05)
 
     print "\n"+'#'*80
-    print u"CTP 连接成功!!!"
+    print "CTP 连接成功!!!"
     print '#'*80
 except:
     print "\n"+'#'*80
-    print u"CTP 连接失败!!!"
+    print "CTP 连接失败!!!"
     print '#'*80
 ################################################################################
 
@@ -106,8 +110,8 @@ except:
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-# ## mainWindow.showMaximized()
+mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+mainWindow.showMaximized()
 # mainWindow.showMinimized()
 
 
@@ -118,14 +122,31 @@ except:
 ## ==============================
 ## 数据库名称
 mainEngine.dataBase     = 'FL_SimNow'
+mainEngine.multiStrategy = True
+# mainEngine.multiStrategy = False
 mainEngine.initCapital  = 1000000
 mainEngine.flowCapitalPre = 0
 mainEngine.flowCapitalToday = 0
 ## 公司内部人员
-mainEngine.mailReceiverMain = ['fl@hicloud-investment.com']
+mainEngine.mailReceiverMain = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
 ## 其他人员
 mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
 ## ==============================
+
+if mainEngine.multiStrategy:
+    # if datetime.now().hour in [8,9,20,21]:
+    # if datetime.now().hour not in [14]:
+    #     subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',
+    #                  mainEngine.dataBase], shell = False)
+    # elif datetime.now().hour in [14]:
+    #     subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',
+    #                  mainEngine.dataBase], shell = False)
+    if datetime.now().hour in [8,9,20,21]:
+        subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',mainEngine.dataBase], shell = False)
+        time.sleep(3)
+    else:
+        subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',mainEngine.dataBase], shell = False)
+
 
 ## =============================================================================
 # 加载设置
@@ -141,22 +162,23 @@ strat = mainEngine.ctaEngine.strategyDict
 ################################################################################
 # 初始化策略
 ## YYStrategy
-mainEngine.ctaEngine.initStrategy('Yun Yang')
-stratYY = strat['Yun Yang']
-print stratYY.tradingOrders
-mainEngine.ctaEngine.startStrategy('Yun Yang')
+mainEngine.ctaEngine.initStrategy('YunYang')
+stratYY = strat['YunYang']
+# print stratYY.tradingOrdersOpen
+# print stratYY.tradingOrdersClose
+mainEngine.ctaEngine.startStrategy('YunYang')
 # ## 停止策略运行
-# mainEngine.ctaEngine.stopStrategy('Yun Yang')
+# mainEngine.ctaEngine.stopStrategy('YunYang')
 
 
 ################################################################################
 # 初始化策略
 ## YYStrategy
-# mainEngine.ctaEngine.initStrategy('OiRank')
-# stratOI = strat['OiRank']
+mainEngine.ctaEngine.initStrategy('OiRank')
+stratOI = strat['OiRank']
 # print stratOI.tradingOrdersOpen
-
-# mainEngine.ctaEngine.startStrategy('OiRank')
+# print stratOI.tradingOrdersClose
+mainEngine.ctaEngine.startStrategy('OiRank')
 ## 停止策略运行
 # mainEngine.ctaEngine.stopStrategy('OiRank')
 
@@ -167,3 +189,4 @@ mainEngine.drEngine.getIndicatorInfo(dbName = mainEngine.dataBase,
                                     initCapital = mainEngine.initCapital,
                                     flowCapitalPre = mainEngine.flowCapitalPre,
                                     flowCapitalToday = mainEngine.flowCapitalToday)
+
