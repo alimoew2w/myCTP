@@ -57,17 +57,6 @@ class OIStrategy(CtaTemplate):
     tradingClosePositionSymbol = False        # 是否强制平仓单个合约
     ## -------------------------------------------------------------------------
 
-    # 参数列表，保存了参数的名称
-    # paramList = ['name',
-    #              'className',
-    #              'author',
-    #              'vtSymbol']
-    
-    # # 变量列表，保存了变量的名称
-    # varList = ['inited',
-    #            'trading',
-    #            'pos']
-
     ## -------------------------------------------------------------------------
     ## 从 TickData 提取的字段
     ## -------------------------------------------------------------------------
@@ -380,22 +369,14 @@ class OIStrategy(CtaTemplate):
                                     FROM positionInfo
                                     WHERE strategyID = '%s'
                                     """ %(self.strategyID))
-            # mysqlPositionInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-            #                         """
-            #                         SELECT *
-            #                         FROM positionInfo
-            #                         WHERE NOT(strategyID = '%s')
-            #                         """ %(self.strategyID))
+
             ## 看看是不是已经在数据库里面了
             tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempRes.loc[0,'InstrumentID']][mysqlPositionInfo.TradingDay == tempRes.loc[0,'TradingDay']][mysqlPositionInfo.direction == tempRes.loc[0,'direction']]
             if len(tempPosInfo) == 0:
                 ## 如果不在
                 ## 则直接添加过去即可
                 try:
-                    # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                    # cursor = conn.cursor()
                     tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
-                    # conn.close()
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
@@ -407,10 +388,7 @@ class OIStrategy(CtaTemplate):
                 ## 则需要更新数据
                 mysqlPositionInfo.at[tempPosInfo.index[0], 'volume'] += tempRes.loc[0,'volume']
                 mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-                # mysqlPositionInfo = mysqlPositionInfo.append(mysqlPositionInfoOthers, ignore_index=True)
                 try:
-                    # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                    # cursor = conn.cursor()
                     cursor.execute("""
                                     DELETE FROM positionInfo
                                     WHERE strategyID = '%s'
@@ -447,12 +425,7 @@ class OIStrategy(CtaTemplate):
                         FROM failedInfo
                         WHERE strategyID = '%s'
                         """ %(self.strategyID))
-                # mysqlFailedInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                #         """
-                #         SELECT *
-                #         FROM failedInfo
-                #         WHERE NOT (strategyID = '%s')
-                #         """ %(self.strategyID))
+
                  #-------------------------------------------------------------------
                 if len(mysqlFailedInfo) != 0:
                     #-------------------------------------------------------------------
@@ -460,17 +433,13 @@ class OIStrategy(CtaTemplate):
 
                     mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
                     mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
-                    # mysqlFailedInfo = mysqlFailedInfo.append(mysqlFailedInfoOthers, ignore_index=True)
                     try:
-                        # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                        # cursor = conn.cursor()
                         cursor.execute("""
                                         DELETE FROM failedInfo
                                         WHERE strategyID = '%s'
                                        """ %(self.strategyID))
                         conn.commit()
                         mysqlFailedInfo.to_sql(con=conn, name='failedInfo', if_exists='append', flavor='mysql', index = False)
-                        # conn.close()
                     except:
                         print "\n"+'#'*80
                         print '写入 MySQL 数据库出错'
@@ -489,28 +458,18 @@ class OIStrategy(CtaTemplate):
                                         FROM positionInfo
                                         WHERE strategyID = '%s'
                                         """ %(self.strategyID))
-                # mysqlPositionInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                #                         """
-                #                         SELECT *
-                #                         FROM positionInfo
-                #                         WHERE NOT(strategyID = '%s')
-                #                         """ %(self.strategyID))
 
                 tempPosInfo = self.positionInfoClose.loc[self.positionInfoClose.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfoClose.direction == tempDirection]
                 tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
                 mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
                 mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-                # mysqlPositionInfo = mysqlPositionInfo.append(mysqlPositionInfoOthers, ignore_index=True)
                 try:
-                    # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                    # cursor = conn.cursor()
                     cursor.execute("""
                                     DELETE FROM positionInfo
                                     WHERE strategyID = '%s'
                                    """ %(self.strategyID))
                     conn.commit()                    
                     mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
-                    # conn.close()
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
@@ -519,8 +478,6 @@ class OIStrategy(CtaTemplate):
                     print '#'*80+"\n"
                 ## =================================================================================
              ## =====================================================================================
-
-        # tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
         tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
             columns = self.tradingInfoFields)
         ## -----------------------------------------------------------------
