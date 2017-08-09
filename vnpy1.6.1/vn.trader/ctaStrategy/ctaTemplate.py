@@ -730,7 +730,7 @@ class CtaTemplate(object):
     ############################################################################
     ## 更新订单字典
     ############################################################################
-    def updateTradingOrders(self, tradingOrders, tradedOrders):
+    def updateTradingOrdersDict(self, tradingOrders, tradedOrders):
         """
         更新订单字典
         """
@@ -829,7 +829,13 @@ class CtaTemplate(object):
                 ## -------------------------------------------------------------
                 # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                 # cursor = conn.cursor()
-                df.to_sql(con=conn, name='failedInfo', if_exists='replace', flavor='mysql', index = False)
+                cursor.execute("""
+                                DELETE FROM failedInfo
+                                WHERE strategyID = %s
+                                AND TradingDay = %s
+                               """,(self.strategyID, self.ctaEngine.TradingDay))
+                conn.commit()
+                df.to_sql(con=conn, name='failedInfo', if_exists='append', flavor='mysql', index = False)
                 # conn.close()         
                 ## -------------------------------------------------------------
                 ####################################################################################
@@ -870,18 +876,91 @@ class CtaTemplate(object):
 
         ## =====================================================================
         ## sendMail
-        if (datetime.now().hour == 15) and (datetime.now().minute == 5) and \
-           (datetime.now().second % 10 == 0) and self.trading:
+        # if (datetime.now().hour == 15) and (4 <= datetime.now().minute <= 5) and \
+        #    (datetime.now().second % 10 == 0) and self.trading:
+        #     self.sendMail()
+        if datetime.now().strftime('%H:%M:%S') == '15:05:00' and self.trading:
+            self.sendMailStatus = True
             self.sendMail()
+        else:
+            self.sendMailStatus = False
         ## =====================================================================
+
+
+    ############################################################################
+    ## 更新订单表
+    ############################################################################
+    def updateTradingOrdersTable(self, stratTrade):
+        """
+        更新交易订单表
+        """
+        ## =====================================================================
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+
+        ## ---------------------------------------------------------------------
+        if self.stratTrade['offset'] == u'开仓':
+            if self.stratTrade['direction'] == 'long':
+                tempDirection = 'buy'
+            elif self.stratTrade['direction'] == 'short':
+                tempDirection = 'short'
+        elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
+            if self.stratTrade['direction'] == 'long':
+                tempDirection = 'cover'
+            elif self.stratTrade['direction'] == 'short':
+                tempDirection = 'sell'
+        ## ---------------------------------------------------------------------
+        
+        ## =====================================================================
+        mysqlInfoTradingOrders = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                """
+                                SELECT *
+                                FROM tradingOrders
+                                WHERE strategyID = '%s'
+                                AND InstrumentID = '%s'
+                                AND orderType = '%s'
+                                """ %(self.strategyID,self.stratTrade['vtSymbol'],
+                                    tempDirection))
+        # print mysqlInfoTradingOrders
+        if len(mysqlInfoTradingOrders) != 0:
+            for i in range(len(mysqlInfoTradingOrders)):
+                tempVolume = mysqlInfoTradingOrders.at[i,'volume'] - self.stratTrade['volume']
+                if tempVolume == 0:
+                    cursor.execute("""
+                                    DELETE FROM tradingOrders
+                                    WHERE strategyID = %s
+                                    AND InstrumentID = %s
+                                    AND volume = %s
+                                    AND orderType = %s
+                                   """, (self.strategyID, self.stratTrade['vtSymbol'],
+                                    mysqlInfoTradingOrders.at[i,'volume'],
+                                    tempDirection))
+                    conn.commit()
+                else:
+                    cursor.execute("""
+                                    UPDATE tradingOrders
+                                    SET volume = %s
+                                    WHERE strategyID = %s
+                                    AND InstrumentID = %s
+                                    AND volume = %s
+                                    AND orderType = %s
+                                   """, (tempVolume, self.strategyID, 
+                                    self.stratTrade['vtSymbol'],
+                                    mysqlInfoTradingOrders.at[i,'volume'],
+                                    tempDirection))
+                    conn.commit()
+
+        ## ---------------------------------------------------------------------
+        conn.close()
+
 
     ############################################################################
     ## 收盘发送交易播报的邮件通知
     ############################################################################
     def sendMail(self):
         """发送邮件通知给：汉云交易员"""
-        if datetime.now().strftime('%H:%M:%S') == '15:05:00' and self.trading:
-            self.sendMailStatus = True
+        # if datetime.now().strftime('%H:%M:%S') == '15:05:00' and self.trading:
+        #     self.sendMailStatus = True
         ## -----------  ----------------------------------------------------------
         if self.sendMailStatus and self.trading:
             self.sendMailStatus = False
