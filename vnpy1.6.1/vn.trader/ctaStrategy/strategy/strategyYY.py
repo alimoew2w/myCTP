@@ -64,16 +64,6 @@ class YYStrategy(CtaTemplate):
     tradingClosePositionSymbol = False        # 是否强制平仓单个合约
     ## -------------------------------------------------------------------------
 
-    # 参数列表，保存了参数的名称
-    # paramList = ['name',
-    #              'className',
-    #              'author',
-    #              'vtSymbol']
-    
-    # # 变量列表，保存了变量的名称
-    # varList = ['inited',
-    #            'trading',
-    #            'pos']
 
     ## -------------------------------------------------------------------------
     ## 从 TickData 提取的字段
@@ -448,12 +438,6 @@ class YYStrategy(CtaTemplate):
                                     FROM positionInfo
                                     WHERE strategyID = '%s'
                                     """ %(self.strategyID))
-            # mysqlPositionInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-            #                         """
-            #                         SELECT *
-            #                         FROM positionInfo
-            #                         WHERE NOT(strategyID = '%s')
-            #                         """ %(self.strategyID))
             ## 看看是不是已经在数据库里面了
             tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempRes.loc[0,'InstrumentID']][mysqlPositionInfo.TradingDay == tempRes.loc[0,'TradingDay']][mysqlPositionInfo.direction == tempRes.loc[0,'direction']]
             if len(tempPosInfo) == 0:
@@ -472,7 +456,6 @@ class YYStrategy(CtaTemplate):
                 ## 则需要更新数据
                 mysqlPositionInfo.at[tempPosInfo.index[0], 'volume'] += tempRes.loc[0,'volume']
                 mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-                # mysqlPositionInfo = mysqlPositionInfo.append(mysqlPositionInfoOthers, ignore_index = True)
                 try:
                     cursor.execute("""
                                     DELETE FROM positionInfo
@@ -505,12 +488,7 @@ class YYStrategy(CtaTemplate):
                                         FROM positionInfo
                                         WHERE strategyID = '%s'
                                         """ %(self.strategyID))
-                # mysqlPositionInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                #                         """
-                #                         SELECT *
-                #                         FROM positionInfo
-                #                         WHERE NOT(strategyID = '%s')
-                #                         """ %(self.strategyID))
+
                 tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
                 tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
                 mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
@@ -544,12 +522,7 @@ class YYStrategy(CtaTemplate):
                     FROM failedInfo
                     WHERE strategyID = '%s'
                     """ %(self.strategyID))
-            # mysqlFailedInfoOthers = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-            #         """
-            #         SELECT *
-            #         FROM failedInfo
-            #         WHERE NOT(strategyID = '%s')
-            #         """ %(self.strategyID))
+
             #-------------------------------------------------------------------
             if len(mysqlFailedInfo) != 0:
                 #-------------------------------------------------------------------
@@ -584,9 +557,6 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## 3. 保存交易记录
         ## =====================================================================
-        # tempFields = ['strategyID','vtSymbol','TradingDay','tradeTime','direction','offset','volume','price']
-        # tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], 
-        #     columns = ['strategyID','InstrumentID','TradingDay','tradeTime','direction','offset','volume','price'])
         tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
             columns = self.tradingInfoFields)
         ## -----------------------------------------------------------------
@@ -602,43 +572,6 @@ class YYStrategy(CtaTemplate):
         ############################################################################################
         if trade.vtOrderID in list(set(self.vtOrderIDListOpen) | set(self.vtOrderIDListClose)) and self.ctaEngine.mainEngine.multiStrategy:
             self.updateTradingOrdersTable(self.stratTrade)
-            # mysqlInfoTradingOrders = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-            #                         """
-            #                         SELECT *
-            #                         FROM tradingOrders
-            #                         WHERE strategyID = '%s'
-            #                         AND InstrumentID = '%s'
-            #                         AND orderType = '%s'
-            #                         """ %(self.strategyID,self.stratTrade['vtSymbol'],
-            #                             tempDirection))
-            # # print mysqlInfoTradingOrders
-            # if len(mysqlInfoTradingOrders) != 0:
-            #     for i in range(len(mysqlInfoTradingOrders)):
-            #         tempVolume = mysqlInfoTradingOrders.at[i,'volume'] - self.stratTrade['volume']
-            #         if tempVolume == 0:
-            #             cursor.execute("""
-            #                             DELETE FROM tradingOrders
-            #                             WHERE strategyID = %s
-            #                             AND InstrumentID = %s
-            #                             AND volume = %s
-            #                             AND orderType = %s
-            #                            """, (self.strategyID, self.stratTrade['vtSymbol'],
-            #                             mysqlInfoTradingOrders.at[i,'volume'],
-            #                             tempDirection))
-            #             conn.commit()
-            #         else:
-            #             cursor.execute("""
-            #                             UPDATE tradingOrders
-            #                             SET volume = %s
-            #                             WHERE strategyID = %s
-            #                             AND InstrumentID = %s
-            #                             AND volume = %s
-            #                             AND orderType = %s
-            #                            """, (tempVolume, self.strategyID, 
-            #                             self.stratTrade['vtSymbol'],
-            #                             mysqlInfoTradingOrders.at[i,'volume'],
-            #                             tempDirection))
-            #             conn.commit()
         # 发出状态更新事件
         self.putEvent()
         ############################################################################################
@@ -730,10 +663,6 @@ class YYStrategy(CtaTemplate):
                     tempVolume = int(self.openInfo.at[i,'volume'])
                     tempKey = self.openInfo.at[i,'InstrumentID'] + '-' + tempDirection
                     tempTradingDay = self.openInfo.at[i,'TradingDay']
-                    # self.tradingOrders[tempKey] = {'vtSymbol':self.openInfo.at[i,'InstrumentID'],
-                    #                                'direction':tempDirection,
-                    #                                'volume':tempVolume,
-                    #                                'TradingDay':tempTradingDay}
                     self.tradingOrdersClose[tempKey] = {'vtSymbol':self.openInfo.at[i,'InstrumentID'],
                                                        'direction':tempDirection,
                                                        'volume':tempVolume,
@@ -768,10 +697,6 @@ class YYStrategy(CtaTemplate):
                     tempVolume = int(self.positionInfo.at[i,'volume'])
                     tempKey = self.positionInfo.at[i,'InstrumentID'] + '-' + tempDirection
                     tempTradingDay = self.positionInfo.at[i,'TradingDay']
-                    # self.tradingOrders[tempKey] = {'vtSymbol':self.positionInfo.at[i,'InstrumentID'],
-                    #                                'direction':tempDirection,
-                    #                                'volume':tempVolume,
-                    #                                'TradingDay':tempTradingDay}
                     self.tradingOrdersOpen[tempKey] = {'vtSymbol':self.positionInfo.at[i,'InstrumentID'],
                                                        'direction':tempDirection,
                                                        'volume':tempVolume,
@@ -964,10 +889,6 @@ class YYStrategy(CtaTemplate):
                         tempVolume = int(self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'volume'].values)
                         tempKey = i + '-' + tempDirection
                         tempTradingDay = self.positionInfo.loc[self.positionInfo.InstrumentID == i, 'TradingDay'].values[0]
-                        # self.tradingOrders[tempKey] = {'vtSymbol':i,
-                        #                                'direction':tempDirection,
-                        #                                'volume':tempVolume,
-                        #                                 'TradingDay':tempTradingDay}
                         self.tradingOrdersOpen[tempKey] = {'vtSymbol':i,
                                                            'direction':tempDirection,
                                                            'volume':tempVolume,
@@ -986,10 +907,6 @@ class YYStrategy(CtaTemplate):
                         tempVolume = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
                         tempKey = i + '-' + tempDirection
                         tempTradingDay = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
-                        # self.tradingOrders[tempKey] = {'vtSymbol':i,
-                        #                                'direction':tempDirection,
-                        #                                'volume':tempVolume,
-                        #                                 'TradingDay':tempTradingDay}
                         self.tradingOrdersClose[tempKey] = {'vtSymbol':i,
                                                        'direction':tempDirection,
                                                        'volume':tempVolume,
@@ -1005,8 +922,6 @@ class YYStrategy(CtaTemplate):
         """
         提取交易订单
         """
-        # pass
-
         tempOpen = self.ctaEngine.mainEngine.dbMySQLQuery('FL_SimNow',
                             """
                             SELECT *
@@ -1028,10 +943,6 @@ class YYStrategy(CtaTemplate):
             for i in range(len(tempOpen)):
                 tempKey = tempOpen.at[i,'InstrumentID'] + '-' + tempOpen.at[i,'orderType']
                 ## ---------------------------------------------------------------------
-                # if tempOpen.at[i,'orderType'] == 'sell':
-                #     tempDirection = 'long'
-                # elif tempOpen.at[i,'orderType'] == 'cover':
-                #     tempDirection = 'short'
                 ## ---------------------------------------------------------------------
                 self.tradingOrdersOpen[tempKey] = {
                     'vtSymbol': tempOpen.at[i,'InstrumentID'],
@@ -1045,10 +956,6 @@ class YYStrategy(CtaTemplate):
             for i in range(len(tempClose)):
                 tempKey = tempClose.at[i,'InstrumentID'] + '-' + tempClose.at[i,'orderType']
                 ## ---------------------------------------------------------------------
-                # if tempClose.at[i,'orderType'] == 'buy':
-                #     tempDirection = 'long'
-                # elif tempClose.at[i,'orderType'] == 'short':
-                #     tempDirection = 'short'
                 ## ---------------------------------------------------------------------
                 self.tradingOrdersClose[tempKey] = {
                     'vtSymbol': tempClose.at[i,'InstrumentID'],
