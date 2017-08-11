@@ -1,0 +1,8 @@
+阿里云 CentOS7 服务器
+
+ ✔ 删除 ctaStrategy 整个文件夹 @done (17-08-11 14:13)
+ ✔ 删除 `/main/setting` 其他的账户信息 @done (17-08-11 14:13)
+ ✔ 删除 `/main/dataRecorder/drEngine.py` @done (17-08-11 14:16)
+ ✔ 删除 `/main/vtEngine.py` @done (17-08-11 14:26)
+ ✔ 删除 `/main/uiBasicWidget.py` @done (17-08-11 14:26)
+ ✔ 删除 `/main/uiMainWindow.py` @done (17-08-11 14:26)
