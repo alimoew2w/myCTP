@@ -509,11 +509,9 @@ class MarketMonitor(BasicMonitor):
         ## william
         ## 开始监听,反馈有更新的 Tick Data
         # 注册事件监听
-        ## 关闭更新功能
-        ## =====================================================================
+
         # self.registerEvent()
         self.clearContents()
-        ## =====================================================================
         
         '''
         print "#######################################################################"
@@ -521,6 +519,7 @@ class MarketMonitor(BasicMonitor):
         print "#######################################################################"
         '''
 
+## [re.sub('-long|-short','', k) for k in temp2.keys()]
 ################################################################################
 ## william
 ## '日志'窗口
@@ -696,6 +695,12 @@ class PositionMonitor(BasicMonitor):
         self.setEventType(EVENT_POSITION)
         self.setFont(BASIC_FONT)
         self.setSaveData(True)
+
+        ## =====================================================================
+        ## william 
+        ## 允许持仓排名
+        self.setSorting(True)
+        ## =====================================================================
         
         self.initTable()
         self.registerEvent()
@@ -968,10 +973,21 @@ class TradingWidget(QtGui.QFrame):
         # 发单按钮
         buttonSendOrder = QtGui.QPushButton(vtText.SEND_ORDER)
         buttonCancelAll = QtGui.QPushButton(vtText.CANCEL_ALL)
-        
+        ## =====================================================================
+        ## william
+        ## 全平
+        buttonCloseAll = QtGui.QPushButton(vtText.CLOSE_ALL)
+        ## =====================================================================
+
+
         size = buttonSendOrder.sizeHint()
-        buttonSendOrder.setMinimumHeight(size.height()*2)   # 把按钮高度设为默认两倍
-        buttonCancelAll.setMinimumHeight(size.height()*2)
+        buttonSendOrder.setMinimumHeight(size.height()*1.5)   # 把按钮高度设为默认两倍
+        buttonCancelAll.setMinimumHeight(size.height()*1.5)
+        ## =====================================================================
+        ## william
+        ## 全平
+        buttonCloseAll.setMinimumHeight(size.height()*1.5)
+        ## =====================================================================
 
         # 整合布局
         hbox = QtGui.QHBoxLayout()
@@ -982,6 +998,11 @@ class TradingWidget(QtGui.QFrame):
         vbox.addLayout(hbox)
         vbox.addWidget(buttonSendOrder)
         vbox.addWidget(buttonCancelAll)
+        ## =====================================================================
+        ## william
+        ## 全平
+        vbox.addWidget(buttonCloseAll)
+        ## =====================================================================
         vbox.addStretch()
 
         self.setLayout(vbox)
@@ -989,6 +1010,12 @@ class TradingWidget(QtGui.QFrame):
         # 关联更新
         buttonSendOrder.clicked.connect(self.sendOrder)
         buttonCancelAll.clicked.connect(self.cancelAll)
+        ## =====================================================================
+        ## william
+        ## 全平
+        buttonCloseAll.clicked.connect(self.closeAll)
+        ## =====================================================================
+
         self.lineSymbol.returnPressed.connect(self.updateSymbol)
 
     #----------------------------------------------------------------------
@@ -1150,7 +1177,7 @@ class TradingWidget(QtGui.QFrame):
         
         self.mainEngine.sendOrder(req, gatewayName)
             
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def cancelAll(self):
         """一键撤销所有委托"""
         l = self.mainEngine.getAllWorkingOrders()
@@ -1162,8 +1189,89 @@ class TradingWidget(QtGui.QFrame):
             req.sessionID = order.sessionID
             req.orderID = order.orderID
             self.mainEngine.cancelOrder(req, order.gatewayName)
-            
-    #----------------------------------------------------------------------
+    
+    ############################################################################
+    ## william
+    ############################################################################
+    def closeAll(self):
+        """
+        一键全平仓
+        """
+        # pass
+        
+        reply = QtGui.QMessageBox.question(self, vtText.CLOSE_ALL,
+                                   vtText.CONFIRM_CLOSE_ALL, QtGui.QMessageBox.Yes | 
+                                   QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes: 
+            ## -----------------------------------------------------------------
+            ## 先撤销所有的订单
+            # self.cancelAll()
+            ## -----------------------------------------------------------------
+        ## =====================================================================
+            CTAORDER_BUY = u'买开'
+            CTAORDER_SELL = u'卖平'
+            CTAORDER_SHORT = u'卖开'
+            CTAORDER_COVER = u'买平'
+
+            class strategyClass(object):
+                name = 'CLOSE_ALL'
+                productClass = ''
+                currency = ''
+            tempStrategy = strategyClass()
+
+            ## -------------------------------------------------------------------------------------
+            ## 订阅合约行情
+            ## -------------------------------------------------------------------------------------
+            for i in self.mainEngine.drEngine.positionInfo.keys():
+                req = VtSubscribeReq()
+                req.symbol = self.mainEngine.drEngine.positionInfo[i]['symbol']
+                self.mainEngine.subscribe(req, 'CTP')
+                if req.symbol not in self.mainEngine.ctaEngine.subscribeContracts:
+                    self.mainEngine.ctaEngine.subscribeContracts.append(req.symbol)
+                self.mainEngine.ctaEngine.tickInfo[req.symbol] = {k:self.mainEngine.getContract(req.symbol).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
+            ## -------------------------------------------------------------------------------------
+            ## =====================================================================
+
+            CTPAccountPosInfo = {k:{u:self.mainEngine.drEngine.positionInfo[k][u] for u in self.mainEngine.drEngine.positionInfo[k].keys() if u in ['vtSymbol','position','direction']} for k in self.mainEngine.drEngine.positionInfo.keys() if int(self.mainEngine.drEngine.positionInfo[k]['position']) != 0}
+            # print CTPAccountPosInfo
+
+            ## =====================================================================================
+            if CTPAccountPosInfo:
+                for i in CTPAccountPosInfo.keys():
+                    ## -----------------------------------------------------------------------------
+                    try:
+                        tempInstrumentID = CTPAccountPosInfo[i]['vtSymbol']
+                        tempVolume       = CTPAccountPosInfo[i]['position']
+                        tempPriceTick    = self.mainEngine.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
+                        tempLastPrice    = self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['lastPrice']
+                        ## -------------------------------------------------------------------------
+                        if CTPAccountPosInfo[i]['direction'] == u'多':
+                            self.mainEngine.ctaEngine.sendOrder(vtSymbol = tempInstrumentID,
+                                orderType = CTAORDER_SELL,
+                                price = max(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['lowerLimit'],tempLastPrice - 1*tempPriceTick),
+                                volume = tempVolume,
+                                strategy = tempStrategy)
+                        elif CTPAccountPosInfo[i]['direction'] == u'空':
+                            self.mainEngine.ctaEngine.sendOrder(vtSymbol = tempInstrumentID,
+                                orderType = CTAORDER_COVER,
+                                price = min(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['upperLimit'], tempLastPrice + 1*tempPriceTick),
+                                volume = tempVolume,
+                                strategy = tempStrategy)
+                        ## -------------------------------------------------------------------------
+                    except:
+                        print '\n' + '#'*80
+                        print tempInstrumentID,'平仓失败！！！'
+                        print '#'*80 + '\n'
+            ## =====================================================================================
+            # event.accept()
+        else:
+            pass
+            # event.ignore()
+
+
+
+    #---------------------------------------------------------------------------
     def closePosition(self, cell):
         """根据持仓信息自动填写交易组件"""
         # 读取持仓数据，cell是一个表格中的单元格对象
