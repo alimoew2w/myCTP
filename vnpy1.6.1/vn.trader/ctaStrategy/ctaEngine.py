@@ -150,7 +150,6 @@ class CtaEngine(object):
         ## -----------------------------------------------------------------------------------------
         ## william
         ## 需要订阅的合约
-        # self.subscribeContracts = list(set(self.mainContracts.Main_contract.values) | set(self.positionContracts.InstrumentID.values) | set(self.signalContracts.InstrumentID.values))
         self.subscribeContracts = list(set(self.positionContracts_FL_SimNow.InstrumentID.values) |
                                        set(self.positionContracts_YY_SimNow.InstrumentID.values) |
                                        set(self.positionContracts_HiCloud.InstrumentID.values) |
@@ -165,9 +164,6 @@ class CtaEngine(object):
         self.tickInfo = {}
         for i in self.subscribeContracts:
             self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
-        # self.subscribeContracts = list(set(self.positionContracts.InstrumentID.values) |
-        #                                set(self.signalContracts.InstrumentID.values) |
-        #                                set(self.failedContracts.InstrumentID.values))
         ############################################################################################
 
 
@@ -324,16 +320,16 @@ class CtaEngine(object):
                 self.mainEngine.cancelOrder(req, order.gatewayName)
             else:
                 if order.status == STATUS_ALLTRADED:
-                    print u'委托单({0}已执行，无法撤销'.format(vtOrderID)
+                    print '委托单({0}已执行，无法撤销'.format(vtOrderID)
                     # self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
                 if order.status == STATUS_CANCELLED:
-                    print u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
+                    print '委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
                     # self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
         ## =====================================================================
         # 查询不成功
         ## =====================================================================
         else:
-            print u'委托单({0}不存在'.format(vtOrderID)
+            print '委托单({0}不存在'.format(vtOrderID)
             # self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
 
     #----------------------------------------------------------------------
@@ -416,7 +412,7 @@ class CtaEngine(object):
         ####################################################################
         ## william
         # print "\n"+'#'*80
-        # print u"tick = event.dict_['data'] :==> ", tick.symbol
+        # print "tick = event.dict_['data'] :==> ", tick.symbol
         # print tick.__dict__
         # print '#'*80+"\n"
         # 推送tick到对应的策略实例进行处理
@@ -430,12 +426,6 @@ class CtaEngine(object):
             # 添加datetime字段
             ctaTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
 
-            ####################################################################
-            ## william
-            # print "\n"+'#'*80
-            # print 'strategy.onTick() 在这里获取 tick !!!==>', ctaTick.symbol
-            # print ctaTick.__dict__
-            # print '#'*80+"\n"
             ####################################################################
             ## william
             # 逐个推送到策略实例中
@@ -512,6 +502,7 @@ class CtaEngine(object):
         ## =====================================================================
         ## 查询账户持仓
         ## =====================================================================
+        # if len(self.accountContracts) == 0:
         tempRes = VtPositionData()
         d = tempRes.__dict__
         for key in d.keys():
@@ -551,32 +542,34 @@ class CtaEngine(object):
     #----------------------------------------------------------------------
     def loadBar(self, dbName, collectionName, days):
         """从数据库中读取Bar数据，startDate是datetime对象"""
-        startDate = self.today - timedelta(days)
+        pass
+        # startDate = self.today - timedelta(days)
 
-        d = {'datetime':{'$gte':startDate}}
-        barData = self.mainEngine.dbQuery(dbName, collectionName, d)
+        # d = {'datetime':{'$gte':startDate}}
+        # barData = self.mainEngine.dbQuery(dbName, collectionName, d)
 
-        l = []
-        for d in barData:
-            bar = CtaBarData()
-            bar.__dict__ = d
-            l.append(bar)
-        return l
+        # l = []
+        # for d in barData:
+        #     bar = CtaBarData()
+        #     bar.__dict__ = d
+        #     l.append(bar)
+        # return l
 
     #----------------------------------------------------------------------
     def loadTick(self, dbName, collectionName, days):
         """从数据库中读取Tick数据，startDate是datetime对象"""
-        startDate = self.today - timedelta(days)
+        pass
+        # startDate = self.today - timedelta(days)
 
-        d = {'datetime':{'$gte':startDate}}
-        tickData = self.mainEngine.dbQuery(dbName, collectionName, d)
+        # d = {'datetime':{'$gte':startDate}}
+        # tickData = self.mainEngine.dbQuery(dbName, collectionName, d)
 
-        l = []
-        for d in tickData:
-            tick = CtaTickData()
-            tick.__dict__ = d
-            l.append(tick)
-        return l
+        # l = []
+        # for d in tickData:
+        #     tick = CtaTickData()
+        #     tick.__dict__ = d
+        #     l.append(tick)
+        # return l
 
     ############################################################################
     ## william
@@ -964,6 +957,58 @@ class CtaEngine(object):
 
         newPrice = round(price/priceTick, 0) * priceTick
         return newPrice
+
+    ############################################################################
+    ## william
+    ############################################################################
+    def closeAll(self):
+        """
+        一键全平仓
+        """
+        pass
+        
+        ## =====================================================================
+        # CTAORDER_BUY = u'买开'
+        # CTAORDER_SELL = u'卖平'
+        # CTAORDER_SHORT = u'卖开'
+        # CTAORDER_COVER = u'买平'
+
+        # class strategyClass(object):
+        #     name = 'CLOSE_ALL'
+        #     productClass = ''
+        #     currency = ''
+        # tempStrategy = strategyClass()
+        # ## =====================================================================
+
+        # self.CTPAccountPosInfo = {k:{u:self.mainEngine.drEngine.positionInfo[k][u] for u in self.mainEngine.drEngine.positionInfo[k].keys() if u in ['vtSymbol','position','direction']} for k in self.mainEngine.drEngine.positionInfo.keys() if int(self.mainEngine.drEngine.positionInfo[k]['position']) != 0}
+        # print self.CTPAccountPosInfo
+
+        # if self.CTPAccountPosInfo:
+        #     for i in self.CTPAccountPosInfo.keys():
+        #         try:
+        #             tempInstrumentID = self.CTPAccountPosInfo[i]['vtSymbol']
+        #             tempVolume       = self.CTPAccountPosInfo[i]['position']
+        #             tempPriceTick    = self.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
+        #             tempLastPrice    = self.ctaEngine.lastTickData[tempInstrumentID]['lastPrice']
+        #             ## -----------------------------------------------------------------------------
+        #             if self.CTPAccountPosInfo[i]['direction'] == u'多':
+        #                 self.sendOrder(vtSymbol = tempInstrumentID,
+        #                     orderType = CTAORDER_SELL,
+        #                     price = max(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['lowerLimit'],tempLastPrice - 1*tempPriceTick),
+        #                     volume = tempVolume,
+        #                     strategy = tempStrategy)
+        #             elif self.CTPAccountPosInfo[i]['direction'] == u'空':
+        #                 self.sendOrder(vtSymbol = tempInstrumentID,
+        #                     orderType = CTAORDER_COVER,
+        #                     price = min(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['upperLimit'], tempLastPrice + 1*tempPriceTick),
+        #                     volume = tempVolume,
+        #                     strategy = tempStrategy)
+        #             ## -----------------------------------------------------------------------------
+        #         except:
+        #             print '#'*80
+        #             print tempInstrumentID,'平仓失败！！！'
+        #             print '#'*80
+
 
 
 ########################################################################
