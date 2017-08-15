@@ -478,20 +478,20 @@ class CtpMdApi(MdApi):
         tick.vtSymbol = tick.symbol #'.'.join([tick.symbol, EXCHANGE_UNKNOWN])
 
         ## 价格信息
-        tick.lastPrice          = data['LastPrice']
+        tick.lastPrice          = round(data['LastPrice'],5)
         # tick.preSettlementPrice = data['PreSettlementPrice']
-        tick.preClosePrice      = data['PreClosePrice']
-        tick.openPrice          = data['OpenPrice']
-        tick.highestPrice       = data['HighestPrice']
-        tick.lowestPrice        = data['LowestPrice']
-        tick.closePrice         = data['ClosePrice']
+        tick.preClosePrice      = round(data['PreClosePrice'],5)
+        tick.openPrice          = round(data['OpenPrice'],5)
+        tick.highestPrice       = round(data['HighestPrice'],5)
+        tick.lowestPrice        = round(data['LowestPrice'],5)
+        tick.closePrice         = round(data['ClosePrice'],5)
 
-        tick.upperLimit         = data['UpperLimitPrice']
-        tick.lowerLimit         = data['LowerLimitPrice']
+        tick.upperLimit         = round(data['UpperLimitPrice'],5)
+        tick.lowerLimit         = round(data['LowerLimitPrice'],5)
 
         ## 成交量, 成交额
-        tick.volume = data['Volume']
-        tick.turnover = data['Turnover']
+        tick.volume = round(data['Volume'],5)
+        tick.turnover = round(data['Turnover'],5)
 
         ## 持仓数据
         # tick.preOpenInterest    = data['PreOpenInterest']
@@ -502,9 +502,9 @@ class CtpMdApi(MdApi):
         # tick.currDelta          = data['CurrDelta']
 
         #! CTP只有一档行情
-        tick.bidPrice1  = data['BidPrice1']
+        tick.bidPrice1  = round(data['BidPrice1'],5)
         tick.bidVolume1 = data['BidVolume1']
-        tick.askPrice1  = data['AskPrice1']
+        tick.askPrice1  = round(data['AskPrice1'],5)
         tick.askVolume1 = data['AskVolume1']
 
         tick.bidPrice2  = data['BidPrice2']
@@ -528,8 +528,8 @@ class CtpMdApi(MdApi):
         tick.askVolume5 = data['AskVolume5']
 
         ########################################################################
-        tick.settlementPrice    = data['SettlementPrice']
-        tick.averagePrice       = data['AveragePrice']
+        tick.settlementPrice    = round(data['SettlementPrice'],5)
+        tick.averagePrice       = round(data['AveragePrice'],5)
         ########################################################################
         ## william
         ## tick 数据返回到 /vn.trader/vtEngine.onTick()
@@ -616,11 +616,7 @@ class CtpMdApi(MdApi):
 ########################################################################
 class CtpTdApi(TdApi):
     """CTP交易API实现"""
-    ## =========================================================================
-    ## 打印订单的信息
-    tempOrderFields = ['symbol','price','priceType','direction',
-                       'offset','volume','tradeStatus','orderTime','orderID']
-    ## =========================================================================
+
     #----------------------------------------------------------------------
     def __init__(self, gateway):
         """API对象的初始化函数"""
@@ -1674,16 +1670,16 @@ class CtpTdApi(TdApi):
         temp = ['InstrumentID','LimitPrice','VolumeTotalOriginal','OrderPriceType','Direction','OrderRef','InvestorID','UserID','BrokerID']
         temp = {k: req[k] for k in req.keys()}
         '''
-        print '\n' + '#'*80 
+        print "\n"+'#'*80
         print "打印下单的详细信息"
         ## print temp
         ## print req
         # print pd.DataFrame([req.values()], columns = req.keys())
         # print orderReq.__dict__
-        print '-'*80 
-        # tempFields = ['symbol','exchange','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
-        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[self.tempOrderFields]
-        print '#'*80 
+        print '-'*80
+        tempFields = ['symbol','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
+        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
+        print '#'*80
         ########################################################################
         self.reqOrderInsert(req, self.reqID)
 
