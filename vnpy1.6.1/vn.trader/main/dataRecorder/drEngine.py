@@ -81,7 +81,7 @@ class DrEngine(object):
         ## william
         ## DrEngine 关闭,则不再保存数据到 CSV 文件
         ########################################################################
-        # self.loadSetting()
+        self.loadSetting()
 
     #----------------------------------------------------------------------
     def loadSetting(self):
@@ -135,6 +135,7 @@ class DrEngine(object):
                     else:
                         print vtSymbol,'合约没有找到'
 
+
                     ############################################################
                     ## william
                     ##
@@ -165,10 +166,10 @@ class DrEngine(object):
             #         bar = DrBarData()
             #         self.barDict[vtSymbol] = bar
 
-            ####################################################################
-            ## william
-            ## 所有的都变成 active
-            ####################################################################
+            # ####################################################################
+            # ## william
+            # ## 所有的都变成 active
+            # ####################################################################
 
             # if 'active' in drSetting:
             #     d = drSetting['active']
@@ -214,6 +215,7 @@ class DrEngine(object):
             if key != 'datetime':
                 d[key] = tick.__getattribute__(key)
         drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
+
         # 更新Tick数据
         if vtSymbol in self.tickDict:
             self.insertData(TICK_DB_NAME, vtSymbol, drTick)
@@ -221,9 +223,9 @@ class DrEngine(object):
             ## william
             ## print "更新Tick数据"
             ## 这里使用了 insertData 插入到线程,原来用的是 mongoDB
-            # if vtSymbol in self.activeSymbolDict:
-            #     activeSymbol = self.activeSymbolDict[vtSymbol]
-            #     self.insertData(TICK_DB_NAME, activeSymbol, drTick)
+            if vtSymbol in self.activeSymbolDict:
+                activeSymbol = self.activeSymbolDict[vtSymbol]
+                self.insertData(TICK_DB_NAME, activeSymbol, drTick)
             ####################################################################
             ## william
             ## 在 UI 界面的 '行情记录里面' 打印
@@ -252,7 +254,7 @@ class DrEngine(object):
             """
             ####################################################################
 
-        # 更新分钟线数据
+        # # 更新分钟线数据
         # if vtSymbol in self.barDict:
         #     bar = self.barDict[vtSymbol]
 
@@ -346,11 +348,11 @@ class DrEngine(object):
                 d[key] = position.__getattribute__(key)
 
         if tempRes.direction == u"多":
-            tempRes.symbolPosition = tempRes.symbol + '-' + u'long'
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'long'
         elif tempRes.direction == u"空":
-            tempRes.symbolPosition = tempRes.symbol + '-' + u'short'
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'short'
         else:
-            tempRes.symbolPosition = tempRes.symbol + '-' + u'unknown'
+            tempRes.symbolPosition = tempRes.symbol + '-' + 'unknown'
 
         tempRes.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -375,6 +377,8 @@ class DrEngine(object):
         # print pd.DataFrame(self.positionInfo)
         return self.positionInfo
 
+
+
     ############################################################################
     ## william
     ## 如果订单有成交,则立即发出通知
@@ -393,14 +397,14 @@ class DrEngine(object):
 
         # self.tradeInfo.tradeStatus = u'全部成交'
         self.tradeInfo.tradeStatus = self.mainEngine.dataEngine.orderDict[self.mainEngine.drEngine.tradeInfo.__dict__['vtOrderID']].status
-        print '\n' + '#'*80 
+        print "\n"+'#'*80
         print "当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
-        print '-'*80 
+        print "-----------------------------------------------------------------------"
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
         print tempRes[['symbol','price','direction','offset',
                        'volume','tradeStatus','tradeTime','orderID']]
-        print '#'*80 
+        print '#'*80
 
     def getTradeInfo(self):
         """获取成交订单信息"""
@@ -451,7 +455,7 @@ class DrEngine(object):
 
         accInfo['availableMoney'] = accInfo['available']
         accInfo['totalMoney'] = accInfo['balance']
-        accInfo['flowMoney']  = flowCapitalPre + flowCapitalToday
+        accInfo['flowMoney'] = flowCapitalPre + flowCapitalToday
         accInfo['allMoney'] = accInfo['totalMoney'] + accInfo['flowMoney']
 
         if accInfo['balance'] != 0:
@@ -524,12 +528,7 @@ class DrEngine(object):
     #----------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
-        ## =====================================================================
-        ## william
-        ## 这里不需要处理 processTickEvent
-        ## 所以我在这里注释掉。
-        # self.eventEngine.register(EVENT_TICK, self.processTickEvent)
-        ## =====================================================================
+        self.eventEngine.register(EVENT_TICK, self.processTickEvent)
 
         ########################################################################
         ## william
@@ -558,7 +557,6 @@ class DrEngine(object):
     #----------------------------------------------------------------------
     def run(self):
         """运行插入线程"""
-        pass
         ########################################################################
         ## william
         ## 获取 CTP 行情 mdApi 推送的 Tick Data
@@ -578,18 +576,27 @@ class DrEngine(object):
         ## 这里,当持仓的合约被鼠标激活后,
         ## 把合约的信息打印到终端
         ########################################################################
-        # while self.active:
-        #     ## 如果需要保存到 csv 文件
-        #     try:
-        #         dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-        #         ## print d
-        #         ############################################################
-        #         ## william
-        #         ## 是不是要保存数据到 csv 文件
-        #         ## self.mainEngine.dbWriteCSV(d)
-        #         ############################################################
-        #     except Empty:
-        #         pass
+        while self.active:
+            ## 如果需要保存到 csv 文件
+            '''
+            if saveTickData:
+                try:
+                    dbName, collectionName, d = self.queue.get(block=True, timeout=1)
+                    ## print d
+                    self.mainEngine.dbWriteCSV(d)
+                except Empty:
+                    pass
+            '''
+            try:
+                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
+                ## print d
+                ############################################################
+                ## william
+                ## 是不是要保存数据到 csv 文件
+                ## self.mainEngine.dbWriteCSV(d)
+                ############################################################
+            except Empty:
+                pass
 
     #---------------------------------------------------------------------------
     def start(self):
@@ -619,8 +626,11 @@ class DrEngine(object):
     def exitFun(self,event):
         if self.exitTime():
             print '#'*80
-            print "亲, 赌场已经收摊打烊啦......!!!"
+            print "启禀圣上, 赌场已经收摊打烊啦......!!!"
             print '#'*80
+            ####################################################################
+            ## william
+            ## 退出程序
             self.stop()
             os._exit(0)
     #---------------------------------------------------------------------------
@@ -630,8 +640,11 @@ class DrEngine(object):
         t  = datetime.now()
         h  = t.hour
         m  = t.minute
-        # if (h == 2 and m > 35) or (h == 15 and m > 17):
-        #     re = True
-        #     print h,m,re
+        s  = t.second
+        # if ((h == 2 and m == 35) or (h == 15 and m == 10 ) or \
+        #     (h in [9,21] and m == 10) ) and s == 59:
+        if (h in [2,11,15] and m == 35 and s == 59):
+            re = True
+            print h,m,s,re
         return re
     ############################################################################
