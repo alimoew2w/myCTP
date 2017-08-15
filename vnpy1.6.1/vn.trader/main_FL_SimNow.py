@@ -7,6 +7,9 @@ import platform
 from datetime import datetime
 
 import re
+from datetime import datetime
+import time
+import csv
 os.putenv('DISPLAY', ':0.0')
 
 import subprocess
@@ -21,6 +24,21 @@ import subprocess
 os.chdir("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
 sys.path.append("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main")
 import vtPath
+
+################################################################################
+TradingDay = []
+with open('ChinaFuturesCalendar.csv') as f:
+    ChinaFuturesCalendar = csv.reader(f)
+    for row in ChinaFuturesCalendar:
+        if row[1] >= '20170101':
+            TradingDay.append(row[1])
+TradingDay.pop(0)
+# print TradingDay
+
+if datetime.now().strftime("%Y%m%d") not in TradingDay:
+    print '#'*80
+    sys.exit("启禀圣上，今日赌场不开张!!!")
+################################################################################
 
 ################################################################################
 from vtEngine import MainEngine
@@ -134,19 +152,9 @@ mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
 ## ==============================
 
 if mainEngine.multiStrategy:
-    # if datetime.now().hour in [8,9,20,21]:
-    # if datetime.now().hour not in [14]:
-    #     subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',
-    #                  mainEngine.dataBase], shell = False)
-    # elif datetime.now().hour in [14]:
-    #     subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',
-    #                  mainEngine.dataBase], shell = False)
-    if datetime.now().hour in [8,9,20,21]:
-        subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',mainEngine.dataBase], shell = False)
-        time.sleep(3)
-    else:
-        subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',mainEngine.dataBase], shell = False)
-
+    subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',mainEngine.dataBase], shell = False)
+    time.sleep(3)
+    # subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',mainEngine.dataBase], shell = False)
 
 ## =============================================================================
 # 加载设置
