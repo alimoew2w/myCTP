@@ -47,7 +47,7 @@ from dataRecorder.recorderEngine import DrEngine
 ########################################################################
 class MainEngine(object):
     """主引擎"""
-    tradingDay = vtFunction.tradingDay()
+    # tradingDay = vtFunction.tradingDay()
     #----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
@@ -186,9 +186,9 @@ class MainEngine(object):
         ########################################################################
         ## william
         ## 保存合约信息
-        f2 = shelve.open(os.path.normpath(os.path.join(main_path,'..','..','vn.data','ContractInfo',(self.tradingDay + '_' + contractFileName) )))
-        f2['data'] = self.dataEngine.contractDict
-        f2.close()
+        # f2 = shelve.open(os.path.normpath(os.path.join(main_path,'..','..','vn.data','ContractInfo',(self.tradingDay + '_' + contractFileName) )))
+        # f2['data'] = self.dataEngine.contractDict
+        # f2.close()
 
         # print "#######################################################################\n"
     ############################################################################
