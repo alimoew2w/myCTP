@@ -400,7 +400,7 @@ class DrEngine(object):
         print "\n"+'#'*80
         print "当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
-        print "-----------------------------------------------------------------------"
+        print "-"*80
         tempRes = pd.DataFrame([temp.values()], columns = temp.keys())
         print tempRes[['symbol','price','direction','offset',
                        'volume','tradeStatus','tradeTime','orderID']]
