@@ -1677,7 +1677,8 @@ class CtpTdApi(TdApi):
         # print pd.DataFrame([req.values()], columns = req.keys())
         # print orderReq.__dict__
         print '-'*80
-        tempFields = ['symbol','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
+        # tempFields = ['symbol','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
+        tempFields = ['symbol','price','direction','offset','volume','tradeStatus','orderTime','orderID']
         print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
         print '#'*80
         ########################################################################
