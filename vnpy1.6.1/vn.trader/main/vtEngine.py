@@ -140,8 +140,8 @@ class MainEngine(object):
             ####################################################################
             ## 系统连接后,自动撤销所有的订单
             ## -----------------------------------------------------------------
-            print u"\n#######################################################################"
-            print u'启动前撤销所有的未成交订单'
+            print "\n"+'#'*80
+            print '启动前撤销所有的未成交订单'
             time.sleep(5)
             self.cancelOrderAll()
             ####################################################################
@@ -154,7 +154,7 @@ class MainEngine(object):
             ## 如果连接 CTP,
             ## 则默认自动连接 MySQL 数据库
             self.dbMySQLConnect()
-            print u"#######################################################################"
+            print "#"*80
             ####################################################################
         else:
             self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
@@ -171,8 +171,8 @@ class MainEngine(object):
             ####################################################################
             ## 系统连接后,自动撤销所有的订单
             ## -----------------------------------------------------------------
-            print u"\n#######################################################################"
-            print u'启动前撤销所有的未成交订单'
+            print "\n"+'#'*80
+            print '启动前撤销所有的未成交订单'
             time.sleep(5)
             self.cancelOrderAll()
             ####################################################################
@@ -185,7 +185,7 @@ class MainEngine(object):
             ## 如果连接 CTP,
             ## 则默认自动连接 MySQL 数据库
             self.dbMySQLConnect()
-            print u"#######################################################################\n"
+            print "#"*80+"\n"
             ####################################################################
         else:
             self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
@@ -247,7 +247,7 @@ class MainEngine(object):
             ## 打印撤单的详细信息
             
             # print "#######################################################################"
-            # print u"撤单的详细信息:"
+            # print "撤单的详细信息:"
             # print req
             # print "#######################################################################"
             ####################################################################
@@ -417,17 +417,17 @@ class MainEngine(object):
                 ################################################################
                 ## william
                 ## 打印数据库信息
-                print u"#-------------------------------------------------------"
-                print u"Mongo 数据库连接成功!!!"
-                print u"#-------------------------------------------------------"    
+                print "#-------------------------------------------------------"
+                print "Mongo 数据库连接成功!!!"
+                print "#-------------------------------------------------------"    
             except ConnectionFailure:
                 self.writeLog(text.DATABASE_CONNECTING_FAILED)
                 ################################################################
                 ## william
                 ## 打印数据库信息
-                print u"#-------------------------------------------------------"
-                print u"Mongo 数据库连接失败!!!"
-                print u"#-------------------------------------------------------" 
+                print "#-------------------------------------------------------"
+                print "Mongo 数据库连接失败!!!"
+                print "#-------------------------------------------------------" 
 
     ############################################################################
     ## william
@@ -482,16 +482,16 @@ class MainEngine(object):
             mysqlData = pd.read_sql(query, conn)
             ## william
             ## 打印数据库列表
-            print u"#-------------------------------------------------------"
-            print u"MySQL 查询数据成功!!!"
-            print u"#-------------------------------------------------------"   
+            # print "#-------------------------------------------------------"
+            # print "MySQL 查询数据成功!!!"
+            # print "#-------------------------------------------------------"   
 
             return mysqlData
-            self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
+            # self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
         except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
             print(e)
             return None
-            self.writeLog(text.DATA_MySQL_QUERY_FAILED)
+            # self.writeLog(text.DATA_MySQL_QUERY_FAILED)
         finally:
             conn.close()
         # else:
@@ -643,8 +643,13 @@ class DataEngine(object):
         order = event.dict_['data']        
         self.orderDict[order.vtOrderID] = order
         
+        ## =====================================================================
+        ## william
+        ## =====================================================================
         # 如果订单的状态是全部成交或者撤销，则需要从workingOrderDict中移除
-        if order.status == STATUS_ALLTRADED or order.status == STATUS_CANCELLED:
+        if (order.status == STATUS_ALLTRADED or 
+            order.status == STATUS_CANCELLED or 
+            order.status == STATUS_REJECTED):
             if order.vtOrderID in self.workingOrderDict:
                 del self.workingOrderDict[order.vtOrderID]
         # 否则则更新字典中的数据        
@@ -686,7 +691,7 @@ class DataEngine(object):
             # print df
             return df
         else:
-            print u"没有查询到订单!!!"
+            print "没有查询到订单!!!"
             return None
 
         #return self.orderDict.values()
