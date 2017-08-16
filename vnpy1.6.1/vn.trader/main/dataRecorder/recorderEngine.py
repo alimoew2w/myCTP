@@ -43,18 +43,8 @@ class DrEngine(object):
 
         self.FILE_PATH = os.path.abspath(os.path.dirname(__file__))
         ########################################################################
-        ## william
-        ##
-        # self.accountInfo = VtAccountData()
-        ## 多个合约的持仓信息
-        ## 返回一个字典,避免重复
-        ## key 是 vtGateway/VtPositionData/ 下面的 symbolPosition
-        ## symbolPosition 格式:i1709-long(short), 代表合约多空
-        # self.positionInfo = {}
 
-        # self.tradeInfo = VtTradeData()
         ########################################################################
-
         # 当前日期
         self.today = self.mainEngine.todayDate
         self.tradingDay = self.mainEngine.tradingDay
@@ -155,11 +145,10 @@ class DrEngine(object):
             if d[i] > 1.79e+200:
                 d[i] = 0
 
-        # print "\n"+'#'*80
-        # # print u"在这里获取 Tick Data !!!==>  ",drTick.__dict__['symbol']
-        # # print drTick.__dict__
-        # print '在这里获取 Tick Data !!!==>', d['symbol']
-        # print d
+        ########################################################################
+        print "\n"+'#'*80
+        print '在这里获取 Tick Data !!!==>', d['symbol']
+        print d
         ########################################################################
         ## william
         ## 保存到 csv
@@ -218,14 +207,6 @@ class DrEngine(object):
             self.active = False
             self.thread.join()
 
-    #---------------------------------------------------------------------------
-    # def writeDrLog(self, content):
-    #     """快速发出日志事件"""
-    #     log = VtLogData()
-    #     log.logContent = content
-    #     event = Event(type_=EVENT_DATARECORDER_LOG)
-    #     event.dict_['data'] = log
-    #     self.eventEngine.put(event)
     ############################################################################
     ## william
     ## 增加程序退出的设定
@@ -233,7 +214,7 @@ class DrEngine(object):
     def exitFun(self,event):
         if self.exitTime():
             print '#'*80
-            print "亲, 赌场已经收摊打烊啦......!!!"
+            print "启禀圣上, 赌场已经收摊打烊啦......!!!"
             print '#'*80
             ####################################################################
             ## william
@@ -247,8 +228,9 @@ class DrEngine(object):
         t  = datetime.now()
         h  = t.hour
         m  = t.minute
-        if (h == 2 and m > 35) or (h == 15 and m > 16):
+        s  = t.second
+        if ( (h == 2 and m == 35) or (h == 15 and m == 17) ) and s == 59:
             re = True
-            print h,m,re
+            print h,m,s,re
         return re
     ############################################################################
