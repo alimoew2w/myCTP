@@ -47,7 +47,6 @@ TradingDay.pop(0)
 if datetime.now().strftime("%Y%m%d") not in TradingDay:
     print '#'*80
     sys.exit("启禀圣上，今日赌场不开张!!!")
-    # sys.exit("Not TradingDaY!!!")
 ################################################################################
 
 
@@ -70,10 +69,10 @@ import vtFunction
 mainEngine = MainEngine()
 mainEngine.DATA_PATH = MAIN_SETTING['DATA_PATH']
 ############################################################################
-print "\n#######################################################################"
+print "\n"+'#'*80
 print "main 主函数启动成功！！！"
 time.sleep(1.0)
-print "#######################################################################\n"
+print "#"*80+"\n"
 ############################################################################
 
 
@@ -112,35 +111,17 @@ except:
 mainEngine.saveContractInfo()
 
 ################################################################################
-## william
-## 保存合约信息
-import pandas as pd
-contractInfo = mainEngine.dataEngine.getAllContracts()
+time.sleep(20)
 
-dfHeader = ['symbol','name','exchange','gatewayName','productClass',
-            'size','priceTick','longMarginRatio','shortMarginRatio']
-dfData = []
-
-for contract in contractInfo:
-    try:
-        dfData.append([contract.__dict__[k] for k in dfHeader])
-    except:
-        contract.longMarginRatio = ''
-        contract.shortMarginRatio = ''
-        dfData.append([contract.__dict__[k] for k in dfHeader])
-
-df = pd.DataFrame(dfData, columns = dfHeader)
-
-reload(sys) # reload 才能调用 setdefaultencoding 方法
-sys.setdefaultencoding('utf-8')
-
-df.to_csv(os.path.join(mainEngine.DATA_PATH,'ContractInfo', 
-    ('ContractInfo_' + datetime.now().strftime('%Y%m%d') + '.csv')), index = False)
-################################################################################
-
-
+from shutil import copyfile
+try:
+    copyfile(os.path.normpath(os.path.join(ROOT_PATH,'main','contract.csv')),
+            os.path.join(mainEngine.DATA_PATH,'ContractInfo', 
+             (datetime.now().strftime('%Y%m%d') + '.csv')))
+except:
+    None
 ## /////////////////////////////////////////////////////////////////////////////
-print "\n#######################################################################"
+print "\n"+'#'*80
 print "正在下载 CTP Tick Data !!!"
-print "#######################################################################\n"
+print "#"*80+"\n"
 ## /////////////////////////////////////////////////////////////////////////////
