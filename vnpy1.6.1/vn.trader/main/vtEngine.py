@@ -417,17 +417,17 @@ class MainEngine(object):
                 ################################################################
                 ## william
                 ## 打印数据库信息
-                print "#-------------------------------------------------------"
+                print '\n'+"#"*80
                 print "Mongo 数据库连接成功!!!"
-                print "#-------------------------------------------------------"    
+                print "#"*80+'\n'    
             except ConnectionFailure:
                 self.writeLog(text.DATABASE_CONNECTING_FAILED)
                 ################################################################
                 ## william
                 ## 打印数据库信息
-                print "#-------------------------------------------------------"
+                print '\n'+"#"*80
                 print "Mongo 数据库连接失败!!!"
-                print "#-------------------------------------------------------" 
+                print "#"*80+'\n'
 
     ############################################################################
     ## william
@@ -540,6 +540,8 @@ class MainEngine(object):
     def getAllOrders(self):
         """查询所有的活跃的委托（返回列表）"""
         return self.dataEngine.getAllOrders()
+    def printAllOrders(self):
+        self.dataEngine.printAllOrders()
     ############################################################################
 
     #---------------------------------------------------------------------------
@@ -636,6 +638,8 @@ class DataEngine(object):
             for key, value in d.items():
                 self.contractDict[key] = value
         f.close()
+
+        ## =====================================================================
         
     #----------------------------------------------------------------------
     def updateOrder(self, event):
@@ -685,16 +689,46 @@ class DataEngine(object):
             dfHeader = allOrders[0].__dict__.keys()
             dfData   = []
             for i in range(len(allOrders)):
-                temp = allOrders[i]
-                dfData.append(temp.__dict__.values())
+                # temp = allOrders[i]
+                # dfData.append(temp.__dict__.values())
+                dfData.append(allOrders[i].__dict__.values())
             df = pd.DataFrame(dfData, columns = dfHeader)
+            ## -----------------------------------------------------------------
+            tempHeader = ['vtOrderID','status','symbol','offset','direction',
+            'orderTime','price','totalVolume','tradedVolume']
+            print '\n'+'#'*80
+            print df.loc[:,tempHeader]
+            print '#'*80+'\n'
+            ## -----------------------------------------------------------------
             # print df
             return df
         else:
             print "没有查询到订单!!!"
             return None
 
-        #return self.orderDict.values()
+    def printAllOrders(self):
+        """查询所有委托（返回列表）"""
+        ########################################################################
+        ## william
+        ########################################################################
+        allOrders = self.orderDict.values()
+
+        if len(allOrders) != 0:
+            dfHeader = ['vtOrderID','status','symbol','offset','direction',
+                        'orderTime','price','totalVolume','tradedVolume']
+            dfData   = []
+            for i in range(len(allOrders)):
+                # temp = allOrders[i]
+                # dfData.append([temp.__dict__[k] for k in dfHeader])
+                dfData.append([allOrders[i].__dict__[k] for k in dfHeader])
+            df = pd.DataFrame(dfData, columns = dfHeader)
+            ## -----------------------------------------------------------------
+            print '\n'+'#'*100
+            print df
+            print '#'*100+'\n'
+        else:
+            print "没有查询到订单!!!"
+            return None
 
     #------------------------------------------=====----------------------------
     def registerEvent(self):
