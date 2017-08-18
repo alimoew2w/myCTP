@@ -7,11 +7,12 @@ vn.ctp的gateway接入
 vtSymbol直接使用symbol
 '''
 
-
+import sys
 import os
 import json
 from copy import copy
 from datetime import datetime
+import shelve
 
 from vnctpmd import MdApi
 from vnctptd import TdApi
@@ -646,6 +647,7 @@ class CtpTdApi(TdApi):
 
         self.requireAuthentication = False
 
+        self.contractDict = {}
         ########################################################################
         ## william
 
@@ -903,8 +905,15 @@ class CtpTdApi(TdApi):
         ## william
         ## 计算持仓均价
         ## vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == 'cu1709', 'VolumeMultiple'].values
-        exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
-        volumeMultiple = int(vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values)
+        # exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
+        # volumeMultiple = int(vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values)
+        try:
+            volumeMultiple = self.contractDict[data['InstrumentID']].volumeMultiple
+            exchangeID = self.contractDict[data['InstrumentID']].exchange
+        except:
+            dfAll = pd.read_csv('contractAll.csv')
+            volumeMultiple = dfAll.loc[dfAll.symbol == data['InstrumentID'],'size'].values[0]
+            exchangeID = dfAll.loc[dfAll.symbol == data['InstrumentID'],'exchange'].values[0]
 
         if pos.position and volumeMultiple:
             if exchangeID != 'SHFE':
@@ -1039,8 +1048,8 @@ class CtpTdApi(TdApi):
         contract.volumeMultiple         = data['VolumeMultiple']
 
         if data['LongMarginRatio'] < 1e+99 and data['ShortMarginRatio'] < 1e+99:
-            contract.longMarginRatio        = data['LongMarginRatio']
-            contract.shortMarginRatio       = data['ShortMarginRatio']
+            contract.longMarginRatio        = round(data['LongMarginRatio'],5)
+            contract.shortMarginRatio       = round(data['ShortMarginRatio'],5)
 
         # 缓存代码和交易所的印射关系
         self.symbolExchangeDict[contract.symbol] = contract.exchange
@@ -1049,7 +1058,48 @@ class CtpTdApi(TdApi):
         # 推送
         self.gateway.onContract(contract)
 
+        ## =====================================================================
+        ## william
+        ## ---------------------------------------------------------------------
+        self.contractDict[contract.symbol] = contract
+        self.contractDict[contract.vtSymbol] = contract
+        ## =====================================================================
+
         if last:
+            # print self.contractDict
+            dfHeader = ['symbol','vtSymbol','name','productClass','gatewayName','exchange',
+                        'priceTick','size','shortMarginRatio','longMarginRatio',
+                        'optionType','underlyingSymbol','strikePrice']
+            dfData   = []
+            # print len(self.contractDict)
+            for k in self.contractDict.keys():
+                temp = self.contractDict[k].__dict__
+                dfData.append([temp[kk] for kk in dfHeader])
+                # print dfData
+            df = pd.DataFrame(dfData, columns = dfHeader)
+
+            reload(sys) # reload 才能调用 setdefaultencoding 方法
+            sys.setdefaultencoding('utf-8')
+
+            df.to_csv('contract.csv', index = False)
+
+            if not os.path.exists('contractAll.csv'):
+                df.to_csv('contractAll.csv', index = False)
+
+            ## =================================================================
+            try:
+                dfAll = pd.read_csv('contractAll.csv')
+                for i in range(df.shape[0]):
+                    if df.at[i,'symbol'] not in dfAll.symbol.values:
+                        dfAll = dfAll.append(df.loc[i], ignore_index = True)
+                dfAll.to_csv('contractAll.csv', index = False)
+            except:
+                None
+            ## =================================================================
+
+            # f = shelve.open(self.contractFileName)
+            # f['data'] = self.contractDict
+            # f.close()
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
 
     #----------------------------------------------------------------------
