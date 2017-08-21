@@ -1,23 +1,29 @@
-# m h dow mon dom
+#
+# m h dom mon dow
+# 
 ## =============================================================================
 MAILTO=fl@hicloud-investment.com
 ## =============================================================================
 
-#22 10,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
-
-#57 10 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainNoUI_FL_SimNow.py
-
-## 55 13 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_FL_SimNow.py
+## =============================================================================
+## System
+## =============================================================================
+0 3 * * 1 reboot
 
 ## =============================================================================
-## LXO_SimNow
+## recorderHiCloud
 ## =============================================================================
-50 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_LXO_SimNow.py
-50 14 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_LXO_SimNow.py
+50,55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
 
 
 ## =============================================================================
-## YY_SimNow
+## main_FL_SimNow
 ## =============================================================================
-55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_YY_SimNow.py
-55 14 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_YY_SimNow.py
+## 14 16 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_FL_SimNow.py
+
+
+## =============================================================================
+## mainUI_YY_SimNow
+## =============================================================================
+50 8,20,12 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py
+
