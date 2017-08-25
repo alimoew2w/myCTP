@@ -100,8 +100,9 @@ class CtaEngine(object):
         # value为包含所有相关strategy对象的list
         self.tickStrategyDict = {}
         self.lastTickData = {}
-        self.lastTickFileds = ['symbol', 'vtSymbol', 'lastPrice', 'bidPrice1', 'askPrice1',
-                               'bidVolume1', 'askVolume1','upperLimit','lowerLimit']
+        self.lastTickFileds = ['symbol', 'vtSymbol', 'datetime',
+                               'lastPrice', 'bidPrice1', 'askPrice1',
+                               'bidVolume1', 'askVolume1', 'upperLimit', 'lowerLimit', 'openPrice']
 
         # 保存vtOrderID和strategy对象映射的字典（用于推送order和trade数据）
         # key为vtOrderID，value为strategy对象
@@ -162,8 +163,23 @@ class CtaEngine(object):
                                        set(self.failedContracts_HiCloud.InstrumentID.values) |
                                        set(self.accountContracts))
         self.tickInfo = {}
+        ## =====================================================================
+        # try:
+        #     # contractInfo = pd.read_csv('contract.csv')
+        #     contractAll = os.path.normpath(os.path.join(self.path,'../main','contractAll.csv'))
+        #     contractInfo = pd.read_csv(contractAll)
+        #     # print contractInfo
+        #     self.contractDict = {}
+        #     for i in range(len(contractInfo)):
+        #         self.contractDict[contractInfo.loc[i]['symbol']] = contractInfo.loc[i].to_dict()
+        # except:
+        #     None
+        ## =====================================================================
         for i in self.subscribeContracts:
-            self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
+            try:
+                self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size']}
+            except:
+                None
         ############################################################################################
 
 
@@ -277,7 +293,7 @@ class CtaEngine(object):
         ## william
         ## 从主函数口发单,使用 ctpGateway
         vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
-        
+                                                                            
         ## =====================================================================
         ## 如果是一键全平仓，不要使用以下的命令
         ## =====================================================================
@@ -403,6 +419,7 @@ class CtaEngine(object):
     def processTickEvent(self, event):
         """处理行情推送"""
         tick = event.dict_['data']
+        tick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
         ## =====================================================================
         if tick.vtSymbol in self.subscribeContracts:
             self.lastTickData[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
@@ -723,13 +740,15 @@ class CtaEngine(object):
                     req = VtSubscribeReq()
                     req.symbol = contract.symbol
                     req.exchange = contract.exchange
-
+                    # req.symbol = contract['symbol']
+                    # req.exchange = contract['exchange']
                     # 对于IB接口订阅行情时所需的货币和产品类型，从策略属性中获取
                     # req.currency = strategy.currency
                     # req.productClass = strategy.productClass
                     ############################################################
                     ## william
                     self.mainEngine.subscribe(req, contract.gatewayName)
+                    # self.mainEngine.subscribe(req, contract['gatewayName'])
                     ############################################################
                 else:
                     ############################################################
