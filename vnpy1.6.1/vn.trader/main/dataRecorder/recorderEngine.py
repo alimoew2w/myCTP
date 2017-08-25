@@ -30,13 +30,15 @@ import csv
 import shelve
 import json
 ################################################################################
-
+import globalSetting
 
 ################################################################################
 class DrEngine(object):
     """数据记录引擎"""
     #---------------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
+        global globalSetting
+        # print globalSetting.accountID
         """Constructor"""
         self.mainEngine = mainEngine
         self.eventEngine = eventEngine
@@ -81,7 +83,7 @@ class DrEngine(object):
         ########################################################################
         self.SETTING_FILE = os.path.normpath(os.path.join(self.FILE_PATH,'../setting','VT_setting.json'))
         self.MAIN_SETTING = json.load(file(self.SETTING_FILE))
-        self.DATA_PATH = os.path.normpath(os.path.join(self.MAIN_SETTING['DATA_PATH'],'TickData'))
+        self.DATA_PATH = os.path.normpath(os.path.join(self.MAIN_SETTING['DATA_PATH'], globalSetting.accountID, 'TickData'))
         self.dataFile = os.path.join(self.DATA_PATH,(str(self.mainEngine.todayDate) + '.csv'))
 
     #----------------------------------------------------------------------
@@ -91,19 +93,45 @@ class DrEngine(object):
         ## william
         ## 保存合约信息到 /vn.trader/main
         ################################################################################
-        contractInfo = self.mainEngine.dataEngine.getAllContracts()
+        # contractInfo = self.mainEngine.dataEngine.getAllContracts()
 
-        for contract in contractInfo:
+        # for contract in contractInfo:
+        #     req = VtSubscribeReq()
+        #     req.symbol = contract.symbol
+        #     req.exchange = contract.exchange
+
+        #     if contract.symbol:
+        #         self.mainEngine.subscribe(req, contract.gatewayName)
+        #     else:
+        #         # pass
+        #         print contract.symbol,'合约没有找到'
+        ## ---------------------------------------------------------------------
+        
+        # contractDict = self.mainEngine.dataEngine.getAllContracts()
+        try:
+            # contractInfo = pd.read_csv('contract.csv')
+            contractAll = os.path.normpath(os.path.join(self.FILE_PATH,'..','contractAll.csv'))
+            contractInfo = pd.read_csv(contractAll)
+            # print contractInfo
+            self.contractDict = {}
+            for i in range(len(contractInfo)):
+                self.contractDict[contractInfo.loc[i]['symbol']] = contractInfo.loc[i].to_dict()
+        except:
+            None
+
+        for k in self.contractDict.keys():
+            contract = self.contractDict[k]
             req = VtSubscribeReq()
-            req.symbol = contract.symbol
-            req.exchange = contract.exchange
+            req.symbol = contract['symbol']
+            req.exchange = contract['exchange']
 
-            if contract.symbol:
-                self.mainEngine.subscribe(req, contract.gatewayName)
+            if contract['symbol']:
+                self.mainEngine.subscribe(req, contract['gatewayName'])
             else:
                 # pass
-                print contract.symbol,'合约没有找到'
+                print contract['symbol'],'合约没有找到'
         ## ---------------------------------------------------------------------
+
         # 启动数据插入线程
         self.start()
         # 注册事件监听
@@ -142,14 +170,14 @@ class DrEngine(object):
         drTick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
 
         for i in self.tempFields:
-            if d[i] > 1.79e+200:
+            if d[i] > 1.79e+99:
                 d[i] = 0
 
-        ########################################################################
+        # ########################################################################
         print "\n"+'#'*80
         print '在这里获取 Tick Data !!!==>', d['symbol']
         print d
-        ########################################################################
+        # ########################################################################
         ## william
         ## 保存到 csv
         ## Ref: /vn.trader/vtEngine/def dbWriteCSV(self,d)
@@ -229,7 +257,7 @@ class DrEngine(object):
         h  = t.hour
         m  = t.minute
         s  = t.second
-        if ( (h == 2 and m == 35) or (h == 15 and m == 17) ) and s == 59:
+        if ( (h in [2,15] and m == 35) or (h in [8,20] and m == 53) ) and s == 59:
             re = True
             print h,m,s,re
         return re
