@@ -165,10 +165,10 @@ class CtpGateway(VtGateway):
     ############################################################################
     ## william
     ## 连接CTP账户, 需要提供账户信息
-    def connectCTPAccount(self, accountInfo):
+    def connectCTPAccount(self, accountID):
         """连接 CTP 指定的账户"""
         # 载入json文件
-        fileName = self.gatewayName + '_connect_account_' + accountInfo + '.json'
+        fileName = self.gatewayName + '_connect_account_' + accountID + '.json'
         path     = os.path.dirname(__file__)
         path     = os.path.normpath(os.path.join(path, '..', '..'))
         fileName = os.path.join(path, 'setting', fileName)
@@ -462,8 +462,8 @@ class CtpMdApi(MdApi):
         ########################################################################
         ## william
         ## self.tradingDay
-        # tick.date       = datetime.now().strftime('%Y%m%d')
-        tick.date = self.tradingDay
+        tick.date       = datetime.now().strftime('%Y%m%d')
+        # tick.date = self.tradingDay
         ########################################################################
         tick.time       = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
 
@@ -998,9 +998,14 @@ class CtpTdApi(TdApi):
         pass
 
     #----------------------------------------------------------------------
+    # def onRspQryInstrumentCommissionRate(self, data, error, n, last):
+    #     """"""
+    #     pass
+
     def onRspQryInstrumentCommissionRate(self, data, error, n, last):
-        """"""
-        pass
+        """合约交易手续费查询回报"""
+        # pass
+
 
     #----------------------------------------------------------------------
     def onRspQryExchange(self, data, error, n, last):
@@ -1015,6 +1020,8 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspQryInstrument(self, data, error, n, last):
         """合约查询回报"""
+        # print data.keys()
+        # ['IsTrading', 'ExpireDate', 'PositionDateType', 'LongMarginRatio', 'StrikePrice', 'UnderlyingMultiple', 'PositionType', 'ProductClass', 'MinSellVolume', 'InstrumentName', 'ShortMarginRatio', 'VolumeMultiple', 'MaxMarginSideAlgorithm', 'DeliveryYear', 'CombinationType', 'MinLimitOrderVolume', 'InstrumentID', 'MaxLimitOrderVolume', 'ExchangeID', 'CreateDate', 'MaxMarketOrderVolume', 'OptionsType', 'StartDelivDate', 'DeliveryMonth', 'MinBuyVolume', 'InstrumentCode', 'PriceTick', 'InstLifePhase', 'ExchangeInstID', 'MinMarketOrderVolume', 'EndDelivDate', 'ProductID', 'OpenDate', 'UnderlyingInstrID']
         contract = VtContractData()
         contract.gatewayName = self.gatewayName
 
@@ -1096,10 +1103,11 @@ class CtpTdApi(TdApi):
             except:
                 None
             ## =================================================================
-
-            # f = shelve.open(self.contractFileName)
-            # f['data'] = self.contractDict
-            # f.close()
+            self.contractFileName = 'ContractData.vt'
+            f = shelve.open(self.contractFileName)
+            f['data'] = self.contractDict
+            f.close()
+            ## =================================================================
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
 
     #----------------------------------------------------------------------
