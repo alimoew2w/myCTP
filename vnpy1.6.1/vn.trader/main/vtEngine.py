@@ -160,20 +160,20 @@ class MainEngine(object):
             self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
 
     #----------------------------------------------------------------------
-    def connectCTPAccount(self, accountInfo, gatewayName = 'CTP'):
+    def connectCTPAccount(self, accountID, gatewayName = 'CTP'):
         """连接特定名称的接口"""
         """
         1. CTP
         """
         if gatewayName in self.gatewayDict:
             gateway = self.gatewayDict[gatewayName]
-            gateway.connectCTPAccount(accountInfo)
+            gateway.connectCTPAccount(accountID)
             ####################################################################
             ## 系统连接后,自动撤销所有的订单
             ## -----------------------------------------------------------------
             print "\n"+'#'*80
             print '启动前撤销所有的未成交订单'
-            time.sleep(5)
+            time.sleep(1)
             self.cancelOrderAll()
             ####################################################################
             '''
@@ -278,15 +278,32 @@ class MainEngine(object):
         # 安全关闭所有接口
         for gateway in self.gatewayDict.values():        
             gateway.close()
+            ## =====================================================================
+            ## william
+            ## 保存数据引擎里的合约数据到硬盘
+            ## ---------------------------------------------------------------------
+            ## 取消所有订单
+            print '#'*80 + '\n'
+            print "即将取消所有订单......\n"
+            for i in range(45):
+                print ".",
+                time.sleep(.05)
+            self.cancelOrderAll()
+            print '\n' + '#'*80 
+            ## =====================================================================
         
         # 停止事件引擎
         self.eventEngine.stop()      
         
         # 停止数据记录引擎
         self.drEngine.stop()
-        
-        # 保存数据引擎里的合约数据到硬盘
-        self.dataEngine.saveContracts()
+
+        ## =====================================================================
+        ## william
+        ## 保存数据引擎里的合约数据到硬盘
+        ## ---------------------------------------------------------------------
+        # self.dataEngine.saveContracts()
+        ## =====================================================================
     
     #----------------------------------------------------------------------
     def writeLog(self, content):
@@ -694,11 +711,11 @@ class DataEngine(object):
                 dfData.append(allOrders[i].__dict__.values())
             df = pd.DataFrame(dfData, columns = dfHeader)
             ## -----------------------------------------------------------------
-            tempHeader = ['vtOrderID','status','symbol','offset','direction',
-            'orderTime','price','totalVolume','tradedVolume']
-            print '\n'+'#'*80
-            print df.loc[:,tempHeader]
-            print '#'*80+'\n'
+            # tempHeader = ['vtOrderID','status','symbol','offset','direction',
+            # 'orderTime','price','totalVolume','tradedVolume']
+            # print '\n'+'#'*80
+            # print df.loc[:,tempHeader]
+            # print '#'*80+'\n'
             ## -----------------------------------------------------------------
             # print df
             return df
