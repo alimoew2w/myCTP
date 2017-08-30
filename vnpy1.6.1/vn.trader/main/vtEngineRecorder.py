@@ -111,14 +111,14 @@ class MainEngine(object):
             print text.GATEWAY_NOT_EXIST.format(gateway=gatewayName)
 
     #----------------------------------------------------------------------
-    def connectCTPAccount(self, accountInfo, gatewayName = 'CTP'):
+    def connectCTPAccount(self, accountID, gatewayName = 'CTP'):
         """连接特定名称的接口"""
         """
         1. CTP
         """
         if gatewayName in self.gatewayDict:
             gateway = self.gatewayDict[gatewayName]
-            gateway.connectCTPAccount(accountInfo)
+            gateway.connectCTPAccount(accountID)
         else:
             self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
 
@@ -250,6 +250,7 @@ class DataEngine(object):
     def getAllContracts(self):
         """查询所有合约对象（返回列表）"""
         return self.contractDict.values()
+        # return self.contractDict
 
     ############################################################################
     ## william
