@@ -238,7 +238,7 @@ class VtTickData(VtBaseData):
         
         ########################################################################
         # self.settlementPrice    = EMPTY_FLOAT
-        # self.averagePrice       = EMPTY_FLOAT    
+        self.averagePrice       = EMPTY_FLOAT    
      
     
     
@@ -451,14 +451,6 @@ class VtContractData(VtBaseData):
         self.volumeMultiple         = EMPTY_INT     # 合约数量乘数
         self.longMarginRatio        = EMPTY_FLOAT   #   
         self.shortMarginRatio       = EMPTY_FLOAT   #  
-
-        # 合约手续费率 
-        # self.openRatioByMoney       = EMPTY_FLOAT   #   
-        # self.openRatiobyVolume      = EMPTY_FLOAT   #   
-        # self.closeRatioByMoney      = EMPTY_FLOAT   #   
-        # self.closeRatioByVolume     = EMPTY_FLOAT   #   
-        # self.closeTodayRatioByMoney = EMPTY_FLOAT   #   
-        # self.closeTodayByVolume     = EMPTY_FLOAT   #  
         
         ########################################################################
         
@@ -499,7 +491,7 @@ class VtOrderReq(object):
 
         ########################################################################
         ## william
-        ## 订单的结构,就是正长这样子哦
+        ## 订单的结构,就是长这样子哦
         ## orderReq
         ########################################################################
         self.symbol = EMPTY_STRING              # 代码
@@ -548,13 +540,3 @@ class VtCancelOrderReq(object):
         self.frontID = EMPTY_STRING             # 前置机号
         self.sessionID = EMPTY_STRING           # 会话号
         ########################################################################
-  
-    
-    
-    
-    
-    
-
-    
-    
-    
