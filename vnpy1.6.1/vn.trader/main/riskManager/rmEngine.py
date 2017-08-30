@@ -181,52 +181,52 @@ class RmEngine(object):
         ## =====================================================================
         # 检查委托数量
         if orderReq.volume > self.orderSizeLimit:
-            print "\n#######################################################################"
-            print u'单笔委托数量%s，超过限制%s' %(orderReq.volume, self.orderSizeLimit)
+            print "\n"+"#"*80
+            print '单笔委托数量%s，超过限制%s' %(orderReq.volume, self.orderSizeLimit)
             self.writeRiskLog(u'单笔委托数量%s，超过限制%s'
                               %(orderReq.volume, self.orderSizeLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
 
         ## =====================================================================
         # 检查成交合约量
         if self.tradeCount >= self.tradeLimit:
-            print "\n#######################################################################"
-            print u'今日总成交合约数量%s，超过限制%s' %(self.tradeCount, self.tradeLimit)
+            print "\n"+"#"*80
+            print '今日总成交合约数量%s，超过限制%s' %(self.tradeCount, self.tradeLimit)
             self.writeRiskLog(u'今日总成交合约数量%s，超过限制%s'
                               %(self.tradeCount, self.tradeLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
 
         ## =====================================================================
         # 检查流控
         if self.orderFlowCount >= self.orderFlowLimit:
-            print "\n#######################################################################"
-            print u'委托流数量%s，超过限制每%s秒%s' %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit)
+            print "\n"+"#"*80
+            print '委托流数量%s，超过限制每%s秒%s' %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit)
             self.writeRiskLog(u'委托流数量%s，超过限制每%s秒%s'
                               %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
 
         ## =====================================================================
         # 检查总活动合约
         workingOrderCount = len(self.mainEngine.getAllWorkingOrders())
         if workingOrderCount >= self.workingOrderLimit:
-            print "\n#######################################################################"
-            print u'当前活动委托数量%s，超过限制%s' %(workingOrderCount, self.workingOrderLimit)
+            print "\n"+"#"*80
+            print '当前活动委托数量%s，超过限制%s' %(workingOrderCount, self.workingOrderLimit)
             self.writeRiskLog(u'当前活动委托数量%s，超过限制%s'
                               %(workingOrderCount, self.workingOrderLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
 
         ## =====================================================================
         # 检查撤单次数
         if orderReq.symbol in self.orderCancelDict and self.orderCancelDict[orderReq.symbol] >= self.orderCancelLimit:
-            print "\n#######################################################################"
-            print u'当日%s撤单次数%s，超过限制%s' %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit)
+            print "\n"+"#"*80
+            print '当日%s撤单次数%s，超过限制%s' %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit)
             self.writeRiskLog(u'当日%s撤单次数%s，超过限制%s'
                               %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
         
         ## =====================================================================
@@ -246,10 +246,10 @@ class RmEngine(object):
         ## 1. 保证金比例
         ## 2. 开仓, 如果是平仓, 就不需要了
         if self.marginRatio > self.marginRatioLimit and orderReq.offset == u'开仓':
-            print "\n#######################################################################"
-            print u'当前账户 %s 保证金比例 %0.2f 超过 %0.2f' %(self.name, self.marginRatio, self.marginRatioLimit)
+            print "\n"+"#"*80
+            print '当前账户 %s 保证金比例 %0.2f 超过 %0.2f' %(self.name, self.marginRatio, self.marginRatioLimit)
             self.writeRiskLog(u'当前账户保证金比例 %0.2f 超过 %0.2f' %(self.marginRatio, self.marginRatioLimit))
-            print "#######################################################################\n"
+            print "#"*80+"\n"
             return False
 
         return True
