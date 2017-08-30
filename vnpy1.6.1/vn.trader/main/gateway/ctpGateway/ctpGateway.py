@@ -495,12 +495,12 @@ class CtpMdApi(MdApi):
         tick.turnover = round(data['Turnover'],5)
 
         ## 持仓数据
-        # tick.preOpenInterest    = data['PreOpenInterest']
-        # tick.openInterest       = data['OpenInterest']
+        tick.preOpenInterest    = data['PreOpenInterest']
+        tick.openInterest       = data['OpenInterest']
 
         # ## 期权数据
-        # tick.preDelta           = data['PreDelta']
-        # tick.currDelta          = data['CurrDelta']
+        tick.preDelta           = data['PreDelta']
+        tick.currDelta          = data['CurrDelta']
 
         #! CTP只有一档行情
         tick.bidPrice1  = round(data['BidPrice1'],5)
@@ -1004,7 +1004,8 @@ class CtpTdApi(TdApi):
 
     def onRspQryInstrumentCommissionRate(self, data, error, n, last):
         """合约交易手续费查询回报"""
-        # pass
+        # print data.keys()
+        pass
 
 
     #----------------------------------------------------------------------
