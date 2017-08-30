@@ -12,7 +12,6 @@ import sys
 ## william:
 ################################################################################
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
-# ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main"
 sys.path.append(ROOT_PATH)
 
 # 将功能模块的目录路径添加到环境变量中
