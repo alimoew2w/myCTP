@@ -7,13 +7,14 @@ MAILTO=fl@hicloud-investment.com
 
 ## =============================================================================
 ## System
+## sudo crontab -e
 ## =============================================================================
-0 3 * * 1 reboot
+## 0 6 * * 1-6 reboot
 
 ## =============================================================================
 ## recorderHiCloud
 ## =============================================================================
-50,55 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
+## 50,55 8,20 * * 1-5 /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/recorderHiCloud.py
 
 
 ## =============================================================================
@@ -25,5 +26,5 @@ MAILTO=fl@hicloud-investment.com
 ## =============================================================================
 ## mainUI_YY_SimNow
 ## =============================================================================
-50 8,20,12 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py
+50 8,20 * * 1-5 /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py
 
