@@ -11,7 +11,7 @@ import sys
 import os
 import json
 from copy import copy
-from datetime import datetime
+from datetime import datetime,timedelta
 import shelve
 
 from vnctpmd import MdApi
@@ -647,6 +647,7 @@ class CtpTdApi(TdApi):
         self.requireAuthentication = False
         
         self.contractDict          = {}
+        self.tradeOrderDict        = {}
         ########################################################################
         ## william
 
@@ -1266,6 +1267,7 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRtnOrder(self, data):
         """报单回报"""
+        # print data
         # 更新最大报单编号
         ########################################################################
         ## william
@@ -1298,6 +1300,16 @@ class CtpTdApi(TdApi):
         order.totalVolume  = data['VolumeTotalOriginal']
         order.tradedVolume = data['VolumeTraded']
         order.orderTime    = data['InsertTime']
+        if data['VolumeTraded']:
+            try:
+                if self.tradeOrderDict[order.vtOrderID].tradeTime:
+                    order.tradeTime = self.tradeOrderDict[order.vtOrderID].tradeTime
+            except:
+                order.tradeTime = datetime.now().strftime('%H:%M:%S')
+            # try:
+            #     order.tradeTime = self.tradeOrderDict[order.vtOrderID].tradeTime
+            # except:
+            #     None
         order.cancelTime   = data['CancelTime']
         order.frontID      = data['FrontID']
         order.sessionID    = data['SessionID']
@@ -1336,6 +1348,8 @@ class CtpTdApi(TdApi):
 
         # 推送
         self.gateway.onTrade(trade)
+        self.tradeOrderDict[trade.vtOrderID] = trade
+        # print self.tradeOrderDict[trade.vtSymbol].__dict__
 
     #----------------------------------------------------------------------
     def onErrRtnOrderInsert(self, data, error):
