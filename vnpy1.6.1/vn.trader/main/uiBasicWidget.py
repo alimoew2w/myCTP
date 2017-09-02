@@ -538,8 +538,8 @@ class LogMonitor(BasicMonitor):
         super(LogMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()        
-        d['logTime'] = {'chinese':vtText.TIME, 'cellType':BasicCell}
-        d['logContent'] = {'chinese':vtText.CONTENT, 'cellType':BasicCell}
+        d['logTime']     = {'chinese':vtText.TIME, 'cellType':BasicCell}
+        d['logContent']  = {'chinese':vtText.CONTENT, 'cellType':BasicCell}
         d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
@@ -562,9 +562,9 @@ class ErrorMonitor(BasicMonitor):
         super(ErrorMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()       
-        d['errorTime']  = {'chinese':vtText.TIME, 'cellType':BasicCell}
-        d['errorID'] = {'chinese':vtText.ERROR_CODE, 'cellType':BasicCell}
-        d['errorMsg'] = {'chinese':vtText.ERROR_MESSAGE, 'cellType':BasicCell}
+        d['errorTime']   = {'chinese':vtText.TIME, 'cellType':BasicCell}
+        d['errorID']     = {'chinese':vtText.ERROR_CODE, 'cellType':BasicCell}
+        d['errorMsg']    = {'chinese':vtText.ERROR_MESSAGE, 'cellType':BasicCell}
         d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
@@ -587,15 +587,15 @@ class TradeMonitor(BasicMonitor):
         super(TradeMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()
-        d['tradeID'] = {'chinese':vtText.TRADE_ID, 'cellType':NumCell}
-        d['orderID'] = {'chinese':vtText.ORDER_ID, 'cellType':NumCell}
-        d['symbol'] = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':BasicCell}
-        d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
-        d['direction'] = {'chinese':vtText.DIRECTION, 'cellType':DirectionCell}
-        d['offset'] = {'chinese':vtText.OFFSET, 'cellType':BasicCell}
-        d['price'] = {'chinese':vtText.PRICE, 'cellType':BasicCell}
-        d['volume'] = {'chinese':vtText.VOLUME, 'cellType':BasicCell}
-        d['tradeTime'] = {'chinese':vtText.TRADE_TIME, 'cellType':BasicCell}
+        d['tradeID']     = {'chinese':vtText.TRADE_ID, 'cellType':NumCell}
+        d['orderID']     = {'chinese':vtText.ORDER_ID, 'cellType':NumCell}
+        d['symbol']      = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':BasicCell}
+        d['vtSymbol']    = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
+        d['direction']   = {'chinese':vtText.DIRECTION, 'cellType':DirectionCell}
+        d['offset']      = {'chinese':vtText.OFFSET, 'cellType':BasicCell}
+        d['price']       = {'chinese':vtText.PRICE, 'cellType':BasicCell}
+        d['volume']      = {'chinese':vtText.VOLUME, 'cellType':BasicCell}
+        d['tradeTime']   = {'chinese':vtText.TRADE_TIME, 'cellType':BasicCell}
         d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
