@@ -12,6 +12,9 @@ from vtFunction import *
 from vtGateway import *
 import vtText
 
+COLOR_RED = QtGui.QColor('red')
+COLOR_GREEN = QtGui.QColor('green')
+
 
 #----------------------------------------------------------------------
 def loadFont():
@@ -173,6 +176,36 @@ class AskCell(QtGui.QTableWidgetItem):
         """设置内容"""
         self.setText(text)
 
+########################################################################
+class PnlCell(QtGui.QTableWidgetItem):
+    """显示盈亏的单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(PnlCell, self).__init__()
+        self.data = None
+        self.color = ''
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+
+        try:
+            value = float(text)
+            # if value >= 0 and self.color != 'red':
+            if value > 0 and self.color != 'red':
+                self.color = 'red'
+                self.setForeground(COLOR_RED)
+            elif value < 0 and self.color != 'green':
+                self.color = 'green'
+                self.setForeground(COLOR_GREEN)
+        except ValueError:
+            pass
+
 
 ########################################################################
 class BasicMonitor(QtGui.QTableWidget):
@@ -208,6 +241,9 @@ class BasicMonitor(QtGui.QTableWidget):
         # 监控的事件类型
         self.eventType = ''
         
+        # # 列宽调整状态（只在第一次更新数据时调整一次列宽）
+        # self.columnResized = False        
+
         # 字体
         self.font      = None
         
@@ -323,9 +359,9 @@ class BasicMonitor(QtGui.QTableWidget):
                 self.insertRow(0)     
                 d = {}
                 for n, header in enumerate(self.headerList):                  
-                    content = safeUnicode(data.__getattribute__(header))
+                    content  = safeUnicode(data.__getattribute__(header))
                     cellType = self.headerDict[header]['cellType']
-                    cell = cellType(content, self.mainEngine)
+                    cell     = cellType(content, self.mainEngine)
                     
                     if self.font:
                         cell.setFont(self.font)  # 如果设置了特殊字体，则进行单元格设置
@@ -350,9 +386,9 @@ class BasicMonitor(QtGui.QTableWidget):
         else:
             self.insertRow(0)  
             for n, header in enumerate(self.headerList):
-                content = safeUnicode(data.__getattribute__(header))
+                content  = safeUnicode(data.__getattribute__(header))
                 cellType = self.headerDict[header]['cellType']
-                cell = cellType(content, self.mainEngine)
+                cell     = cellType(content, self.mainEngine)
                 
                 if self.font:
                     cell.setFont(self.font)
@@ -363,7 +399,9 @@ class BasicMonitor(QtGui.QTableWidget):
                 self.setItem(0, n, cell)                        
                 
         # 调整列宽
-        self.resizeColumns()
+        if not self.columnResized:
+            self.resizeColumns()
+            self.columnResized = True
         
         # 重新打开排序
         if self.sorting:
@@ -696,7 +734,8 @@ class PositionMonitor(BasicMonitor):
         d['frozen']         = {'chinese':vtText.FROZEN, 'cellType':BasicCell}
         d['price']          = {'chinese':vtText.PRICE, 'cellType':BasicCell}
         d['size']           = {'chinese':vtText.SIZE, 'cellType':BasicCell}
-        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
+        # d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
+        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':PnlCell}
         d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
@@ -984,6 +1023,8 @@ class TradingWidget(QtGui.QFrame):
         buttonCancelAll = QtGui.QPushButton(vtText.CANCEL_ALL)
         ## =====================================================================
         ## william
+        ## 全停
+        buttonStopAll = QtGui.QPushButton(vtText.STOP_ALL)
         ## 全平
         buttonCloseAll = QtGui.QPushButton(vtText.CLOSE_ALL)
         ## =====================================================================
@@ -994,6 +1035,8 @@ class TradingWidget(QtGui.QFrame):
         buttonCancelAll.setMinimumHeight(size.height()*1.5)
         ## =====================================================================
         ## william
+        ## 全停
+        buttonStopAll.setMinimumHeight(size.height()*1.5)
         ## 全平
         buttonCloseAll.setMinimumHeight(size.height()*1.5)
         ## =====================================================================
@@ -1009,6 +1052,8 @@ class TradingWidget(QtGui.QFrame):
         vbox.addWidget(buttonCancelAll)
         ## =====================================================================
         ## william
+        ## 全撤
+        vbox.addWidget(buttonStopAll)
         ## 全平
         vbox.addWidget(buttonCloseAll)
         ## =====================================================================
@@ -1021,6 +1066,8 @@ class TradingWidget(QtGui.QFrame):
         buttonCancelAll.clicked.connect(self.cancelAll)
         ## =====================================================================
         ## william
+        ## 全撤
+        buttonStopAll.clicked.connect(self.stopAll)
         ## 全平
         buttonCloseAll.clicked.connect(self.closeAll)
         ## =====================================================================
@@ -1186,7 +1233,10 @@ class TradingWidget(QtGui.QFrame):
         
         self.mainEngine.sendOrder(req, gatewayName)
             
-    #---------------------------------------------------------------------------
+    ############################################################################
+    ## william
+    ## 全撤
+    ############################################################################
     def cancelAll(self):
         """一键撤销所有委托"""
         l = self.mainEngine.getAllWorkingOrders()
@@ -1201,6 +1251,29 @@ class TradingWidget(QtGui.QFrame):
     
     ############################################################################
     ## william
+    ## 全停
+    ############################################################################
+    def stopAll(self):
+        """
+        一键全平仓
+        """
+        # pass
+        
+        reply = QtGui.QMessageBox.question(self, vtText.STOP_ALL,
+                                   vtText.CONFIRM_STOP_ALL, QtGui.QMessageBox.Yes | 
+                                   QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        ## =====================================================================
+        if reply == QtGui.QMessageBox.Yes: 
+            if self.mainEngine.ctaEngine.strategyDict:
+                for k in self.mainEngine.ctaEngine.strategyDict.keys():
+                    self.mainEngine.ctaEngine.stopStrategy(k)
+        ## =====================================================================    
+
+
+    ############################################################################
+    ## william
+    ## 全平
     ############################################################################
     def closeAll(self):
         """
