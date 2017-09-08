@@ -119,13 +119,12 @@ print '#'*80+"\n"
 ################################################################################
 
 
-
 ################################################################################
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-# # mainWindow.showMaximized()
+mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+mainWindow.showMaximized()
 # mainWindow.showMinimized()
 
 ################################################################################
@@ -154,8 +153,8 @@ except:
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-mainWindow.showMaximized()
+# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+# mainWindow.showMaximized()
 # mainWindow.showMinimized()
 
 
@@ -210,13 +209,13 @@ strat = mainEngine.ctaEngine.strategyDict
 ## 取消所有的订单
 ## ------------------------------------------------------------------------------
 ## 取消所有订单
-print '#'*80 + '\n'
-print "开盘启动前取消所有订单......"
-mainEngine.cancelOrderAll()
-for i in range(33):
-    print ".",
-    time.sleep(.05)
-print '\n' + '#'*80 
+# print '#'*80 + '\n'
+# print "开盘启动前取消所有订单......"
+# mainEngine.cancelOrderAll()
+# for i in range(33):
+#     print ".",
+#     time.sleep(.05)
+# print '\n' + '#'*80 
 ## =============================================================================
 
 ################################################################################
@@ -224,7 +223,7 @@ print '\n' + '#'*80
 ## YYStrategy
 mainEngine.ctaEngine.initStrategy('YunYang')
 stratYY = strat['YunYang']
-mainEngine.ctaEngine.startStrategy('YunYang')
+# mainEngine.ctaEngine.startStrategy('YunYang')
 # ## 停止策略运行
 # mainEngine.ctaEngine.stopStrategy('YunYang')
 
@@ -234,9 +233,34 @@ mainEngine.ctaEngine.startStrategy('YunYang')
 ## YYStrategy
 mainEngine.ctaEngine.initStrategy('OiRank')
 stratOI = strat['OiRank']
-mainEngine.ctaEngine.startStrategy('OiRank')
+# mainEngine.ctaEngine.startStrategy('OiRank')
 ## 停止策略运行
 # mainEngine.ctaEngine.stopStrategy('OiRank')
+
+# mainEngine.ctaEngine.startTrading()
+
+################################################################################
+tempStratOrders = list(set(stratYY.vtOrderIDListOpen) |
+                       set(stratYY.vtOrderIDListClose) |
+                       set(stratOI.vtOrderIDListOpen) |
+                       set(stratOI.vtOrderIDListClose))
+
+while(1):
+    tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(mainEngine.getAllWorkingOrders())) if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
+
+    print tempAllWorkingOrders
+
+    if tempAllWorkingOrders:
+        for vtOrderID in tempAllWorkingOrders:
+            mainEngine.ctaEngine.cancelOrder(vtOrderID)
+        time.sleep(0.1)
+    else:
+        break
+################################################################################
+
+
+mainEngine.ctaEngine.startStrategy('YunYang')
+mainEngine.ctaEngine.startStrategy('OiRank')
 
 
 ################################################################################
@@ -245,3 +269,16 @@ mainEngine.drEngine.getIndicatorInfo(dbName          = mainEngine.dataBase,
                                     flowCapitalPre   = mainEngine.flowCapitalPre,
                                     flowCapitalToday = mainEngine.flowCapitalToday)
 # mainEngine.cancelOrderAll()
+
+"""
+
+print [mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(mainEngine.getAllWorkingOrders()))]
+
+stratYY.updateWorkingInfo(stratYY.tradingOrdersOpen, 'open')
+stratOI.updateWorkingInfo(stratOI.tradingOrdersOpen, 'open')
+
+stratYY.updateWorkingInfo(stratYY.tradingOrdersClose, 'lose')
+stratOI.updateWorkingInfo(stratOI.tradingOrdersClose, 'close')
+"""
+
+
