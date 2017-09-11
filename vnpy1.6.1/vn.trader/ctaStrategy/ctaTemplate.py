@@ -7,6 +7,7 @@
 from __future__ import division
 import os
 import sys
+from copy import copy
 
 from ctaBase import *
 from vtConstant import *
@@ -381,6 +382,8 @@ class CtaTemplate(object):
                              priceType, price = None, addTick = 0, discount = 0):
         """处理订单"""
         ## 生成交易列表
+        if (datetime.now() - self.tickTimer[vtSymbol]).seconds <= 2:
+            return
         tempTradingList = [k for k in tradingOrders.keys() if tradingOrders[k]['vtSymbol'] == vtSymbol]
         ####################################################################
         if tempTradingList:
@@ -425,7 +428,7 @@ class CtaTemplate(object):
                     #                           addTick       = addTick)      
                     ## =============================================================================
                     if tradingOrders[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[\
-                    self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'][\
+                    self.ctaEngine.mainEngine.getAllOrders().status.isin([u'未成交',u'部分成交'])][\
                     self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values:
                         if ((datetime.now() - self.tickTimer[vtSymbol]).seconds > 3) and self.tradingEnd:
                             self.cancelOrder(tradingOrders[i]['vtOrderID'])
@@ -441,6 +444,28 @@ class CtaTemplate(object):
                                                price         = price,
                                                addTick       = addTick,
                                                discount      = discount) 
+                    elif (tradingOrders[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[\
+                    self.ctaEngine.mainEngine.getAllOrders().status.isin([u'全部成交'])][\
+                    self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values) and \
+                    tradingOrders[i]['volume']:
+                        self.sendTradingOrder2(tradingOrders = tradingOrders,
+                                               orderDict     = tradingOrders[i],
+                                               orderIDList   = orderIDList,
+                                               priceType     = priceType,
+                                               price         = price,
+                                               addTick       = addTick,
+                                               discount      = discount) 
+                    # elif tradingOrders[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[\
+                    # self.ctaEngine.mainEngine.getAllOrders().status.isin([u'已撤销',u'部分成交',u'全部成交',u'拒单'])][\
+                    # self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values and \
+                    #  tradingOrders[i]['volume'] != 0:
+                    #     self.sendTradingOrder2(tradingOrders = tradingOrders,
+                    #                            orderDict     = tradingOrders[i],
+                    #                            orderIDList   = orderIDList,
+                    #                            priceType     = priceType,
+                    #                            price         = price,
+                    #                            addTick       = addTick,
+                    #                            discount      = discount) 
                     ## =============================================================================
                     # elif:tradingOrders[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[\
                     # self.ctaEngine.mainEngine.getAllOrders().status.isin([u'拒单',u'全部成交'])][\
@@ -467,12 +492,12 @@ class CtaTemplate(object):
                     #     return None
                 else:
                     self.sendTradingOrder2(tradingOrders = tradingOrders,
-                                          orderDict     = tradingOrders[i],
-                                          orderIDList   = orderIDList,
-                                          priceType     = priceType,
-                                          price         = price,
-                                          addTick       = addTick,
-                                          discount      = discount)
+                                          orderDict      = tradingOrders[i],
+                                          orderIDList    = orderIDList,
+                                          priceType      = priceType,
+                                          price          = price,
+                                          addTick        = addTick,
+                                          discount       = discount)
         ####################################################################
         ## .....................................................................
         self.putEvent()
@@ -488,7 +513,7 @@ class CtaTemplate(object):
     def sendTradingOrder(self, tradingOrders, orderDict, orderIDList, addTick = 1):
         """发送单个合约的订单"""
         tempInstrumentID = orderDict['vtSymbol']
-        # tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+        # tempPriceTick  = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
         tempPriceTick    = self.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
         tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
         tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
@@ -535,10 +560,10 @@ class CtaTemplate(object):
                           priceType, price = None, addTick = 0, discount = 0):
         """发送单个合约的订单"""
         tempInstrumentID = orderDict['vtSymbol']
-        # tempPriceTick    = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
+        # tempPriceTick  = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
         tempPriceTick    = self.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
-        # tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
-        # tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
+        tempAskPrice1    = self.lastTickData[tempInstrumentID]['askPrice1']
+        tempBidPrice1    = self.lastTickData[tempInstrumentID]['bidPrice1']
         tempUpperLimit   = self.lastTickData[tempInstrumentID]['upperLimit']
         tempLowerLimit   = self.lastTickData[tempInstrumentID]['lowerLimit']
         tempLastPrice    = self.lastTickData[tempInstrumentID]['lastPrice']
@@ -550,14 +575,14 @@ class CtaTemplate(object):
         ## ---------------------------------------------------------------------
         if priceType == 'best':
             if tempDirection in ['buy','cover']:
-                tempBestPrice = self.lastTickData[tempInstrumentID]['bidPrice1']
+                tempBestPrice = tempBidPrice1 
             elif tempDirection in ['sell','short']:
-                tempBestPrice = self.lastTickData[tempInstrumentID]['askPrice1']
+                tempBestPrice = tempAskPrice1
         elif priceType == 'chasing':
             if tempDirection in ['buy','cover']:
-                tempBestPrice = self.lastTickData[tempInstrumentID]['askPrice1']
+                tempBestPrice = tempAskPrice1
             elif tempDirection in ['sell','short']:
-                tempBestPrice = self.lastTickData[tempInstrumentID]['bidPrice1']
+                tempBestPrice = tempBidPrice1 
         elif priceType == 'last':
             tempBestPrice = tempLastPrice
         elif priceType == 'open':
@@ -687,12 +712,11 @@ class CtaTemplate(object):
         ## =====================================================================
         ## 0. 数据预处理
         ## =====================================================================
-        self.stratTrade = trade.__dict__
+        self.stratTrade                 = trade.__dict__
         self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
-        self.stratTrade['strategyID'] = self.strategyID
-        # self.stratTrade['strategyID'] = 'hello'
-        self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
-        self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
+        self.stratTrade['strategyID']   = self.strategyID
+        self.stratTrade['tradeTime']    = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
+        self.stratTrade['TradingDay']   = self.ctaEngine.tradingDate
 
         ## ---------------------------------------------------------------------
         if self.stratTrade['offset'] == u'开仓':
@@ -924,12 +948,18 @@ class CtaTemplate(object):
         """
         更新订单字典
         """
+        # if (datetime.now().hour in [8,20] and 
+        #     datetime.now().minute >= 59 and 
+        #     15 <= datetime.now().second <= 30):
+        #     self.ctaEngine.mainEngine.cancelOrderAll()
         ## =====================================================================
         ## sendMail
         # if (datetime.now().hour == 15) and (4 <= datetime.now().minute <= 5) and \
         #    (datetime.now().second % 10 == 0) and self.trading:
         #     self.sendMail()
-        if datetime.now().strftime('%H:%M:%S') == '15:03:00' and self.trading:
+        if (datetime.now().strftime('%H:%M:%S') == '15:03:00' and 
+            1 <= (datetime.now().weekday()+1) <= 5 and 
+            self.trading):
             self.sendMailStatus = True
             self.sendMail()
         else:
@@ -1059,8 +1089,6 @@ class CtaTemplate(object):
 
                         ## -------------------------------------------------------------------------
                         try:
-                            # conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                            # cursor = conn.cursor()
                             cursor.execute("""
                                             DELETE FROM positionInfo
                                             WHERE strategyID = %s
@@ -1069,7 +1097,6 @@ class CtaTemplate(object):
                                             AND direction  = %s
                                            """, (self.strategyID, self.failedOrders[k]['vtSymbol'], self.failedOrders[k]['vtSymbol'], tempDirection))
                             conn.commit()
-                            # conn.close()
                         except:
                             None
                         ## -------------------------------------------------------------------------
@@ -1144,6 +1171,128 @@ class CtaTemplate(object):
 
         ## ---------------------------------------------------------------------
         conn.close()
+
+
+    ############################################################################
+    ## 更新 vtOrderIDList
+    ############################################################################
+    def updateVtOrderIDList(self, vtOrderIDList, stage):
+        """
+        更新 vtOrderIDList
+        """
+
+        tempWorkingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT vtOrderID
+                                    FROM workingInfo
+                                    WHERE StrategyID = '%s'
+                                    AND TradingDay = '%s'
+                                    AND stage = '%s'
+                                    AND not (vtOrderID is NULL)
+                                    """ %(self.strategyID, self.ctaEngine.tradingDay, stage))
+        if len(tempWorkingInfo.vtOrderID):
+            for i in range(len(tempWorkingInfo)):
+                # print tempWorkingInfo.vtOrderID.values[i]
+                if tempWorkingInfo.vtOrderID.values[i] not in vtOrderIDList:
+                    vtOrderIDList.append(tempWorkingInfo.vtOrderID.values[i])
+
+
+    ############################################################################
+    ## 更新 tradingOrders 里面的字段： vrOrderID
+    ############################################################################
+
+    def updateTradingOrdersVtOrderID(self, tradingOrders, stage):
+        """
+        更新交易订单的 vtOrderID
+        """
+
+        # strategyID = 'YYStrategy'
+        # tradingOrders = stratYY.tradingOrdersOpen
+        # stage = 'open'
+
+        tempWorkingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT *
+                                    FROM workingInfo
+                                    WHERE StrategyID = '%s'
+                                    AND TradingDay = %s
+                                    AND stage = '%s'
+                                    """ %(self.strategyID, self.ctaEngine.tradingDay, stage))
+        # print tempWorkingInfo
+        if len(tradingOrders):
+            for i in range(len(tradingOrders)):
+                temp = tempWorkingInfo.loc[tempWorkingInfo.vtSymbol == tradingOrders[tradingOrders.keys()[i]]['vtSymbol']][tempWorkingInfo.orderType == tradingOrders[tradingOrders.keys()[i]]['direction']].reset_index(drop = True)
+                if len(temp) == 0:
+                    continue
+                if temp.at[0,'vtOrderID'] not in [self.ctaEngine.mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(self.ctaEngine.mainEngine.getAllWorkingOrders()))]:
+                    continue
+                if ('vtOrderID' not in tradingOrders[tradingOrders.keys()[i]].keys() or
+                    tradingOrders[tradingOrders.keys()[i]]['vtOrderID'] < temp.at[0,'vtOrderID']):
+                    tradingOrders[tradingOrders.keys()[i]]['vtOrderID'] = temp.at[0,'vtOrderID']
+                    self.ctaEngine.orderStrategyDict[temp.at[0,'vtOrderID']] =  self.ctaEngine.strategyDict[self.name]
+
+    ############################################################################
+    ## 更新 workingInfo
+    ############################################################################
+    def updateWorkingInfo(self, tradingOrders, stage):
+        """
+        更新 workingInfo 表格
+        """
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+
+        tempWorkingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                                    """
+                                    SELECT *
+                                    FROM workingInfo
+                                    WHERE StrategyID = '%s'
+                                    AND TradingDay = '%s'
+                                    AND stage = '%s'
+                                    """ %(self.strategyID, self.ctaEngine.tradingDay, stage))
+
+        dfHeader = ['TradingDay','StrategyID','vtSymbol','vtOrderID',
+                    'orderType','volume','stage']
+        dfData   = []
+
+        if tradingOrders:
+            for k in tradingOrders.keys():
+                temp = copy(tradingOrders[k])
+                temp['StrategyID'] = self.strategyID
+                temp['orderType'] = temp['direction']
+                temp['stage'] = stage
+                if 'vtOrderID' not in temp.keys():
+                    # temp['vtOrderID'] = ''
+                    break
+                if temp['vtSymbol'] in tempWorkingInfo.vtSymbol.values:
+                    if temp['vtOrderID'] < tempWorkingInfo.loc[tempWorkingInfo.vtSymbol == temp['vtSymbol']].vtOrderID.values[0]:
+                        continue
+                dfData.append([temp[kk] for kk in dfHeader])
+        df = pd.DataFrame(dfData, columns = dfHeader)
+
+        # cursor.execute("""
+        #                 DELETE FROM workingInfo
+        #                 WHERE not(TradingDay = '%s')
+        #                """ %(self.ctaEngine.tradingDay))
+        # cursor.execute("""
+        #                 DELETE FROM workingInfo
+        #                 WHERE strategyID = '%s'
+        #                 AND TradingDay = '%s'
+        #                 AND stage = '%s'
+        #                """ %(self.strategyID, self.ctaEngine.tradingDay, stage))
+        cursor.execute("""
+                        DELETE FROM workingInfo
+                        WHERE strategyID = '%s'
+                        AND stage = '%s'
+                       """ %(self.strategyID, stage))
+        conn.commit()
+        df.to_sql(con=conn, name='workingInfo', if_exists='append', flavor='mysql', index = False)
+        conn.close()
+
+        # print '#'*80+'\n'
+        # print datetime.now()
+        # print 'Update workInfo for ' + self.strategyID
+        # print '\n'+'#'*80
+
 
 
     ############################################################################
