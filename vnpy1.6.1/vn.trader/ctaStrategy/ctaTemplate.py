@@ -1359,7 +1359,7 @@ class CtaTemplate(object):
                 f.write('{0}'.format(u'\n## 基金净值'))
                 f.write('{0}'.format('\n' + 20 * '#'))
                 f.write('{0}'.format('\n' + 100*'-') + '\n')
-                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.transpose(),
+                f.write(tabulate(self.ctaEngine.mainEngine.drEngine.accountBalance.ix[:, self.ctaEngine.mainEngine.drEngine.accountBalance.columns != 'commission'].transpose(),
                                     headers = ['Index','Value'], tablefmt = 'rst'))
                 f.write('{0}'.format('\n' + 100*'-') + '\n')
                 ## -------------------------------------------------------------------------
