@@ -48,7 +48,7 @@ class CtaEngine(object):
     #----------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
         """Constructor"""
-        self.mainEngine = mainEngine
+        self.mainEngine  = mainEngine
         self.eventEngine = eventEngine
 
         ############################################################################################
@@ -74,13 +74,13 @@ class CtaEngine(object):
 
 
         ## 当前日历的日期
-        self.todayDate = vtFunction.todayDate().date()
-        self.todayDay  = self.todayDate.strftime('%Y%m%d')
-
+        self.todayDate       = vtFunction.todayDate().date()
+        self.todayDay        = self.todayDate.strftime('%Y%m%d')
+        
         ## 当前交易日的日期
-        self.tradingDate = datetime.strptime(self.mainEngine.tradingDay,'%Y%m%d').date()
-        self.tradingDay  = self.tradingDate.strftime('%Y%m%d')
-
+        self.tradingDate     = datetime.strptime(self.mainEngine.tradingDay,'%Y%m%d').date()
+        self.tradingDay      = self.tradingDate.strftime('%Y%m%d')
+        
         ## 上一个交易日
         self.lastTradingDate = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < self.tradingDate, 'days'].max()
         self.lastTradingDay  = self.lastTradingDate.strftime('%Y%m%d')
@@ -88,41 +88,41 @@ class CtaEngine(object):
 
         # 保存策略实例的字典
         # key为策略名称，value为策略实例，注意策略名称不允许重复
-        self.strategyDict = {}
-
+        self.strategyDict     = {}
+        
         ## =====================================================================
-        self.positionInfo = {}
+        self.positionInfo     = {}
         self.accountContracts = []
         ## =====================================================================
-
+        
         # 保存vtSymbol和策略实例映射的字典（用于推送tick数据）
         # 由于可能多个strategy交易同一个vtSymbol，因此key为vtSymbol
         # value为包含所有相关strategy对象的list
         self.tickStrategyDict = {}
-        self.lastTickData = {}
-        self.lastTickFileds = ['symbol', 'vtSymbol', 'datetime',
-                               'lastPrice', 'bidPrice1', 'askPrice1',
-                               'bidVolume1', 'askVolume1', 'upperLimit', 'lowerLimit', 'openPrice']
+        self.lastTickData     = {}
+        self.lastTickFileds   = ['symbol', 'vtSymbol', 'datetime',
+                                 'lastPrice', 'bidPrice1', 'askPrice1',
+                                 'bidVolume1', 'askVolume1', 'upperLimit', 'lowerLimit', 'openPrice']
 
         # 保存vtOrderID和strategy对象映射的字典（用于推送order和trade数据）
         # key为vtOrderID，value为strategy对象
-        self.orderStrategyDict = {}
-
+        self.orderStrategyDict    = {}
+        
         # 本地停止单编号计数
-        self.stopOrderCount = 0
-        # stopOrderID = STOPORDERPREFIX + str(stopOrderCount)
-
+        self.stopOrderCount       = 0
+        # stopOrderID             = STOPORDERPREFIX + str(stopOrderCount)
+        
         # 本地停止单字典
         # key为stopOrderID，value为stopOrder对象
-        self.stopOrderDict = {}             # 停止单撤销后不会从本字典中删除
-        self.workingStopOrderDict = {}      # 停止单撤销后会从本字典中删除
-
+        self.stopOrderDict        = {}             # 停止单撤销后不会从本字典中删除
+        self.workingStopOrderDict = {}             # 停止单撤销后会从本字典中删除
+        
         # 持仓缓存字典
         # key为vtSymbol，value为PositionBuffer对象
-        self.posBufferDict = {}
-
+        self.posBufferDict        = {}
+        
         # 成交号集合，用来过滤已经收到过的成交推送
-        self.tradeSet = set()
+        self.tradeSet             = set()
 
 
         ############################################################################################
@@ -130,23 +130,24 @@ class CtaEngine(object):
         ## 有关订阅合约行情
         ## -----------------------------------------------------------------------------------------
         ## 所有的主力合约
-        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',"""select * from main_contract_daily where TradingDay = %s""" %self.lastTradingDay)
-
+        self.mainContracts                = self.mainEngine.dbMySQLQuery('china_futures_bar',
+                                            """select * from main_contract_daily where TradingDay = %s""" %self.lastTradingDay)
+        
         ## 持仓的合约
-        self.positionContracts_FL_SimNow = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from positionInfo;""")
-        self.positionContracts_YY_SimNow = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from positionInfo;""")
-        self.positionContracts_HiCloud = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from positionInfo;""")
+        self.positionContracts_FL_SimNow  = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from positionInfo;""")
+        self.positionContracts_YY_SimNow  = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from positionInfo;""")
+        self.positionContracts_HiCloud    = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from positionInfo;""")
         self.positionContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from positionInfo;""")
-
+        
         ## 信号的合约
-        self.signalContracts = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
-        self.signalContracts2 = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t_2;""")
-
+        self.signalContracts              = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
+        self.signalContracts2             = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t_2;""")
+        
         ## 前一个交易日未成交的合约
-        self.failedContracts_Fl_SimNow = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from failedInfo;""")
-        self.failedContracts_YY_SimNow = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from failedInfo;""")
-        self.failedContracts_HiCloud = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from failedInfo;""")
-        self.failedContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from failedInfo;""")
+        self.failedContracts_Fl_SimNow    = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from failedInfo;""")
+        self.failedContracts_YY_SimNow    = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from failedInfo;""")
+        self.failedContracts_HiCloud      = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from failedInfo;""")
+        self.failedContracts_LXO_SimNow   = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from failedInfo;""")
 
         ## -----------------------------------------------------------------------------------------
         ## william
@@ -202,7 +203,7 @@ class CtaEngine(object):
         self.registerEvent()
 
     #----------------------------------------------------------------------
-    def sendOrder(self, vtSymbol, orderType, price, volume, strategy):
+    def sendOrderBK(self, vtSymbol, orderType, price, volume, strategy):
         """发单"""
         ########################################################################
         ## william
@@ -210,17 +211,17 @@ class CtaEngine(object):
         ## Ref: /stragegy/strategyBBminute.py
         contract = self.mainEngine.getContract(vtSymbol)
 
-        req = VtOrderReq()
-        req.symbol = contract.symbol
+        req          = VtOrderReq()
+        req.symbol   = contract.symbol
         req.exchange = contract.exchange
         ########################################################################
         ## william
         ## 这个需要参考最小价格变动单位：　priceTick
-        req.price = self.roundToPriceTick(contract.priceTick, price)
+        req.price  = self.roundToPriceTick(contract.priceTick, price)
         req.volume = volume
 
         req.productClass = strategy.productClass
-        req.currency = strategy.currency
+        req.currency     = strategy.currency
 
         ########################################################################
         ## william
@@ -231,7 +232,7 @@ class CtaEngine(object):
         # CTA委托类型映射
         if orderType == CTAORDER_BUY:
             req.direction = DIRECTION_LONG
-            req.offset = OFFSET_OPEN
+            req.offset    = OFFSET_OPEN
 
         elif orderType == CTAORDER_SELL:
             req.direction = DIRECTION_SHORT
@@ -240,24 +241,52 @@ class CtaEngine(object):
             ## william
             ####################################################################
             # 只有上期所才要考虑平今平昨
-            if contract.exchange != EXCHANGE_SHFE:
+            # if contract.exchange != EXCHANGE_SHFE:
+            # if contract.exchange != 'SHFE':
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     elif posBuffer.longYd != 0:
+            #         req.offset = OFFSET_CLOSE
+            #         req.volume = min(req.volume, posBuffer.longYd)
+            #     elif posBuffer.longToday != 0:
+            #         req.offset = OFFSET_CLOSETODAY
+            #         req.volume = min(req.volume, posBuffer.longToday)
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # 获取持仓缓存数据
+            posBuffer = self.posBufferDict.get(vtSymbol, None)
+            # 如果获取持仓缓存失败，则默认平昨
+            if not posBuffer:
                 req.offset = OFFSET_CLOSE
+            elif posBuffer.longYd != 0:
+                req.offset = OFFSET_CLOSE
+                req.volume = min(req.volume, posBuffer.longYd)
+            elif posBuffer.longToday != 0:
+                req.offset = OFFSET_CLOSETODAY
+                req.volume = min(req.volume, posBuffer.longToday)
+            # 其他情况使用平昨
             else:
-                # 获取持仓缓存数据
-                posBuffer = self.posBufferDict.get(vtSymbol, None)
-                # 如果获取持仓缓存失败，则默认平昨
-                if not posBuffer:
-                    req.offset = OFFSET_CLOSE
+                req.offset = OFFSET_CLOSE
+
                 # 否则如果有多头今仓，则使用平今
-                elif posBuffer.longToday:
-                    req.offset= OFFSET_CLOSETODAY
-                # 其他情况使用平昨
-                else:
-                    req.offset = OFFSET_CLOSE
+                # elif posBuffer.longToday:
+                #     req.offset= OFFSET_CLOSETODAY
+                #     print "id3. OFFSET_CLOSETODAY"
+                # # 其他情况使用平昨
+                # else:
+                #     req.offset = OFFSET_CLOSE
+                #     print "id4. OFFSET_CLOSE"
 
         elif orderType == CTAORDER_SHORT:
             req.direction = DIRECTION_SHORT
-            req.offset = OFFSET_OPEN
+            req.offset    = OFFSET_OPEN
 
         elif orderType == CTAORDER_COVER:
             req.direction = DIRECTION_LONG
@@ -266,20 +295,53 @@ class CtaEngine(object):
             ## william
             ####################################################################
             # 只有上期所才要考虑平今平昨
-            if contract.exchange != EXCHANGE_SHFE:
+            # if contract.exchange != EXCHANGE_SHFE:
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     # 否则如果有空头今仓，则使用平今
+            #     elif posBuffer.shortToday:
+            #         req.offset= OFFSET_CLOSETODAY
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # if contract.exchange != 'SHFE':
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     elif posBuffer.shortYd != 0:
+            #         req.offset = OFFSET_CLOSE
+            #         req.volume = min(req.volume, posBuffer.shortYd)
+            #     elif posBuffer.shortToday != 0:
+            #         req.offset = OFFSET_CLOSETODAY
+            #         req.volume = min(req.volume, posBuffer.shortToday)
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # 获取持仓缓存数据
+            posBuffer = self.posBufferDict.get(vtSymbol, None)
+            # 如果获取持仓缓存失败，则默认平昨
+            if not posBuffer:
                 req.offset = OFFSET_CLOSE
+            elif posBuffer.shortYd != 0:
+                req.offset = OFFSET_CLOSE
+                req.volume = min(req.volume, posBuffer.shortYd)
+            elif posBuffer.shortToday != 0:
+                req.offset = OFFSET_CLOSETODAY
+                req.volume = min(req.volume, posBuffer.shortToday)
+            # 其他情况使用平昨
             else:
-                # 获取持仓缓存数据
-                posBuffer = self.posBufferDict.get(vtSymbol, None)
-                # 如果获取持仓缓存失败，则默认平昨
-                if not posBuffer:
-                    req.offset = OFFSET_CLOSE
-                # 否则如果有空头今仓，则使用平今
-                elif posBuffer.shortToday:
-                    req.offset= OFFSET_CLOSETODAY
-                # 其他情况使用平昨
-                else:
-                    req.offset = OFFSET_CLOSE
+                req.offset = OFFSET_CLOSE
 
         ########################################################################
         ## william
@@ -304,12 +366,185 @@ class CtaEngine(object):
             print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
             print '#'*80+'\n'
         ## =====================================================================
-        # self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
-        #                  %(strategy.name, vtSymbol, req.direction, volume, price))
+        self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
+                         %(strategy.name, vtSymbol, req.direction, volume, price))
         ########################################################################
         ## william
         ## 同样，返回订单号
         return vtOrderID
+
+    #----------------------------------------------------------------------
+    def sendOrder(self, vtSymbol, orderType, price, volume, strategy):
+        """发单"""
+        ########################################################################
+        ## william
+        ## 这里的 strategy 来自具体的策略
+        ## Ref: /stragegy/strategyBBminute.py
+        contract = self.mainEngine.getContract(vtSymbol)
+
+        req          = VtOrderReq()
+        req.symbol   = contract.symbol
+        req.exchange = contract.exchange
+        ########################################################################
+        ## william
+        ## 这个需要参考最小价格变动单位：　priceTick
+        req.price  = self.roundToPriceTick(contract.priceTick, price)
+        req.volume = volume
+
+        req.productClass = strategy.productClass
+        req.currency     = strategy.currency
+
+        ########################################################################
+        ## william
+        ## Ref: /vn.trader/language/chinese/constant.py/
+        # 设计为CTA引擎发出的委托只允许使用限价单
+        req.priceType = PRICETYPE_LIMITPRICE
+
+        # CTA委托类型映射
+        if orderType == CTAORDER_BUY:
+            req.direction = DIRECTION_LONG
+            req.offset    = OFFSET_OPEN
+
+        elif orderType == CTAORDER_SELL:
+            req.direction = DIRECTION_SHORT
+
+            ####################################################################
+            ## william
+            ####################################################################
+            # 只有上期所才要考虑平今平昨
+            # if contract.exchange != EXCHANGE_SHFE:
+            # if contract.exchange != 'SHFE':
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     elif posBuffer.longYd != 0:
+            #         req.offset = OFFSET_CLOSE
+            #         req.volume = min(req.volume, posBuffer.longYd)
+            #     elif posBuffer.longToday != 0:
+            #         req.offset = OFFSET_CLOSETODAY
+            #         req.volume = min(req.volume, posBuffer.longToday)
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # 获取持仓缓存数据
+            posBuffer = self.posBufferDict.get(vtSymbol, None)
+            # 如果获取持仓缓存失败，则默认平昨
+            if not posBuffer:
+                req.offset = OFFSET_CLOSE
+            elif posBuffer.longYd != 0:
+                req.offset = OFFSET_CLOSE
+                req.volume = min(req.volume, posBuffer.longYd)
+            elif posBuffer.longToday != 0:
+                req.offset = OFFSET_CLOSETODAY
+                req.volume = min(req.volume, posBuffer.longToday)
+            # 其他情况使用平昨
+            else:
+                req.offset = OFFSET_CLOSE
+
+                # 否则如果有多头今仓，则使用平今
+                # elif posBuffer.longToday:
+                #     req.offset= OFFSET_CLOSETODAY
+                #     print "id3. OFFSET_CLOSETODAY"
+                # # 其他情况使用平昨
+                # else:
+                #     req.offset = OFFSET_CLOSE
+                #     print "id4. OFFSET_CLOSE"
+
+        elif orderType == CTAORDER_SHORT:
+            req.direction = DIRECTION_SHORT
+            req.offset    = OFFSET_OPEN
+
+        elif orderType == CTAORDER_COVER:
+            req.direction = DIRECTION_LONG
+
+            ####################################################################
+            ## william
+            ####################################################################
+            # 只有上期所才要考虑平今平昨
+            # if contract.exchange != EXCHANGE_SHFE:
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     # 否则如果有空头今仓，则使用平今
+            #     elif posBuffer.shortToday:
+            #         req.offset= OFFSET_CLOSETODAY
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # if contract.exchange != 'SHFE':
+            #     req.offset = OFFSET_CLOSE
+            # else:
+            #     # 获取持仓缓存数据
+            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
+            #     # 如果获取持仓缓存失败，则默认平昨
+            #     if not posBuffer:
+            #         req.offset = OFFSET_CLOSE
+            #     elif posBuffer.shortYd != 0:
+            #         req.offset = OFFSET_CLOSE
+            #         req.volume = min(req.volume, posBuffer.shortYd)
+            #     elif posBuffer.shortToday != 0:
+            #         req.offset = OFFSET_CLOSETODAY
+            #         req.volume = min(req.volume, posBuffer.shortToday)
+            #     # 其他情况使用平昨
+            #     else:
+            #         req.offset = OFFSET_CLOSE
+
+            # 获取持仓缓存数据
+            posBuffer = self.posBufferDict.get(vtSymbol, None)
+            # 如果获取持仓缓存失败，则默认平昨
+            if not posBuffer:
+                req.offset = OFFSET_CLOSE
+            elif posBuffer.shortYd != 0:
+                req.offset = OFFSET_CLOSE
+                req.volume = min(req.volume, posBuffer.shortYd)
+            elif posBuffer.shortToday != 0:
+                req.offset = OFFSET_CLOSETODAY
+                req.volume = min(req.volume, posBuffer.shortToday)
+            # 其他情况使用平昨
+            else:
+                req.offset = OFFSET_CLOSE
+
+        ########################################################################
+        ## william
+        ## 发单
+        ## Ref: gateway/ctpGateway.py/class CtpTdApi/def sendOrder(self, orderReq):
+        ##１．执行下单命令：　self.reqOrderInsert(req, self.reqID)
+        ##2. 并返回订单号（字符串）：vtOrderID，便于某些算法进行动态管理
+        ########################################################################
+
+        ########################################################################
+        ## william
+        ## 从主函数口发单,使用 ctpGateway
+        vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
+                                                                            
+        ## =====================================================================
+        ## 如果是一键全平仓，不要使用以下的命令
+        ## =====================================================================
+        if strategy.name != 'CLOSE_ALL':
+            self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
+
+            print "\n"+'#'*80
+            print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
+            print '#'*80+'\n'
+        ## =====================================================================
+        self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
+                         %(strategy.name, vtSymbol, req.direction, volume, price))
+        ########################################################################
+        ## william
+        ## 同样，返回订单号
+        return vtOrderID
+
+
 
     #---------------------------------------------------------------------------
     def cancelOrder(self, vtOrderID):
@@ -354,27 +589,27 @@ class CtaEngine(object):
         self.stopOrderCount += 1
         stopOrderID = STOPORDERPREFIX + str(self.stopOrderCount)
 
-        so = StopOrder()
-        so.vtSymbol = vtSymbol
-        so.orderType = orderType
-        so.price = price
-        so.volume = volume
-        so.strategy = strategy
+        so             = StopOrder()
+        so.vtSymbol    = vtSymbol
+        so.orderType   = orderType
+        so.price       = price
+        so.volume      = volume
+        so.strategy    = strategy
         so.stopOrderID = stopOrderID
-        so.status = STOPORDER_WAITING
+        so.status      = STOPORDER_WAITING
 
         if orderType == CTAORDER_BUY:
             so.direction = DIRECTION_LONG
-            so.offset = OFFSET_OPEN
+            so.offset    = OFFSET_OPEN
         elif orderType == CTAORDER_SELL:
             so.direction = DIRECTION_SHORT
-            so.offset = OFFSET_CLOSE
+            so.offset    = OFFSET_CLOSE
         elif orderType == CTAORDER_SHORT:
             so.direction = DIRECTION_SHORT
-            so.offset = OFFSET_OPEN
+            so.offset    = OFFSET_OPEN
         elif orderType == CTAORDER_COVER:
             so.direction = DIRECTION_LONG
-            so.offset = OFFSET_CLOSE
+            so.offset    = OFFSET_CLOSE
 
         # 保存stopOrder对象到字典中
         self.stopOrderDict[stopOrderID] = so
@@ -542,6 +777,32 @@ class CtaEngine(object):
 
 
 
+    ############################################################################
+    ## william
+    ## 启动策略交易
+    ############################################################################
+    # def startTrading(self, event):
+    #     ## -----------------------------------------------------------------
+    #     if not self.strategyDict:
+    #         return 
+    #     ## -----------------------------------------------------------------
+
+    #     tempStratOrders = list(set(self.strategyDict['YunYang'].vtOrderIDListOpen) |
+    #                            set(self.strategyDict['YunYang'].vtOrderIDListClose) |
+    #                            set(self.strategyDict['OiRank'].vtOrderIDListOpen) |
+    #                            set(self.strategyDict['OiRank'].vtOrderIDListClose))
+
+    #     tempAllWorkingOrders = [self.mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(self.mainEngine.getAllWorkingOrders())) if self.mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
+
+    #     if tempAllWorkingOrders:
+    #         for vtOrderID in tempAllWorkingOrders:
+    #             self.cancelOrder(vtOrderID)
+    #     else:
+    #         for k in self.strategyDict.keys():
+    #             self.startStrategy(k)
+
+
+
 
     #----------------------------------------------------------------------
     def registerEvent(self):
@@ -550,6 +811,7 @@ class CtaEngine(object):
         self.eventEngine.register(EVENT_ORDER, self.processOrderEvent)
         self.eventEngine.register(EVENT_TRADE, self.processTradeEvent)
         self.eventEngine.register(EVENT_POSITION, self.processPositionEvent)
+        # self.eventEngine.register(EVENT_TIMER, self.startTrading)
 
     #----------------------------------------------------------------------
     def insertData(self, dbName, collectionName, data):
@@ -642,9 +904,9 @@ class CtaEngine(object):
     #----------------------------------------------------------------------
     def writeCtaLog(self, content):
         """快速发出CTA模块日志事件"""
-        log = VtLogData()
+        log            = VtLogData()
         log.logContent = content
-        event = Event(type_=EVENT_CTA_LOG)
+        event          = Event(type_=EVENT_CTA_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)
 
@@ -709,11 +971,11 @@ class CtaEngine(object):
             ## william
             # 保存Tick映射关系
             if 'vtSymbol' in setting.keys() and len(setting['vtSymbol']) != 0:
-                vtSymbolSet  = setting['vtSymbol'].replace(" ", "")
+                vtSymbolSet   = setting['vtSymbol'].replace(" ", "")
                 vtSymbolStrat = vtSymbolSet.split(',')
-                vtSymbolList = list(set(self.subscribeContracts) | set(vtSymbolStrat))
+                vtSymbolList  = list(set(self.subscribeContracts) | set(vtSymbolStrat))
             else:
-                vtSymbolList = list(set(self.subscribeContracts))
+                vtSymbolList  = list(set(self.subscribeContracts))
 
             for vtSymbol in vtSymbolList:
             #by hw 单个策略订阅多个合约，配置文件中"vtSymbol": "IF1602,IF1603"
@@ -737,8 +999,8 @@ class CtaEngine(object):
                 ## william
                 contract = self.mainEngine.getContract(vtSymbol)
                 if contract:
-                    req = VtSubscribeReq()
-                    req.symbol = contract.symbol
+                    req          = VtSubscribeReq()
+                    req.symbol   = contract.symbol
                     req.exchange = contract.exchange
                     # req.symbol = contract['symbol']
                     # req.exchange = contract['exchange']
@@ -1037,29 +1299,29 @@ class PositionBuffer(object):
     #----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
-        self.vtSymbol = EMPTY_STRING
-
+        self.vtSymbol      = EMPTY_STRING
+        
         # 多头
-        self.longPosition = EMPTY_INT
-        self.longToday = EMPTY_INT
-        self.longYd = EMPTY_INT
-
+        self.longPosition  = EMPTY_INT
+        self.longToday     = EMPTY_INT
+        self.longYd        = EMPTY_INT
+        
         # 空头
         self.shortPosition = EMPTY_INT
-        self.shortToday = EMPTY_INT
-        self.shortYd = EMPTY_INT
+        self.shortToday    = EMPTY_INT
+        self.shortYd       = EMPTY_INT
 
     #----------------------------------------------------------------------
     def updatePositionData(self, pos):
         """更新持仓数据"""
         if pos.direction == DIRECTION_LONG:
             self.longPosition = pos.position
-            self.longYd = pos.ydPosition
-            self.longToday = self.longPosition - self.longYd
+            self.longYd       = pos.ydPosition
+            self.longToday    = self.longPosition - self.longYd
         else:
             self.shortPosition = pos.position
-            self.shortYd = pos.ydPosition
-            self.shortToday = self.shortPosition - self.shortYd
+            self.shortYd       = pos.ydPosition
+            self.shortToday    = self.shortPosition - self.shortYd
 
     #----------------------------------------------------------------------
     def updateTradeData(self, trade):
@@ -1068,26 +1330,26 @@ class PositionBuffer(object):
             # 多方开仓，则对应多头的持仓和今仓增加
             if trade.offset == OFFSET_OPEN:
                 self.longPosition += trade.volume
-                self.longToday += trade.volume
+                self.longToday    += trade.volume
             # 多方平今，对应空头的持仓和今仓减少
             elif trade.offset == OFFSET_CLOSETODAY:
                 self.shortPosition -= trade.volume
-                self.shortToday -= trade.volume
+                self.shortToday    -= trade.volume
             # 多方平昨，对应空头的持仓和昨仓减少
             else:
                 self.shortPosition -= trade.volume
-                self.shortYd -= trade.volume
+                self.shortYd       -= trade.volume
         else:
             # 空头和多头相同
             if trade.offset == OFFSET_OPEN:
                 self.shortPosition += trade.volume
-                self.shortToday += trade.volume
+                self.shortToday    += trade.volume
             elif trade.offset == OFFSET_CLOSETODAY:
                 self.longPosition -= trade.volume
-                self.longToday -= trade.volume
+                self.longToday    -= trade.volume
             else:
                 self.longPosition -= trade.volume
-                self.longYd -= trade.volume
+                self.longYd       -= trade.volume
 
 
 
