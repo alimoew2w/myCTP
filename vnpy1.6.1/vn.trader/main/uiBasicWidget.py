@@ -13,6 +13,7 @@ from vtGateway import *
 import vtText
 
 COLOR_RED = QtGui.QColor('red')
+COLOR_GRAY = QtGui.QColor('gray')
 COLOR_GREEN = QtGui.QColor('green')
 
 
@@ -200,6 +201,9 @@ class PnlCell(QtGui.QTableWidgetItem):
             if value > 0 and self.color != 'red':
                 self.color = 'red'
                 self.setForeground(COLOR_RED)
+            elif value == 0 and self.color != 'gray':
+                self.color = 'gray'
+                self.setForeground(COLOR_GRAY)    
             elif value < 0 and self.color != 'green':
                 self.color = 'green'
                 self.setForeground(COLOR_GREEN)
@@ -1024,6 +1028,8 @@ class TradingWidget(QtGui.QFrame):
         ## =====================================================================
         ## william
         ## 全停
+        buttonStartAll = QtGui.QPushButton(vtText.START_ALL)
+        ## 全停
         buttonStopAll = QtGui.QPushButton(vtText.STOP_ALL)
         ## 全平
         buttonCloseAll = QtGui.QPushButton(vtText.CLOSE_ALL)
@@ -1035,6 +1041,8 @@ class TradingWidget(QtGui.QFrame):
         buttonCancelAll.setMinimumHeight(size.height()*1.5)
         ## =====================================================================
         ## william
+        ## 全启
+        buttonStartAll.setMinimumHeight(size.height()*1.5)
         ## 全停
         buttonStopAll.setMinimumHeight(size.height()*1.5)
         ## 全平
@@ -1053,6 +1061,8 @@ class TradingWidget(QtGui.QFrame):
         ## =====================================================================
         ## william
         ## 全撤
+        vbox.addWidget(buttonStartAll)
+        ## 全撤
         vbox.addWidget(buttonStopAll)
         ## 全平
         vbox.addWidget(buttonCloseAll)
@@ -1066,6 +1076,8 @@ class TradingWidget(QtGui.QFrame):
         buttonCancelAll.clicked.connect(self.cancelAll)
         ## =====================================================================
         ## william
+        ## 全撤
+        buttonStartAll.clicked.connect(self.startAll)
         ## 全撤
         buttonStopAll.clicked.connect(self.stopAll)
         ## 全平
@@ -1249,6 +1261,27 @@ class TradingWidget(QtGui.QFrame):
             req.orderID   = order.orderID
             self.mainEngine.cancelOrder(req, order.gatewayName)
     
+    ############################################################################
+    ## william
+    ## 全停
+    ############################################################################
+    def startAll(self):
+        """
+        一键全平仓
+        """
+        # pass
+        
+        reply = QtGui.QMessageBox.question(self, vtText.START_ALL,
+                                   vtText.CONFIRM_START_ALL, QtGui.QMessageBox.Yes | 
+                                   QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        ## =====================================================================
+        if reply == QtGui.QMessageBox.Yes: 
+            if self.mainEngine.ctaEngine.strategyDict:
+                for k in self.mainEngine.ctaEngine.strategyDict.keys():
+                    self.mainEngine.ctaEngine.startStrategy(k)
+        ## ===================================================================== 
+
     ############################################################################
     ## william
     ## 全停
