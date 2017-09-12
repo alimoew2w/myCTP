@@ -117,10 +117,11 @@ if (nrow(OIopenInfo) != 0) {
   OIopenInfo <- data.table()
 }
 
-
 ## =============================================================================
 ## 1. 先处理开盘的订单
 ## =============================================================================
+mysql <- mysqlFetch(accountDB)
+
 if (nrow(YYpositionInfo) != 0) {
   if (nrow(OIopenInfo) != 0) {
     dtStart <- merge(YYpositionInfo, OIopenInfo,
@@ -131,15 +132,18 @@ if (nrow(YYpositionInfo) != 0) {
         .[, holdingDays := NULL]
     dtStart
 
+    ## -------------------------------------------------------------------------
+    ## 需要更改 strategyID
+    ## -------------------------------------------------------------------------
     dtUpdateStrategyID <- dtStart[volume.x != 0 & volume.y != 0]
     if (nrow(dtUpdateStrategyID) != 0) {
         mysql <- mysqlFetch(accountDB)
         for (i in 1:nrow(dtUpdateStrategyID)) {
             if (dtUpdateStrategyID[i, deltaVolume] <= 0) {
-                ## -----------------------------------------------------------------
+                ## -------------------------------------------------------------
                 ## 如果持仓不够
                 ## 则全部改 ID
-                ## -----------------------------------------------------------------
+                ## -------------------------------------------------------------
                 sql <- paste("update positionInfo
                               set strategyID = 'OIStrategy',
                               TradingDay = ",currTradingDay[1,days],
@@ -148,33 +152,98 @@ if (nrow(YYpositionInfo) != 0) {
                               "and InstrumentID = ", paste0("'",dtUpdateStrategyID[i,InstrumentID],"'")
                               )
                 dbSendQuery(mysql,sql)
+
+                ## -------------------------------------------------------------
+                ## 把交易的信息写入 tradingInfo
+                ## -------------------------------------------------------------
+                tempResYY <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateStrategyID[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = ifelse(dtUpdateStrategyID[i,direction == 'long'],
+                                                           'short', 'long'),
+                                        offset = '平仓',
+                                        volume = dtUpdateStrategyID[i,volume.x],
+                                        price = -1)
+                tempResOI <- data.table(strategyID = 'OIStrategy',
+                                        InstrumentID = dtUpdateStrategyID[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = dtUpdateStrategyID[i,direction],
+                                        offset = '开仓',
+                                        volume = dtUpdateStrategyID[i,volume.x],
+                                        price = 1)
+                
+                dbWriteTable(mysql, 'tradingInfo',
+                            rbind(tempResYY, tempResOI), row.names = FALSE, append = TRUE)
             } else {
                 ## -----------------------------------------------------------------
                 ## 如果持仓足够
                 ## 则全部改 ID
                 ## -----------------------------------------------------------------
+                # sql <- paste("update positionInfo
+                #   set volume = ",dtUpdateStrategyID[i, deltaVolume],
+                #   ", strategyID = 'OIStrategy',
+                #   TradingDay = ",currTradingDay[1,days],
+                #   "where strategyID = 'YYStrategy'
+                #   and InstrumentID = ", paste0("'",dtUpdateStrategyID[i,InstrumentID],"'",
+                #   "and TradingDay = ", dtUpdateStrategyID[i, gsub('-','',TradingDay.x)])
+                #   )
+                # dbSendQuery(mysql, sql)
+
+                # tempRes <- dtUpdateStrategyID[i,.(strategyID = strategyID.x,InstrumentID,
+                #                                  TradingDay = TradingDay.y,
+                #                                  direction,
+                #                                  volume = volume.y)]
+                # sql <- paste("delete from positionInfo
+                #                           where strategyID = 'YYStrategy'
+                #                           and InstrumentID = ", paste0("'",tempRes[1,InstrumentID],"'"),
+                #                           "and TradingDay = ", tempRes[1,gsub('-','',TradingDay)],
+                #                           "and direction = ", paste0("'",tempRes[1,direction],"'"))
+                # dbSendQuery(mysql, sql)
+                # dbWriteTable(mysql, 'positionInfo',
+                #             tempRes, row.names = FALSE, append = TRUE)
+
+                ## -------------------------------------------------------------
                 sql <- paste("update positionInfo
                   set volume = ",dtUpdateStrategyID[i, deltaVolume],
-                  ", strategyID = 'OIStrategy',
-                  TradingDay = ",currTradingDay[1,days],
                   "where strategyID = 'YYStrategy'
-                  and InstrumentID = ", paste0("'",dtUpdateStrategyID[i,InstrumentID],"'",
-                  "and TradingDay = ", dtUpdateStrategyID[i, gsub('-','',TradingDay.x)])
+                  and InstrumentID = ", paste0("'",dtUpdateStrategyID[i,InstrumentID],"'"),
+                  "and TradingDay = ", dtUpdateStrategyID[i, gsub('-','',TradingDay.x)],
+                  "and direction = ", paste0("'",dtUpdateStrategyID[i,direction],"'")
                   )
                 dbSendQuery(mysql, sql)
 
-                tempRes <- dtUpdateStrategyID[i,.(strategyID = strategyID.x,InstrumentID,
+                tempRes <- dtUpdateStrategyID[i,.(strategyID = strategyID.y, InstrumentID,
                                                  TradingDay = TradingDay.y,
                                                  direction,
                                                  volume = volume.y)]
-                sql <- paste("delete from positionInfo
-                                          where strategyID = 'YYStrategy'
-                                          and InstrumentID = ", paste0("'",tempRes[1,InstrumentID],"'"),
-                                          "and TradingDay = ", tempRes[1,gsub('-','',TradingDay)],
-                                          "and direction = ", paste0("'",tempRes[1,direction],"'"))
-                dbSendQuery(mysql, sql)
                 dbWriteTable(mysql, 'positionInfo',
                             tempRes, row.names = FALSE, append = TRUE)
+
+                ## -------------------------------------------------------------
+                ## 把交易的信息写入 tradingInfo
+                ## -------------------------------------------------------------
+                tempResYY <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateStrategyID[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = ifelse(dtUpdateStrategyID[i,direction == 'long'],
+                                                           'short', 'long'),
+                                        offset = '平仓',
+                                        volume = dtUpdateStrategyID[i,volume.y],
+                                        price = -1)
+                tempResOI <- data.table(strategyID = 'OIStrategy',
+                                        InstrumentID = dtUpdateStrategyID[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = dtUpdateStrategyID[i,direction],
+                                        offset = '开仓',
+                                        volume = dtUpdateStrategyID[i,volume.y],
+                                        price = 1)
+                
+                dbWriteTable(mysql, 'tradingInfo',
+                            rbind(tempResYY, tempResOI), row.names = FALSE, append = TRUE)
             }
         }
     }
@@ -293,27 +362,94 @@ if (nrow(YYpositionInfo) != 0) {
                               "and direction = ", paste0("'",dtUpdateTradingDay[i,direction],"'")
                               )
                 dbSendQuery(mysql, sql)
+
+                ## -------------------------------------------------------------
+                ## 把交易的信息写入 tradingInfo
+                ## -------------------------------------------------------------
+                tempResClose <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateTradingDay[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = ifelse(dtUpdateTradingDay[i,direction == 'long'],
+                                                           'short', 'long'),
+                                        offset = '平仓',
+                                        volume = dtUpdateTradingDay[i,volume.x],
+                                        price = -1)
+                tempResOpen <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateTradingDay[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = dtUpdateTradingDay[i,direction],
+                                        offset = '开仓',
+                                        volume = dtUpdateTradingDay[i,volume.x],
+                                        price = 1)
+                
+                dbWriteTable(mysql, 'tradingInfo',
+                            rbind(tempResClose, tempResOpen), row.names = FALSE, append = TRUE)
             } else {
+                # sql <- paste("update positionInfo
+                #   set volume = ",dtUpdateTradingDay[i, deltaVolume],
+                #   "where strategyID = 'YYStrategy'
+                #   and InstrumentID = ", paste0("'",dtUpdateTradingDay[i,InstrumentID],"'",
+                #   "and TradingDay = ", dtUpdateTradingDay[i, gsub('-','',TradingDay.x)]),
+                #   "and direction = ", paste0("'",dtUpdateTradingDay[i,direction],"'")
+                #   )
+                # dbSendQuery(mysql, sql)
+
+                # tempRes <- dtUpdateTradingDay[i,.(strategyID,InstrumentID,
+                #                                                  TradingDay = TradingDay.y,
+                #                                                  direction,
+                #                                                  volume = volume.y)]
+                # sql <- paste("delete from positionInfo
+                #                           where strategyID = 'YYStrategy'
+                #                           and InstrumentID = ", paste0("'",tempRes[1,InstrumentID],"'"),
+                #                           "and TradingDay = ", tempRes[1,gsub('-','',TradingDay)],
+                #                           "and direction = ", paste0("'",tempRes[1,direction],"'"))
+                # dbSendQuery(mysql, sql)
+                # dbWriteTable(mysql, 'positionInfo',
+                #             tempRes, row.names = FALSE, append = TRUE)
+
+                ## -------------------------------------------------------------
+                ## 把交易的信息写入 tradingInfo
+                ## -------------------------------------------------------------
                 sql <- paste("update positionInfo
                   set volume = ",dtUpdateTradingDay[i, deltaVolume],
                   "where strategyID = 'YYStrategy'
-                  and InstrumentID = ", paste0("'",dtUpdateTradingDay[i,InstrumentID],"'",
-                  "and TradingDay = ", dtUpdateTradingDay[i, gsub('-','',TradingDay.x)])
+                  and InstrumentID = ", paste0("'",dtUpdateTradingDay[i,InstrumentID],"'"),
+                  "and TradingDay = ", dtUpdateTradingDay[i, gsub('-','',TradingDay.x)],
+                  "and direction = ", paste0("'",dtUpdateTradingDay[i,direction],"'")
                   )
                 dbSendQuery(mysql, sql)
 
-                tempRes <- dtUpdateTradingDay[i,.(strategyID,InstrumentID,
-                                                                 TradingDay = TradingDay.y,
-                                                                 direction,
-                                                                 volume = volume.y)]
-                sql <- paste("delete from positionInfo
-                                          where strategyID = 'YYStrategy'
-                                          and InstrumentID = ", paste0("'",tempRes[1,InstrumentID],"'"),
-                                          "and TradingDay = ", tempRes[1,gsub('-','',TradingDay)],
-                                          "and direction = ", paste0("'",tempRes[1,direction],"'"))
-                dbSendQuery(mysql, sql)
+                tempRes <- dtUpdateTradingDay[i,.(strategyID = strategyID.y, InstrumentID,
+                                                 TradingDay = TradingDay.y,
+                                                 direction,
+                                                 volume = volume.y)]
                 dbWriteTable(mysql, 'positionInfo',
                             tempRes, row.names = FALSE, append = TRUE)
+                ## -------------------------------------------------------------
+                ## 把交易的信息写入 tradingInfo
+                ## -------------------------------------------------------------
+                tempResClose <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateTradingDay[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = ifelse(dtUpdateTradingDay[i,direction == 'long'],
+                                                           'short', 'long'),
+                                        offset = '平仓',
+                                        volume = dtUpdateTradingDay[i,volume.y],
+                                        price = -1)
+                tempResOpen <- data.table(strategyID = 'YYStrategy',
+                                        InstrumentID = dtUpdateTradingDay[i,InstrumentID],
+                                        TradingDay = currTradingDay[1,days],
+                                        tradeTime = format(Sys.time(),'%Y-%m-%d %H:%M:%S'),
+                                        direction = dtUpdateTradingDay[i,direction],
+                                        offset = '开仓',
+                                        volume = dtUpdateTradingDay[i,volume.y],
+                                        price = 1)
+                
+                dbWriteTable(mysql, 'tradingInfo',
+                            rbind(tempResClose, tempResOpen), row.names = FALSE, append = TRUE)
             }
         }
     }
