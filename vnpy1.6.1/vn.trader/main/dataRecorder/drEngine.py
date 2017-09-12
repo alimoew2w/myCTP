@@ -395,8 +395,8 @@ class DrEngine(object):
             if key != 'datetime':
                 d[key] = trade.__getattribute__(key)
 
-        # self.tradeInfo.tradeStatus = u'全部成交'
         self.tradeInfo.tradeStatus = self.mainEngine.dataEngine.orderDict[self.mainEngine.drEngine.tradeInfo.__dict__['vtOrderID']].status
+        ## ---------------------------------------------------------------------
         print "\n"+'#'*80
         print "当前成交订单的详细信息:"
         temp = self.tradeInfo.__dict__
@@ -405,6 +405,7 @@ class DrEngine(object):
         print tempRes[['symbol','price','direction','offset',
                        'volume','tradeStatus','tradeTime','orderID']]
         print '#'*80
+        ## ---------------------------------------------------------------------
 
     def getTradeInfo(self):
         """获取成交订单信息"""
@@ -432,8 +433,10 @@ class DrEngine(object):
                         tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
                     elif tempPosInfo[key]['direction'] == u'空':
                         tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.mainEngine.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
-
-                    tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+                    if self.accountInfo.balance:
+                        tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+                    else:
+                        tempPosInfo[key]['positionPct'] = 0
                 # --------------------------------------------------------------------------
             # print x
             # print pd.DataFrame(x).transpose()
@@ -471,11 +474,11 @@ class DrEngine(object):
             accInfo['deltaBalancePct'] = 0
         accInfo['TradingDay'] = self.mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')
 
-        tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit']
+        tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit','commission']
         for k in tempFields:
             accInfo[k] = round(accInfo[k],4)
 
-        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney','flowMoney','allMoney']
+        tempFields = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney','flowMoney','allMoney','commission']
         self.accountBalance = pd.DataFrame([[accInfo[k] for k in tempFields]], columns = tempFields)
 
         ## =====================================================================
@@ -631,6 +634,23 @@ class DrEngine(object):
             ####################################################################
             ## william
             ## 退出程序
+            
+            for gateway in self.mainEngine.gatewayDict.values():        
+                gateway.close()
+                ## =============================================================
+                ## william
+                ## 保存数据引擎里的合约数据到硬盘
+                ## -------------------------------------------------------------
+                ## 取消所有订单
+                print '#'*80 + '\n'
+                print "即将取消所有订单......"
+                self.mainEngine.cancelOrderAll()
+                for i in range(33):
+                    print ".",
+                    time.sleep(.5)
+                print '\n' + '#'*80 
+                ## =============================================================
+
             self.stop()
             os._exit(0)
     #---------------------------------------------------------------------------
@@ -643,7 +663,9 @@ class DrEngine(object):
         s  = t.second
         # if ((h == 2 and m == 35) or (h == 15 and m == 10 ) or \
         #     (h in [9,21] and m == 10) ) and s == 59:
-        if (h in [2,11,15] and m == 35 and s == 59):
+        # if (h in [2,15] and 35 <= m <= 40 and s == 59):
+        # if (h in [2,15] and 35 <= m <= 35 and s == 59):
+        if (h == 15 and 35 <= m <= 35 and s == 59) and (1 <= (datetime.now().weekday()+1) <= 5):
             re = True
             print h,m,s,re
         return re
