@@ -202,29 +202,9 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         ## 如果上一个交易日有未完成的订单,需要优先处理
         ## =====================================================================
-        if len(self.failedInfo) != 0:
-            for i in range(len(self.failedInfo)):
-                ## -------------------------------------------------------------
-                ## direction
-                if self.failedInfo.loc[i,'direction'] == 'long':
-                    if self.failedInfo.loc[i,'offset'] == u'开仓':
-                        tempDirection = 'buy'
-                    elif self.failedInfo.loc[i,'offset'] == u'平仓':
-                        tempDirection = 'cover'
-                elif self.failedInfo.loc[i,'direction'] == 'short':
-                    if self.failedInfo.loc[i,'offset'] == u'开仓':
-                        tempDirection = 'short'
-                    elif self.failedInfo.loc[i,'offset'] == u'平仓':
-                        tempDirection = 'sell'
-                ## -------------------------------------------------------------
-                ## volume
-                tempVolume = self.failedInfo.loc[i,'volume']
-                tempKey    = self.failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                tempTradingDay = self.failedInfo.loc[i,'TradingDay']
-                self.tradingOrdersFailedInfo[tempKey] = {'vtSymbol':self.failedInfo.loc[i,'InstrumentID'],
-                                                         'direction':tempDirection,
-                                                         'volume':tempVolume,
-                                                         'TradingDay':tempTradingDay}
+        ## ---------------------------------------------------------------------
+        self.processFailedInfo(self.failedInfo)
+        ## ---------------------------------------------------------------------
 
         print '#'*80
         print '%s策略启动' %self.name
@@ -256,7 +236,7 @@ class OIStrategy(CtaTemplate):
 
         print '#'*80
         print "@william 策略初始化成功 !!!"
-        # self.writeCtaLog(u'%s策略初始化' %self.name)
+        self.writeCtaLog(u'%s策略初始化' %self.name)
         print self.vtSymbolList
         print '#'*80
         ########################################################################
@@ -267,9 +247,6 @@ class OIStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
-        # tempTick = tick.__dict__
-        # tempTick = {k:tick.__dict__[k] for k in self.tickFileds}
-
         ## =====================================================================
         if not self.trading:
             return 
@@ -291,8 +268,8 @@ class OIStrategy(CtaTemplate):
         ########################################################################
         ## william
         ## =====================================================================
-        if len(self.failedInfo) != 0 and self.trading:
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+        if len(self.failedInfo) != 0 and self.tradingStart:
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersFailedInfo, 
                                      orderIDList   = self.vtOrderIDListFailedInfo,
                                      priceType     = 'chasing',
@@ -303,9 +280,8 @@ class OIStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] \
                              for k in self.tradingOrdersOpen.keys()] and 
             self.tradingStart and not self.tradingEnd):
-            # pass
             ####################################################################
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
@@ -318,7 +294,7 @@ class OIStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and 
             self.tradingBetween):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'last',
@@ -328,7 +304,7 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and self.tradingEnd):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
@@ -364,11 +340,7 @@ class OIStrategy(CtaTemplate):
         """处理策略交易与持仓信息
         """
         ## =====================================================================
-        
-        # print 'hello'
-        # print trade.vtOrderID
-        # print self.vtOrderIDListOpen
-        
+    
         if trade.vtOrderID not in list(set(self.vtOrderIDListOpen) | 
                                        set(self.vtOrderIDListClose) | 
                                        set(self.vtOrderIDListFailedInfo)):
@@ -928,17 +900,6 @@ class OIStrategy(CtaTemplate):
             self.tradingEnd = True
         else:
             self.tradingEnd = False
-
-        ## =====================================================================
-        # if ((datetime.now().hour == 8 and datetime.now().minute == 59 and datetime.now().second >= 30 ) or 
-        #     (datetime.now().hour == 9 and datetime.now().minute >= 0 and datetime.now().second <= 30 )) and \
-        #     (datetime.now().second % 10 == 0):
-        #     if self.ctaEngine.mainEngine.getAllOrders():
-        #         tempAllWorkingOrders = {self.ctaEngine.mainEngine.getAllOrders()[i].vtOrderID:self.ctaEngine.mainEngine.getAllOrders()[i].orderTime for i in range(len(self.ctaEngine.mainEngine.getAllOrders()))}
-        #         for key,value in tempAllWorkingOrders.items():
-        #             if abs(int(datetime.now().hour) - int(tempAllWorkingOrders[key][:2])) > 3:
-        #                 self.cancelOrder(key)
-        ## =====================================================================
 
         ## =====================================================================
         ## 如果是收盘交易
