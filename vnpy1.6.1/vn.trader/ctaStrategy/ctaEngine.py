@@ -38,25 +38,31 @@ import pandas as pd
 from datetime import *
 
 
-########################################################################
+####################################################################################################
 class CtaEngine(object):
     """CTA策略引擎"""
+    
+    ## =============================================================================================
+    ## CTA 策略配置
+    ## -------------------------------------------------------------------------
     settingFileName = 'CTA_setting.json'
     path = os.path.abspath(os.path.dirname(__file__))
     settingFileName = os.path.join(path, settingFileName)
+    ## =============================================================================================
 
-    #----------------------------------------------------------------------
+
+    ## =============================================================================================
     def __init__(self, mainEngine, eventEngine):
         """Constructor"""
         self.mainEngine  = mainEngine
         self.eventEngine = eventEngine
 
-        ############################################################################################
+        ## =========================================================================================
         ## william
         ## 有关日期的设置
         ## date: 指的是日期, 即 python 里面的 date() 格式, eg: 2017-01-01
         ## day:  是 date 转变过来的字符串格式, eg:'20170101'
-        ## -----------------------------------------------------------------------------------------
+        ## ---------------------------------------------------------------------
         ## 期货交易日历表
         ## Usage: mainEngine.ctaEngine.ChinaFuturesCalendar
         ## __格式是 date, 即 2017-01-01, 需要用 date 格式来匹配__
@@ -64,37 +70,45 @@ class CtaEngine(object):
         ## days:   日盘日期,
         self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 
             """select * from ChinaFuturesCalendar where days >= 20170101;""")
-        ## -----------------------------------------------------------------------------------------
-        '''
-        for i in range(len(self.ChinaFuturesCalendar)):
-            self.ChinaFuturesCalendar.loc[i, 'nights'] = str(self.ChinaFuturesCalendar.loc[i, 'nights']).replace('-','')
-            self.ChinaFuturesCalendar.loc[i, 'days'] = str(self.ChinaFuturesCalendar.loc[i, 'days']).replace('-','')
-        '''
-        ## -----------------------------------------------------------------------------------------
+        ## =========================================================================================
 
 
+        ## =========================================================================================
+        ## 交易系统需要使用的交易日历
+        ## ---------------------------------------------------------------------
         ## 当前日历的日期
+        ## ------------
         self.todayDate       = vtFunction.todayDate().date()
         self.todayDay        = self.todayDate.strftime('%Y%m%d')
         
         ## 当前交易日的日期
+        ## --------------
         self.tradingDate     = datetime.strptime(self.mainEngine.tradingDay,'%Y%m%d').date()
         self.tradingDay      = self.tradingDate.strftime('%Y%m%d')
         
         ## 上一个交易日
         self.lastTradingDate = self.ChinaFuturesCalendar.loc[self.ChinaFuturesCalendar.days < self.tradingDate, 'days'].max()
         self.lastTradingDay  = self.lastTradingDate.strftime('%Y%m%d')
-        ############################################################################################
+        ## =========================================================================================
 
+
+        ## =========================================================================================
         # 保存策略实例的字典
         # key为策略名称，value为策略实例，注意策略名称不允许重复
         self.strategyDict     = {}
         
-        ## =====================================================================
+        ## 持仓信息
+        ## ------
         self.positionInfo     = {}
+
+        ## 持仓合约
+        ## -------
         self.accountContracts = []
-        ## =====================================================================
+        ## =========================================================================================
         
+        ## =========================================================================================
+        ## CTA 策略相关的 Dict
+        ## ---------------------------------------------------------------------
         # 保存vtSymbol和策略实例映射的字典（用于推送tick数据）
         # 由于可能多个strategy交易同一个vtSymbol，因此key为vtSymbol
         # value为包含所有相关strategy对象的list
@@ -123,31 +137,43 @@ class CtaEngine(object):
         
         # 成交号集合，用来过滤已经收到过的成交推送
         self.tradeSet             = set()
+        ## =========================================================================================
 
 
-        ############################################################################################
+        ## =========================================================================================
         ## william
         ## 有关订阅合约行情
         ## -----------------------------------------------------------------------------------------
         ## 所有的主力合约
         self.mainContracts                = self.mainEngine.dbMySQLQuery('china_futures_bar',
-                                            """select * from main_contract_daily where TradingDay = %s""" %self.lastTradingDay)
+                                            """select * from main_contract_daily 
+                                               where TradingDay = %s """ %self.lastTradingDay)
         
         ## 持仓的合约
-        self.positionContracts_FL_SimNow  = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from positionInfo;""")
-        self.positionContracts_YY_SimNow  = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from positionInfo;""")
-        self.positionContracts_HiCloud    = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from positionInfo;""")
-        self.positionContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from positionInfo;""")
+        self.positionContracts_FL_SimNow  = self.mainEngine.dbMySQLQuery('FL_SimNow',
+                                            """select * from positionInfo;""")
+        self.positionContracts_YY_SimNow  = self.mainEngine.dbMySQLQuery('YY_SimNow',
+                                            """select * from positionInfo;""")
+        self.positionContracts_HiCloud    = self.mainEngine.dbMySQLQuery('HiCloud',
+                                            """select * from positionInfo;""")
+        self.positionContracts_LXO_SimNow = self.mainEngine.dbMySQLQuery('LXO_SimNow',
+                                            """select * from positionInfo;""")
         
         ## 信号的合约
-        self.signalContracts              = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t;""")
-        self.signalContracts2             = self.mainEngine.dbMySQLQuery('lhg_trade',"""select * from fl_open_t_2;""")
+        self.signalContracts              = self.mainEngine.dbMySQLQuery('lhg_trade',
+                                            """select * from fl_open_t;""")
+        self.signalContracts2             = self.mainEngine.dbMySQLQuery('lhg_trade',
+                                            """select * from fl_open_t_2;""")
         
         ## 前一个交易日未成交的合约
-        self.failedContracts_Fl_SimNow    = self.mainEngine.dbMySQLQuery('FL_SimNow',"""select * from failedInfo;""")
-        self.failedContracts_YY_SimNow    = self.mainEngine.dbMySQLQuery('YY_SimNow',"""select * from failedInfo;""")
-        self.failedContracts_HiCloud      = self.mainEngine.dbMySQLQuery('HiCloud',"""select * from failedInfo;""")
-        self.failedContracts_LXO_SimNow   = self.mainEngine.dbMySQLQuery('LXO_SimNow',"""select * from failedInfo;""")
+        self.failedContracts_Fl_SimNow    = self.mainEngine.dbMySQLQuery('FL_SimNow',
+                                            """select * from failedInfo;""")
+        self.failedContracts_YY_SimNow    = self.mainEngine.dbMySQLQuery('YY_SimNow',
+                                            """select * from failedInfo;""")
+        self.failedContracts_HiCloud      = self.mainEngine.dbMySQLQuery('HiCloud',
+                                            """select * from failedInfo;""")
+        self.failedContracts_LXO_SimNow   = self.mainEngine.dbMySQLQuery('LXO_SimNow',
+                                            """select * from failedInfo;""")
 
         ## -----------------------------------------------------------------------------------------
         ## william
@@ -164,31 +190,22 @@ class CtaEngine(object):
                                        set(self.failedContracts_HiCloud.InstrumentID.values) |
                                        set(self.accountContracts))
         self.tickInfo = {}
-        ## =====================================================================
-        # try:
-        #     # contractInfo = pd.read_csv('contract.csv')
-        #     contractAll = os.path.normpath(os.path.join(self.path,'../main','contractAll.csv'))
-        #     contractInfo = pd.read_csv(contractAll)
-        #     # print contractInfo
-        #     self.contractDict = {}
-        #     for i in range(len(contractInfo)):
-        #         self.contractDict[contractInfo.loc[i]['symbol']] = contractInfo.loc[i].to_dict()
-        # except:
-        #     None
-        ## =====================================================================
+        
+
+        ## =========================================================================================
+        ## 记录合约相关的 
+        ## 1. priceTick
+        ## 2. size
+        ## ---------------------------------------------------------------------
         for i in self.subscribeContracts:
             try:
-                self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] for k in ['vtSymbol','priceTick','size']}
+                self.tickInfo[i] = {k:self.mainEngine.getContract(i).__dict__[k] 
+                                    for k in ['vtSymbol','priceTick','size']}
             except:
                 None
-        ############################################################################################
+        ## =========================================================================================
 
 
-        ## MySQL 储存的不同策略的持仓信息
-        ## Usage
-        # self.allStrategyPosInfo = self.mainEngine.dbMySQLQuery('fl', 'select * from positionInfo')
-        # if self.allStrategyPosInfo.shape[0]:
-        #     self.allStrategyPosInfo.volume = self.allStrategyPosInfo.volume.astype(int)
         ########################################################################
         ## william
         ## Ref: /ctaStrategy/ctaBase.pyse
@@ -202,185 +219,19 @@ class CtaEngine(object):
         # 注册事件监听
         self.registerEvent()
 
-    #----------------------------------------------------------------------
-    def sendOrderBK(self, vtSymbol, orderType, price, volume, strategy):
-        """发单"""
-        ########################################################################
-        ## william
-        ## 这里的 strategy 来自具体的策略
-        ## Ref: /stragegy/strategyBBminute.py
-        contract = self.mainEngine.getContract(vtSymbol)
 
-        req          = VtOrderReq()
-        req.symbol   = contract.symbol
-        req.exchange = contract.exchange
-        ########################################################################
-        ## william
-        ## 这个需要参考最小价格变动单位：　priceTick
-        req.price  = self.roundToPriceTick(contract.priceTick, price)
-        req.volume = volume
-
-        req.productClass = strategy.productClass
-        req.currency     = strategy.currency
-
-        ########################################################################
-        ## william
-        ## Ref: /vn.trader/language/chinese/constant.py/
-        # 设计为CTA引擎发出的委托只允许使用限价单
-        req.priceType = PRICETYPE_LIMITPRICE
-
-        # CTA委托类型映射
-        if orderType == CTAORDER_BUY:
-            req.direction = DIRECTION_LONG
-            req.offset    = OFFSET_OPEN
-
-        elif orderType == CTAORDER_SELL:
-            req.direction = DIRECTION_SHORT
-
-            ####################################################################
-            ## william
-            ####################################################################
-            # 只有上期所才要考虑平今平昨
-            # if contract.exchange != EXCHANGE_SHFE:
-            # if contract.exchange != 'SHFE':
-            #     req.offset = OFFSET_CLOSE
-            # else:
-            #     # 获取持仓缓存数据
-            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
-            #     # 如果获取持仓缓存失败，则默认平昨
-            #     if not posBuffer:
-            #         req.offset = OFFSET_CLOSE
-            #     elif posBuffer.longYd != 0:
-            #         req.offset = OFFSET_CLOSE
-            #         req.volume = min(req.volume, posBuffer.longYd)
-            #     elif posBuffer.longToday != 0:
-            #         req.offset = OFFSET_CLOSETODAY
-            #         req.volume = min(req.volume, posBuffer.longToday)
-            #     # 其他情况使用平昨
-            #     else:
-            #         req.offset = OFFSET_CLOSE
-
-            # 获取持仓缓存数据
-            posBuffer = self.posBufferDict.get(vtSymbol, None)
-            # 如果获取持仓缓存失败，则默认平昨
-            if not posBuffer:
-                req.offset = OFFSET_CLOSE
-            elif posBuffer.longYd != 0:
-                req.offset = OFFSET_CLOSE
-                req.volume = min(req.volume, posBuffer.longYd)
-            elif posBuffer.longToday != 0:
-                req.offset = OFFSET_CLOSETODAY
-                req.volume = min(req.volume, posBuffer.longToday)
-            # 其他情况使用平昨
-            else:
-                req.offset = OFFSET_CLOSE
-
-                # 否则如果有多头今仓，则使用平今
-                # elif posBuffer.longToday:
-                #     req.offset= OFFSET_CLOSETODAY
-                #     print "id3. OFFSET_CLOSETODAY"
-                # # 其他情况使用平昨
-                # else:
-                #     req.offset = OFFSET_CLOSE
-                #     print "id4. OFFSET_CLOSE"
-
-        elif orderType == CTAORDER_SHORT:
-            req.direction = DIRECTION_SHORT
-            req.offset    = OFFSET_OPEN
-
-        elif orderType == CTAORDER_COVER:
-            req.direction = DIRECTION_LONG
-
-            ####################################################################
-            ## william
-            ####################################################################
-            # 只有上期所才要考虑平今平昨
-            # if contract.exchange != EXCHANGE_SHFE:
-            #     req.offset = OFFSET_CLOSE
-            # else:
-            #     # 获取持仓缓存数据
-            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
-            #     # 如果获取持仓缓存失败，则默认平昨
-            #     if not posBuffer:
-            #         req.offset = OFFSET_CLOSE
-            #     # 否则如果有空头今仓，则使用平今
-            #     elif posBuffer.shortToday:
-            #         req.offset= OFFSET_CLOSETODAY
-            #     # 其他情况使用平昨
-            #     else:
-            #         req.offset = OFFSET_CLOSE
-
-            # if contract.exchange != 'SHFE':
-            #     req.offset = OFFSET_CLOSE
-            # else:
-            #     # 获取持仓缓存数据
-            #     posBuffer = self.posBufferDict.get(vtSymbol, None)
-            #     # 如果获取持仓缓存失败，则默认平昨
-            #     if not posBuffer:
-            #         req.offset = OFFSET_CLOSE
-            #     elif posBuffer.shortYd != 0:
-            #         req.offset = OFFSET_CLOSE
-            #         req.volume = min(req.volume, posBuffer.shortYd)
-            #     elif posBuffer.shortToday != 0:
-            #         req.offset = OFFSET_CLOSETODAY
-            #         req.volume = min(req.volume, posBuffer.shortToday)
-            #     # 其他情况使用平昨
-            #     else:
-            #         req.offset = OFFSET_CLOSE
-
-            # 获取持仓缓存数据
-            posBuffer = self.posBufferDict.get(vtSymbol, None)
-            # 如果获取持仓缓存失败，则默认平昨
-            if not posBuffer:
-                req.offset = OFFSET_CLOSE
-            elif posBuffer.shortYd != 0:
-                req.offset = OFFSET_CLOSE
-                req.volume = min(req.volume, posBuffer.shortYd)
-            elif posBuffer.shortToday != 0:
-                req.offset = OFFSET_CLOSETODAY
-                req.volume = min(req.volume, posBuffer.shortToday)
-            # 其他情况使用平昨
-            else:
-                req.offset = OFFSET_CLOSE
-
-        ########################################################################
-        ## william
-        ## 发单
-        ## Ref: gateway/ctpGateway.py/class CtpTdApi/def sendOrder(self, orderReq):
-        ##１．执行下单命令：　self.reqOrderInsert(req, self.reqID)
-        ##2. 并返回订单号（字符串）：vtOrderID，便于某些算法进行动态管理
-        ########################################################################
-
-        ########################################################################
-        ## william
-        ## 从主函数口发单,使用 ctpGateway
-        vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
-                                                                            
-        ## =====================================================================
-        ## 如果是一键全平仓，不要使用以下的命令
-        ## =====================================================================
-        if strategy.name != 'CLOSE_ALL':
-            self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
-
-            print "\n"+'#'*80
-            print '策略%s发送委托，%s，%s，%s@%s' %(strategy.name, vtSymbol, req.direction, volume, price)
-            print '#'*80+'\n'
-        ## =====================================================================
-        self.writeCtaLog(u'策略%s发送委托，%s，%s，%s@%s'
-                         %(strategy.name, vtSymbol, req.direction, volume, price))
-        ########################################################################
-        ## william
-        ## 同样，返回订单号
-        return vtOrderID
-
-    #----------------------------------------------------------------------
+    ################################################################################################
+    ## 下单指令
+    ## sendOrder
+    ################################################################################################
     def sendOrder(self, vtSymbol, orderType, price, volume, strategy):
         """发单"""
-        ########################################################################
+        ## =====================================================================
         ## william
         ## 这里的 strategy 来自具体的策略
         ## Ref: /stragegy/strategyBBminute.py
         contract = self.mainEngine.getContract(vtSymbol)
+        ## =====================================================================
 
         req          = VtOrderReq()
         req.symbol   = contract.symbol
@@ -546,7 +397,10 @@ class CtaEngine(object):
 
 
 
-    #---------------------------------------------------------------------------
+    ################################################################################################
+    ## 撤单指令
+    ## cancelOrder
+    ################################################################################################
     def cancelOrder(self, vtOrderID):
         """撤单"""
         ## ---------------------------------------------------------------------
@@ -572,16 +426,16 @@ class CtaEngine(object):
             else:
                 if order.status == STATUS_ALLTRADED:
                     print '委托单({0}已执行，无法撤销'.format(vtOrderID)
-                    # self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
+                    self.writeCtaLog(u'委托单({0}已执行，无法撤销'.format(vtOrderID))
                 if order.status == STATUS_CANCELLED:
                     print '委托单({0}已撤销，无法再次撤销'.format(vtOrderID)
-                    # self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
+                    self.writeCtaLog(u'委托单({0}已撤销，无法再次撤销'.format(vtOrderID))
         ## =====================================================================
         # 查询不成功
         ## =====================================================================
         else:
             print '委托单({0}不存在'.format(vtOrderID)
-            # self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
+            self.writeCtaLog(u'委托单({0}不存在'.format(vtOrderID))
 
     #----------------------------------------------------------------------
     def sendStopOrder(self, vtSymbol, orderType, price, volume, strategy):
@@ -776,44 +630,21 @@ class CtaEngine(object):
         ## =====================================================================
 
 
-
-    ############################################################################
-    ## william
-    ## 启动策略交易
-    ############################################################################
-    # def startTrading(self, event):
-    #     ## -----------------------------------------------------------------
-    #     if not self.strategyDict:
-    #         return 
-    #     ## -----------------------------------------------------------------
-
-    #     tempStratOrders = list(set(self.strategyDict['YunYang'].vtOrderIDListOpen) |
-    #                            set(self.strategyDict['YunYang'].vtOrderIDListClose) |
-    #                            set(self.strategyDict['OiRank'].vtOrderIDListOpen) |
-    #                            set(self.strategyDict['OiRank'].vtOrderIDListClose))
-
-    #     tempAllWorkingOrders = [self.mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(self.mainEngine.getAllWorkingOrders())) if self.mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
-
-    #     if tempAllWorkingOrders:
-    #         for vtOrderID in tempAllWorkingOrders:
-    #             self.cancelOrder(vtOrderID)
-    #     else:
-    #         for k in self.strategyDict.keys():
-    #             self.startStrategy(k)
-
-
-
-
-    #----------------------------------------------------------------------
+    ################################################################################################
+    ## 注册监听，才能提取相关的数据
+    ## event.dict_['data']
+    ################################################################################################
     def registerEvent(self):
         """注册事件监听"""
         self.eventEngine.register(EVENT_TICK, self.processTickEvent)
         self.eventEngine.register(EVENT_ORDER, self.processOrderEvent)
         self.eventEngine.register(EVENT_TRADE, self.processTradeEvent)
         self.eventEngine.register(EVENT_POSITION, self.processPositionEvent)
-        # self.eventEngine.register(EVENT_TIMER, self.startTrading)
+ 
 
-    #----------------------------------------------------------------------
+    ################################################################################################
+    ## mongoDB
+    ################################################################################################
     def insertData(self, dbName, collectionName, data):
         """插入数据到数据库（这里的data可以是CtaTickData或者CtaBarData）"""
         self.mainEngine.dbInsert(dbName, collectionName, data.__dict__)
@@ -901,12 +732,14 @@ class CtaEngine(object):
         except:
             print "MySQL 查询失败!!!"
 
-    #----------------------------------------------------------------------
+    ################################################################################################
+    ## 在屏幕上面打印日志
+    ################################################################################################
     def writeCtaLog(self, content):
         """快速发出CTA模块日志事件"""
-        log            = VtLogData()
-        log.logContent = content
-        event          = Event(type_=EVENT_CTA_LOG)
+        log                 = VtLogData()
+        log.logContent      = content
+        event               = Event(type_=EVENT_CTA_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)
 
@@ -1239,57 +1072,16 @@ class CtaEngine(object):
         newPrice = round(price/priceTick, 0) * priceTick
         return newPrice
 
-    ############################################################################
-    ## william
-    ############################################################################
+    ################################################################################################
+    ## 全平仓
+    ## 已在界面实现，具体可以参考 
+    ## /main/uiBasicWidget.py
+    ################################################################################################
     def closeAll(self):
         """
         一键全平仓
         """
         pass
-        
-        ## =====================================================================
-        # CTAORDER_BUY = u'买开'
-        # CTAORDER_SELL = u'卖平'
-        # CTAORDER_SHORT = u'卖开'
-        # CTAORDER_COVER = u'买平'
-
-        # class strategyClass(object):
-        #     name = 'CLOSE_ALL'
-        #     productClass = ''
-        #     currency = ''
-        # tempStrategy = strategyClass()
-        # ## =====================================================================
-
-        # self.CTPAccountPosInfo = {k:{u:self.mainEngine.drEngine.positionInfo[k][u] for u in self.mainEngine.drEngine.positionInfo[k].keys() if u in ['vtSymbol','position','direction']} for k in self.mainEngine.drEngine.positionInfo.keys() if int(self.mainEngine.drEngine.positionInfo[k]['position']) != 0}
-        # print self.CTPAccountPosInfo
-
-        # if self.CTPAccountPosInfo:
-        #     for i in self.CTPAccountPosInfo.keys():
-        #         try:
-        #             tempInstrumentID = self.CTPAccountPosInfo[i]['vtSymbol']
-        #             tempVolume       = self.CTPAccountPosInfo[i]['position']
-        #             tempPriceTick    = self.ctaEngine.tickInfo[tempInstrumentID]['priceTick']
-        #             tempLastPrice    = self.ctaEngine.lastTickData[tempInstrumentID]['lastPrice']
-        #             ## -----------------------------------------------------------------------------
-        #             if self.CTPAccountPosInfo[i]['direction'] == u'多':
-        #                 self.sendOrder(vtSymbol = tempInstrumentID,
-        #                     orderType = CTAORDER_SELL,
-        #                     price = max(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['lowerLimit'],tempLastPrice - 1*tempPriceTick),
-        #                     volume = tempVolume,
-        #                     strategy = tempStrategy)
-        #             elif self.CTPAccountPosInfo[i]['direction'] == u'空':
-        #                 self.sendOrder(vtSymbol = tempInstrumentID,
-        #                     orderType = CTAORDER_COVER,
-        #                     price = min(self.mainEngine.ctaEngine.lastTickData[tempInstrumentID]['upperLimit'], tempLastPrice + 1*tempPriceTick),
-        #                     volume = tempVolume,
-        #                     strategy = tempStrategy)
-        #             ## -----------------------------------------------------------------------------
-        #         except:
-        #             print '#'*80
-        #             print tempInstrumentID,'平仓失败！！！'
-        #             print '#'*80
-
 
 
 ########################################################################
@@ -1350,9 +1142,3 @@ class PositionBuffer(object):
             else:
                 self.longPosition -= trade.volume
                 self.longYd       -= trade.volume
-
-
-
-
-
-
