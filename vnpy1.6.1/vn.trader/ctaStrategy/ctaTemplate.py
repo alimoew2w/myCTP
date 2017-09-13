@@ -343,8 +343,7 @@ class CtaTemplate(object):
     ## @param orderDict: 订单的字典格式
     ## @param orderIDList: 订单列表
     ############################################################################
-    def prepareTradingOrder(self, vtSymbol, tradingOrders, orderIDList,
-                             priceType, price = None, addTick = 0, discount = 0):
+    def prepareTradingOrder(self, vtSymbol, tradingOrders, orderIDList, priceType, price = None, addTick = 0, discount = 0):
         """处理订单"""
         ## 生成交易列表
         tempTradingList = [k for k in tradingOrders.keys() if tradingOrders[k]['vtSymbol'] == vtSymbol]
@@ -417,8 +416,7 @@ class CtaTemplate(object):
     ## @param orderIDList: 订单列表
     ## @param addTick 控制增加的价格
     ############################################################################
-    def sendTradingOrder(self, tradingOrders, orderDict, orderIDList,
-                          priceType, price = None, addTick = 0, discount = 0):
+    def sendTradingOrder(self, tradingOrders, orderDict, orderIDList, priceType, price = None, addTick = 0, discount = 0):
         """发送单个合约的订单"""
         tempInstrumentID = orderDict['vtSymbol']
         # tempPriceTick  = self.ctaEngine.mainEngine.getContract(tempInstrumentID).priceTick
@@ -500,6 +498,45 @@ class CtaTemplate(object):
         ## .....................................................................
         self.putEvent()
         ## .....................................................................
+
+
+    ############################################################################
+    ## william
+    ## 处理前一日未成交的订单
+    ############################################################################
+    def processFailedInfo(self, failedInfo):
+        """处理未成交订单"""
+        ## =====================================================================
+        if len(failedInfo) == 0:
+            return
+        ## =====================================================================
+
+        self.tradingOrdersFailedInfo = {}
+        ## =====================================================================
+        for i in range(len(failedInfo)):
+            ## -------------------------------------------------------------
+            ## direction
+            if failedInfo.loc[i,'direction'] == 'long':
+                if failedInfo.loc[i,'offset'] == u'开仓':
+                    tempDirection = 'buy'
+                elif failedInfo.loc[i,'offset'] == u'平仓':
+                    tempDirection = 'cover'
+            elif failedInfo.loc[i,'direction'] == 'short':
+                if failedInfo.loc[i,'offset'] == u'开仓':
+                    tempDirection = 'short'
+                elif failedInfo.loc[i,'offset'] == u'平仓':
+                    tempDirection = 'sell'
+            ## -------------------------------------------------------------
+            ## volume
+            tempVolume = failedInfo.loc[i,'volume']
+            tempKey    = failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
+            tempTradingDay = failedInfo.loc[i,'TradingDay']
+            
+            self.tradingOrdersFailedInfo[tempKey] = {'vtSymbol':failedInfo.loc[i,'InstrumentID'],
+                                                'direction':tempDirection,
+                                                'volume':tempVolume,
+                                                'TradingDay':tempTradingDay}
+        ## =====================================================================
 
 
     ############################################################################
