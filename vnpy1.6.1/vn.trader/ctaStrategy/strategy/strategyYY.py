@@ -210,29 +210,9 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## 如果上一个交易日有未完成的订单,需要优先处理
         ## =====================================================================
-        if len(self.failedInfo) != 0:
-            for i in range(len(self.failedInfo)):
-                ## -------------------------------------------------------------
-                ## direction
-                if self.failedInfo.loc[i,'direction'] == 'long':
-                    if self.failedInfo.loc[i,'offset'] == u'开仓':
-                        tempDirection = 'buy'
-                    elif self.failedInfo.loc[i,'offset'] == u'平仓':
-                        tempDirection = 'cover'
-                elif self.failedInfo.loc[i,'direction'] == 'short':
-                    if self.failedInfo.loc[i,'offset'] == u'开仓':
-                        tempDirection = 'short'
-                    elif self.failedInfo.loc[i,'offset'] == u'平仓':
-                        tempDirection = 'sell'
-                ## -------------------------------------------------------------
-                ## volume
-                tempVolume = self.failedInfo.loc[i,'volume']
-                tempKey    = self.failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
-                tempTradingDay = self.failedInfo.loc[i,'TradingDay']
-                self.tradingOrdersFailedInfo[tempKey] = {'vtSymbol':self.failedInfo.loc[i,'InstrumentID'],
-                                                         'direction':tempDirection,
-                                                         'volume':tempVolume,
-                                                         'TradingDay':tempTradingDay}
+        ## ---------------------------------------------------------------------
+        self.processFailedInfo(self.failedInfo)
+        ## ---------------------------------------------------------------------
 
         print '#'*80
         print '%s策略启动' %self.name
@@ -260,7 +240,7 @@ class YYStrategy(CtaTemplate):
 
         print '#'*80
         print "@william 策略初始化成功 !!!"
-        # self.writeCtaLog(u'%s策略初始化' %self.name)
+        self.writeCtaLog(u'%s策略初始化' %self.name)
         print self.vtSymbolList
         print '#'*80
         ########################################################################
@@ -271,9 +251,6 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def onTick(self, tick):
         """收到行情TICK推送（必须由用户继承实现）"""
-        ## =====================================================================
-        ## =====================================================================
-        
         ## =====================================================================
         if not self.trading:
             return 
@@ -295,8 +272,8 @@ class YYStrategy(CtaTemplate):
         ########################################################################
         ## william
         ## =====================================================================
-        if len(self.failedInfo) != 0 and self.trading:
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+        if len(self.failedInfo) != 0 and self.tradingStart:
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersFailedInfo, 
                                      orderIDList   = self.vtOrderIDListFailedInfo,
                                      priceType     = 'chasing',
@@ -307,7 +284,7 @@ class YYStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] \
                              for k in self.tradingOrdersOpen.keys()] and 
             self.tradingStart and not self.tradingEnd):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
@@ -319,7 +296,7 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] \
                              for k in self.tradingOrdersOpen.keys()] and self.tradingEnd):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'chasing',
@@ -330,7 +307,7 @@ class YYStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and 
             self.tradingStart and not self.tradingEnd):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'open',
@@ -341,7 +318,7 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and self.tradingEnd):
-            self.prepareTradingOrder2(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
@@ -379,10 +356,6 @@ class YYStrategy(CtaTemplate):
         """
         处理策略交易与持仓信息
         """
-        
-        # print 'hello'
-        # print trade.vtOrderID
-        # print self.vtOrderIDListOpen
 
         ## =====================================================================
         if trade.vtOrderID not in list(set(self.vtOrderIDListOpen) | 
@@ -528,12 +501,6 @@ class YYStrategy(CtaTemplate):
                                         FROM positionInfo
                                         WHERE strategyID = '%s'
                                         """ %(self.strategyID))
-
-                # tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
-                # tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.TradingDay == tempPosInfo.at[tempPosInfo.index[0],'TradingDay']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']]
-                # mysqlPositionInfo.at[tempPosInfo2.index[0], 'volume'] -= tempRes.at[0,'volume']
-                # mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-                # mysqlPositionInfo = mysqlPositionInfo.append(mysqlPositionInfoOthers, ignore_index=True)
                 tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
                 tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']].sort_values(by='TradingDay', ascending = True)
                 ## ---------------------------------------------------------------------------------
@@ -1058,18 +1025,6 @@ class YYStrategy(CtaTemplate):
         else:
             self.tradingEnd = False
 
-        
-        ## =====================================================================
-        # if ((datetime.now().hour == 8 and datetime.now().minute == 59 and datetime.now().second > 30 ) or 
-        #     (datetime.now().hour == 9 and datetime.now().minute >= 0 and datetime.now().second <= 30 )) and \
-        #     (datetime.now().second % 10 == 0):
-        #     if self.ctaEngine.mainEngine.getAllWorkingOrders():
-        #         tempAllWorkingOrders = {self.ctaEngine.mainEngine.getAllWorkingOrders()[i].vtOrderID:self.ctaEngine.mainEngine.getAllWorkingOrders()[i].orderTime for i in range(len(self.ctaEngine.mainEngine.getAllWorkingOrders()))}
-        #         for key,value in tempAllWorkingOrders.items():
-        #             if abs(int(datetime.now().hour) - int(tempAllWorkingOrders[key][:2])) > 3:
-        #                 self.cancelOrder(key)
-        ## =====================================================================
-
         ## =====================================================================
         ## 如果是收盘交易
         ## 则取消开盘交易的所有订单
@@ -1084,10 +1039,6 @@ class YYStrategy(CtaTemplate):
                         self.cancelOrder(vtOrderID)
                     else:
                         None
-                    # try:
-                    #     self.cancelOrder(vtOrderID)
-                    # except:
-                    #     None
             ## -----------------------------------------------------------------
         ## =====================================================================
 
