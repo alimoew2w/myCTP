@@ -1,12 +1,9 @@
 # encoding: UTF-8
 """
-################################################################################
 @william
-
 云扬一号
 """
 ################################################################################
-## @william
 from __future__ import division
 import os
 import sys
@@ -17,7 +14,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 import codecs
-
 
 cta_strategy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(cta_strategy_path)
@@ -47,10 +43,7 @@ class YYStrategy(CtaTemplate):
     strategyID   = className
     author       = 'Lin HuanGeng'
     ############################################################################
-####
-####
-    ##
-    ##
+
     ############################################################################
     ## -------------------------------------------------------------------------
     ## 各种控制条件
@@ -120,10 +113,7 @@ class YYStrategy(CtaTemplate):
     ## -------------------------------------------------------------------------
     vtOrderIDListAll   = []                   # 所有订单集合
     ############################################################################
-####
-####
-    ##
-    ##
+ 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def __init__(self, ctaEngine, setting):
         """Constructor"""
@@ -141,7 +131,7 @@ class YYStrategy(CtaTemplate):
         ##    value 是具体的订单, 参考
         ## ---------------------------------------------------------------------
         ## 开仓信息, 需要检测是不是当前交易日的开仓, 使用了条件筛选
-        self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery('XiFu',
+        self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade',
                             """
                             SELECT *
                             FROM fl_open_t
@@ -266,7 +256,6 @@ class YYStrategy(CtaTemplate):
 
         ## ---------------------------------------------------------------------
         self.lastTickData[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.tickFileds}
-        # self.updateCancelOrders(tick.vtSymbol)
         ## ---------------------------------------------------------------------
 
         ########################################################################
@@ -289,8 +278,6 @@ class YYStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
                                      discount      = 0.002)
-                                     # priceType     = 'chasing',
-                                     # addTick       = 1)            
         ## =====================================================================
 
         ## =====================================================================
@@ -312,8 +299,6 @@ class YYStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'open',
                                      discount      = 0.002)
-                                     # priceType     = 'chasing',
-                                     # addTick       = 1)
 
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
@@ -323,9 +308,7 @@ class YYStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
                                      addTick       = 1)
-
         ## =====================================================================
-
         
         ## =====================================================================
         # 发出状态更新事件
@@ -434,7 +417,6 @@ class YYStrategy(CtaTemplate):
                         self.tradingOrdersOpen.pop(tempKey, None)
                         self.tradedOrdersOpen[tempKey] = tempKey
             # ------------------------------------------------------------------
-            # ------------------------------------------------------------------
             tempPosInfo = self.failedInfo.loc[self.failedInfo.InstrumentID == self.stratTrade['vtSymbol']][self.failedInfo.direction == self.stratTrade['direction']][self.failedInfo.offset == tempOffset].reset_index(drop = True)
             self.stratTrade['TradingDay']  = tempPosInfo.at[0, 'TradingDay']
             # ------------------------------------------------------------------
@@ -461,8 +443,6 @@ class YYStrategy(CtaTemplate):
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80 + '\n'
             else:
                 ## 如果在
@@ -479,8 +459,6 @@ class YYStrategy(CtaTemplate):
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80 + '\n'
             ## -------------------------------------------------------------
         elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
@@ -521,11 +499,8 @@ class YYStrategy(CtaTemplate):
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80 + '\n'
                 ## =================================================================================
-
 
         #===================================================================
         if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
@@ -558,8 +533,6 @@ class YYStrategy(CtaTemplate):
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80 + '\n'
                 #-------------------------------------------------------------------
             self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
@@ -598,20 +571,10 @@ class YYStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def registerEvent(self):
         """注册事件监听"""
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.closePositionTradeEvent)
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingStatus)
         ## ---------------------------------------------------------------------
-
-    #---------------------------------------------------------------------------
-    ############################################################################
-    ## william
-    ## 从 MySQL 数据库读取策略持仓信息
-
-    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
     ############################################################################
     ## william
@@ -929,8 +892,6 @@ class YYStrategy(CtaTemplate):
                                                        'volume':tempVolume,
                                                         'TradingDay':tempTradingDay}
 
-
-
     ############################################################################
     ## william
     ## 从 MySQL 数据库读取策略持仓信息
@@ -1068,9 +1029,6 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## 尾盘读取交易订单
         ## ---------------------------------------------------------------------
-        # if (datetime.now().hour == 14 and 
-        #     56 <= datetime.now().minute <= 58 and 
-        #     datetime.now().second % 30 == 0) and self.ctaEngine.mainEngine.multiStrategy:
         if (datetime.now().hour == tradingCloseHour and 
             tradingCloseMinute1 <= datetime.now().minute <= tradingCloseMinute1 and 
             30 <= datetime.now().second <= 59 and 
