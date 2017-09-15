@@ -160,12 +160,12 @@ class OIStrategy(CtaTemplate):
                             FROM positionInfo
                             WHERE strategyID = '%s'
                             """ %(self.strategyID))
-        # self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-        #                     """
-        #                     SELECT *
-        #                     FROM positionInfo
-        #                     WHERE strategyID = '%s'
-        #                     """ %(self.strategyID))
+        self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM positionInfo
+                            WHERE strategyID = '%s'
+                            """ %(self.strategyID))
 
         ## ---------------------------------------------------------------------
         ## 查看当日已经交易的订单
@@ -229,7 +229,7 @@ class OIStrategy(CtaTemplate):
         self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
                                  set(self.failedInfo.InstrumentID.values)
                                  | set(self.positionInfo.InstrumentID.values)
-                                 # | set(self.positionInfoClose.InstrumentID.values)
+                                 | set(self.positionInfoClose.InstrumentID.values)
                                 )
         for i in self.vtSymbolList:
             self.tickTimer[i] = datetime.now()
@@ -262,7 +262,6 @@ class OIStrategy(CtaTemplate):
         
         ## ---------------------------------------------------------------------
         self.lastTickData[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.tickFileds}
-        # self.updateCancelOrders(tick.vtSymbol)
         ## ---------------------------------------------------------------------
 
         ########################################################################
@@ -286,8 +285,6 @@ class OIStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
                                      discount      = 0.002)
-                                     # priceType     = 'chasing',
-                                     # addTick       = 1)            
         ## =====================================================================
 
         ## =====================================================================
@@ -440,8 +437,6 @@ class OIStrategy(CtaTemplate):
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80+"\n"
             else:
                 ## 如果在
@@ -459,8 +454,6 @@ class OIStrategy(CtaTemplate):
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80+"\n"
             ## -------------------------------------------------------------
         elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
@@ -503,8 +496,6 @@ class OIStrategy(CtaTemplate):
                     except:
                         print "\n"+'#'*80
                         print '写入 MySQL 数据库出错'
-                        # self.onStop()
-                        # print '停止策略 %s' %self.name
                         print '#'*80+"\n"
                     #-------------------------------------------------------------------
             elif self.stratTrade['vtOrderID'] in self.vtOrderIDListClose:
@@ -541,9 +532,7 @@ class OIStrategy(CtaTemplate):
                     print '写入 MySQL 数据库出错'
                     print '#'*80+"\n"
                 ## =================================================================================
-             ## =====================================================================================
         
- 
         #=======================================================================
         if self.stratTrade['vtOrderID'] in self.vtOrderIDListFailedInfo:
             mysqlFailedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
@@ -560,7 +549,6 @@ class OIStrategy(CtaTemplate):
 
                 mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= self.stratTrade['volume']
                 mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
-                # mysqlFailedInfo = mysqlFailedInfo.append(mysqlFailedInfoOthers, ignore_index = True)
                 try:
                     cursor.execute("""
                                     DELETE FROM failedInfo
@@ -571,8 +559,6 @@ class OIStrategy(CtaTemplate):
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
-                    # self.onStop()
-                    # print '停止策略 %s' %self.name
                     print '#'*80 + '\n'
                 #---------------------------------------------------------------
             self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
@@ -605,21 +591,10 @@ class OIStrategy(CtaTemplate):
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def registerEvent(self):
         """注册事件监听"""
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TICK, self.onClosePosition)
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.stratTradeEvent)
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TRADE, self.closePositionTradeEvent)
         ## ---------------------------------------------------------------------
         ## 更新交易记录,并写入 mysql
         self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.updateTradingStatus)
         ## ---------------------------------------------------------------------
-        ## 收盘发送邮件
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.sendMail)
-        ## ---------------------------------------------------------------------
-        ## 
-        ## 开盘交易
-        # self.ctaEngine.mainEngine.eventEngine.register(EVENT_TIMER, self.onTradingOpen)
-
-    #---------------------------------------------------------------------------
 
 
     ############################################################################
@@ -806,9 +781,6 @@ class OIStrategy(CtaTemplate):
                                                   'TradingDay':tempTradingDay,
                                                   'orderNo': 0}
 
-        # print '#'*80
-
-
     ############################################################################
     ## william
     ## 从 MySQL 数据库读取策略持仓信息
@@ -834,7 +806,6 @@ class OIStrategy(CtaTemplate):
             ## ---------------------------------------------------------------------
             for i in range(len(tempOrders)):
                 tempKey = tempOrders.at[i,'InstrumentID'] + '-' + tempOrders.at[i,'orderType']
-                ## ---------------------------------------------------------------------
                 ## ---------------------------------------------------------------------
                 if stage == 'open':
                     self.tradingOrdersOpen[tempKey] = {
