@@ -20,7 +20,7 @@ import MySQLdb
 import numpy as np
 import pandas as pd
 pd.set_option('display.width', 200)
-pd.set_option('display.max_rows', 30)
+pd.set_option('display.max_rows', 100)
 ################################################################################
 
 
@@ -101,8 +101,8 @@ class MainEngine(object):
 
         # 扩展模块
         self.ctaEngine = CtaEngine(self, self.eventEngine)
-        self.drEngine = DrEngine(self, self.eventEngine)
-        self.rmEngine = RmEngine(self, self.eventEngine)
+        self.drEngine  = DrEngine(self, self.eventEngine)
+        self.rmEngine  = RmEngine(self, self.eventEngine)
         
     #----------------------------------------------------------------------
     def initGateway(self):
@@ -138,18 +138,6 @@ class MainEngine(object):
             gateway = self.gatewayDict[gatewayName]
             gateway.connect()
             ####################################################################
-            ## 系统连接后,自动撤销所有的订单
-            ## -----------------------------------------------------------------
-            print "\n"+'#'*80
-            print '启动前撤销所有的未成交订单'
-            time.sleep(5)
-            self.cancelOrderAll()
-            ####################################################################
-            '''
-            # 接口连接后自动执行数据库连接的任务
-            self.dbConnect()
-            '''
-            ####################################################################
             ## william
             ## 如果连接 CTP,
             ## 则默认自动连接 MySQL 数据库
@@ -169,18 +157,6 @@ class MainEngine(object):
             gateway = self.gatewayDict[gatewayName]
             gateway.connectCTPAccount(accountID)
             ####################################################################
-            ## 系统连接后,自动撤销所有的订单
-            ## -----------------------------------------------------------------
-            print "\n"+'#'*80
-            print '启动前撤销所有的未成交订单'
-            time.sleep(1)
-            self.cancelOrderAll()
-            ####################################################################
-            '''
-            # 接口连接后自动执行数据库连接的任务
-            self.dbConnect()
-            '''
-            ####################################################################
             ## william
             ## 如果连接 CTP,
             ## 则默认自动连接 MySQL 数据库
@@ -189,6 +165,7 @@ class MainEngine(object):
             ####################################################################
         else:
             self.writeLog(text.GATEWAY_NOT_EXIST.format(gateway=gatewayName))
+
 
     #----------------------------------------------------------------------
     def subscribe(self, subscribeReq, gatewayName):
@@ -229,29 +206,16 @@ class MainEngine(object):
     ## ref: /vn.trader/uiBasicWidget.py
     ##      cancelOrderAll()
     ############################################################################
-    #----------------------------------------------------------------------
-    
     def cancelOrderAll(self):
         """一键撤销所有委托"""
         AllWorkingOrders = self.getAllWorkingOrders()
         for order in AllWorkingOrders:
             req = VtCancelOrderReq()
-            req.symbol = order.symbol
-            req.exchange = order.exchange
-            req.frontID = order.frontID
+            req.symbol    = order.symbol
+            req.exchange  = order.exchange
+            req.frontID   = order.frontID
             req.sessionID = order.sessionID
-            req.orderID = order.orderID 
-
-            ####################################################################
-            ## william
-            ## 打印撤单的详细信息
-            
-            # print "#######################################################################"
-            # print "撤单的详细信息:"
-            # print req
-            # print "#######################################################################"
-            ####################################################################
-            
+            req.orderID   = order.orderID 
             self.cancelOrder(req, order.gatewayName)
         
     #----------------------------------------------------------------------
@@ -466,8 +430,6 @@ class MainEngine(object):
             try:
                 conn = MySQLdb.connect(db = dbName, host = host, port = port, user = user, passwd = passwd, use_unicode = True, charset = "utf8")
                 return conn
-                # cursor = conn.cursor()  
-                # return cursor
                 self.writeLog(text.DATABASE_MySQL_CONNECTING_COMPLETED)
                 print text.DATABASE_MySQL_CONNECTING_COMPLETED
                 self.dbMySQLClient = True
@@ -485,35 +447,21 @@ class MainEngine(object):
     #---------------------------------------------------------------------------
     def dbMySQLQuery(self, dbName, query):
         """ 从 MySQL 中读取数据 """
-        """
-        dbName    = "china_futures_bar"
-        query     = 'select * from daily where tradingday = 20170504 limit 20;'
-        """
         host, port, user, passwd = loadMySQLSetting()
         db    = dbName
         query = str(query)
 
-        # if self.dbMySQLClient:
         try:
             conn = MySQLdb.connect(host = host, port = port, db = db, user = user, passwd = passwd, use_unicode = True, charset = "utf8")
             mysqlData = pd.read_sql(query, conn)
-            ## william
-            ## 打印数据库列表
-            # print "#-------------------------------------------------------"
-            # print "MySQL 查询数据成功!!!"
-            # print "#-------------------------------------------------------"   
-
             return mysqlData
-            # self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
+            self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
         except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
             print(e)
             return None
-            # self.writeLog(text.DATA_MySQL_QUERY_FAILED)
+            self.writeLog(text.DATA_MySQL_QUERY_FAILED)
         finally:
             conn.close()
-        # else:
-        #     self.writeLog(text.DATA_MySQL_NOT_CONNECTED)   
-        #     return None
     #---------------------------------------------------------------------------
 
     ############################################################################
@@ -706,18 +654,9 @@ class DataEngine(object):
             dfHeader = allOrders[0].__dict__.keys()
             dfData   = []
             for i in range(len(allOrders)):
-                # temp = allOrders[i]
-                # dfData.append(temp.__dict__.values())
                 dfData.append(allOrders[i].__dict__.values())
             df = pd.DataFrame(dfData, columns = dfHeader)
             ## -----------------------------------------------------------------
-            # tempHeader = ['vtOrderID','status','symbol','offset','direction',
-            # 'orderTime','price','totalVolume','tradedVolume']
-            # print '\n'+'#'*80
-            # print df.loc[:,tempHeader]
-            # print '#'*80+'\n'
-            ## -----------------------------------------------------------------
-            # print df
             return df
         else:
             print "没有查询到订单!!!"
@@ -735,8 +674,6 @@ class DataEngine(object):
                         'orderTime','price','totalVolume','tradedVolume']
             dfData   = []
             for i in range(len(allOrders)):
-                # temp = allOrders[i]
-                # dfData.append([temp.__dict__[k] for k in dfHeader])
                 dfData.append([allOrders[i].__dict__[k] for k in dfHeader])
             df = pd.DataFrame(dfData, columns = dfHeader)
             ## -----------------------------------------------------------------
