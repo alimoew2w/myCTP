@@ -4,7 +4,7 @@
 ## 参数设置
 ################################################################################
 ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader"
-accountID = "YY_SimNow"
+accountID = "FL_SimNow"
 ################################################################################
 
 
@@ -48,7 +48,6 @@ with open('ChinaFuturesCalendar.csv') as f:
         if row[1] >= '20170101':
             TradingDay.append(row[1])
 TradingDay.pop(0)
-# print TradingDay
 
 if datetime.now().strftime("%Y%m%d") not in TradingDay:
     print '#'*80
@@ -79,9 +78,6 @@ SETTING_FILENAME = os.path.join(MAIN_PATH, 'setting', SETTING_FILENAME)
 ################################################################################
 #----------------------------------------------------------------------
 def main():
-    """主程序入口"""
-    ############################################################################
-    """主程序入口"""
     ############################################################################
     # 重载sys模块，设置默认字符串编码方式为utf8
     reload(sys)
@@ -208,20 +204,6 @@ def main():
     strat = mainEngine.ctaEngine.strategyDict
     ## =========================================================================
 
-    ## =========================================================================
-    ## william
-    ## 取消所有的订单
-    ## -------------------------------------------------------------------------
-    ## 取消所有订单
-    # print '#'*80 + '\n'
-    # print "开盘启动前取消所有订单......"
-    # mainEngine.cancelOrderAll()
-    # for i in range(33):
-    #     print ".",
-    #     time.sleep(.05)
-    # print '\n' + '#'*80 
-    ## =========================================================================
-
     ###########################################################################
     # 初始化策略
     ## YYStrategy
@@ -248,7 +230,9 @@ def main():
                            set(stratOI.vtOrderIDListClose))
 
     while(1):
-        tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(mainEngine.getAllWorkingOrders())) if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
+        tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID 
+                for j in range(len(mainEngine.getAllWorkingOrders())) 
+                    if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
 
         print tempAllWorkingOrders
 

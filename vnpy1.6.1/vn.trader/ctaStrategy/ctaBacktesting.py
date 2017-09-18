@@ -877,11 +877,11 @@ class OptimizationSetting(object):
             return 
         
         if end < start:
-            print u'参数起始点必须不大于终止点'
+            print '参数起始点必须不大于终止点'
             return
         
         if step <= 0:
-            print u'参数布进必须大于0'
+            print '参数布进必须大于0'
             return
         
         l = []

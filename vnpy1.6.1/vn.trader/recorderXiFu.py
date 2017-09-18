@@ -4,7 +4,7 @@
 ## 用于记录 CTP Tick Data
 ################################################################################
 ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader"
-accountID = "HiCloud"
+accountID = "XiFu"
 # DATA_PATH = "/media/william/Storage2/vnpyData"
 ################################################################################
 ##　william

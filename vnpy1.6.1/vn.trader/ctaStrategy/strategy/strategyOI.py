@@ -227,9 +227,9 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         ## 当前策略下面的所有合约集合
         self.vtSymbolList = list(set(self.openInfo.InstrumentID.values) |
-                                 set(self.failedInfo.InstrumentID.values)
-                                 | set(self.positionInfo.InstrumentID.values)
-                                 | set(self.positionInfoClose.InstrumentID.values)
+                                 set(self.failedInfo.InstrumentID.values) |
+                                 set(self.positionInfo.InstrumentID.values) |
+                                 set(self.positionInfoClose.InstrumentID.values)
                                 )
         for i in self.vtSymbolList:
             self.tickTimer[i] = datetime.now()
@@ -268,7 +268,7 @@ class OIStrategy(CtaTemplate):
         ## william
         ## =====================================================================
         if len(self.failedInfo) != 0 and self.tradingStart:
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersFailedInfo, 
                                      orderIDList   = self.vtOrderIDListFailedInfo,
                                      priceType     = 'chasing',
@@ -280,7 +280,7 @@ class OIStrategy(CtaTemplate):
                              for k in self.tradingOrdersOpen.keys()] and 
             self.tradingStart and not self.tradingEnd):
             ####################################################################
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
@@ -291,7 +291,7 @@ class OIStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and 
             self.tradingBetween):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'last',
@@ -301,11 +301,11 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and self.tradingEnd):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
-                                     addTick       = 1)
+                                     addTick       = 0)
         ## =====================================================================
 
         ########################################################################

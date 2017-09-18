@@ -9,11 +9,12 @@
 1. Anaconda2 4.0.0:
 
         sudo chmod +x Anaconda2-4.0.0-Linux-x86_64.sh
-        sh /Anaconda2-4.0.0-Linux-x86_64.sh
+        ./Anaconda2-4.0.0-Linux-x86_64.sh
         export PATH="/home/william/anaconda2/bin:$python"
 
     > 这里需要注意的是,如果已经安装了 Anaconda2 4.2.3,即最新版本的,那么可以使用以下命令来安装 pyQt
 
+        conda uninstall pyqt
         conda install pyqt=4
 
         ## Ref:https://github.com/ContinuumIO/anaconda-issues/issues/483
@@ -24,6 +25,7 @@
         sudo apt-get install python-setuptools
         sudo apt-get install build-essential python-dev libmysqlclient-dev
         sudo apt-get install python-mysqldb
+        sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
 
         ## 需要安装 Boost, 否则在编译 vn.api/vn.ctp 的时候会报错
         sudo apt install cmake libblkid-dev libboost-all-dev libaudit-dev e2fslibs-dev
@@ -32,6 +34,7 @@
         pip install pymongo qdarkstyle zmq msgpack-python websocket
         pip install pyqtgraph
         pip install MySQL-python
+        pip install tabulate
         conda install pandas=0.18.0
 
 3. talib 安装：
@@ -149,3 +152,32 @@
 
 
 ## 修改文件
+
+
+## 系统设置
+
+> 如果需要从 crontab 启动交易系统，需要做以下几件事情：
+
+- 把所有的 `print u` 替换为 `print`, 否则会报错 `Ascii` 出错;
+- 修改系统设置
+    
+    sudo vim /etc/sudoers
+    ## 在文件末尾，添加以下命令
+    Defaults env_keep="DISPLAY XAUTHORITY"
+- 在 `mainNoUI` 开头添加
+    
+    os.putenv('DISPLAY', ':0.0')
+
+## 转移数据文件 `rsync`
+
+```bash
+rsync -vr --progress -e 'sshpass -p "密码" ssh' fl@47.93.200.243:/home/fl/myVnpy/vn.data/TickData/ /home/william/Desktop/
+
+rsync -vr --progress -e 'sshpass -p "密码" ssh' fl@47.93.200.243:/home/fl/myVnpy/vn.data/TickData/ /data/ChinaFuturesTickData/vn.data
+```
+
+## `Linux` 系统安装程序
+
+```bash
+sudo apt install sshpass
+```

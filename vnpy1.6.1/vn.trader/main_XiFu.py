@@ -4,7 +4,7 @@
 ## 参数设置
 ################################################################################
 ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader"
-accountID = "FL_SimNow"
+accountID = "XiFu"
 ################################################################################
 
 
@@ -48,11 +48,12 @@ with open('ChinaFuturesCalendar.csv') as f:
         if row[1] >= '20170101':
             TradingDay.append(row[1])
 TradingDay.pop(0)
+# print TradingDay
 
-# if datetime.now().strftime("%Y%m%d") not in TradingDay:
-#     print '#'*80
-#     sys.exit("启禀圣上，今日赌场不开张!!!")
-#     print '#'*80
+if datetime.now().strftime("%Y%m%d") not in TradingDay:
+    print '#'*80
+    sys.exit("启禀圣上，今日赌场不开张!!!")
+    print '#'*80
 ################################################################################
 
 
@@ -122,8 +123,8 @@ print '#'*80+"\n"
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-mainWindow.showMaximized()
+# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+# mainWindow.showMaximized()
 # mainWindow.showMinimized()
 
 ################################################################################
@@ -152,121 +153,6 @@ except:
 ## william
 ## 增加 “启动成功” 的提示。
 ##'''
-# mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-# mainWindow.showMaximized()
+mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
+mainWindow.showMaximized()
 # mainWindow.showMinimized()
-
-
-################################################################################
-## william
-## CTA 策略
-
-## =============================================================================
-## 数据库名称
-mainEngine.ROOT_PATH          = ROOT_PATH
-mainEngine.dataBase           = accountID
-mainEngine.multiStrategy      = True
-# mainEngine.multiStrategy    = False
-mainEngine.initCapital        = 1000000
-mainEngine.flowCapitalPre     = 0
-mainEngine.flowCapitalToday   = 0
-## 公司内部人员
-mainEngine.mailReceiverMain   = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
-## 其他人员
-mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
-## =============================================================================
-
-
-################################################################################
-##　william
-## 是否启动多策略交易系统
-################################################################################
-if mainEngine.multiStrategy:
-    subprocess.call(['Rscript',
-                    os.path.join(ROOT_PATH,'ctaStrategy','start.R'),
-                    mainEngine.dataBase], shell = False)
-    time.sleep(1)
-################################################################################
-
-
-
-################################################################################
-##　william
-## 接入 CTP 
-################################################################################
-## =============================================================================
-# 加载设置
-mainEngine.ctaEngine.loadSetting()
-
-print mainEngine.ctaEngine.strategyDict
-## 所有的策略字典
-strat = mainEngine.ctaEngine.strategyDict
-## =============================================================================
-
-
-################################################################################
-# 初始化策略
-## YYStrategy
-mainEngine.ctaEngine.initStrategy('YunYang')
-stratYY = strat['YunYang']
-# mainEngine.ctaEngine.startStrategy('YunYang')
-# ## 停止策略运行
-# mainEngine.ctaEngine.stopStrategy('YunYang')
-
-
-################################################################################
-# 初始化策略
-## YYStrategy
-mainEngine.ctaEngine.initStrategy('OiRank')
-stratOI = strat['OiRank']
-# mainEngine.ctaEngine.startStrategy('OiRank')
-## 停止策略运行
-# mainEngine.ctaEngine.stopStrategy('OiRank')
-
-# mainEngine.ctaEngine.startTrading()
-
-################################################################################
-tempStratOrders = list(set(stratYY.vtOrderIDListOpen) |
-                       set(stratYY.vtOrderIDListClose) |
-                       set(stratOI.vtOrderIDListOpen) |
-                       set(stratOI.vtOrderIDListClose))
-
-while(1):
-    tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID 
-            for j in range(len(mainEngine.getAllWorkingOrders())) 
-                if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
-
-    print tempAllWorkingOrders
-
-    if tempAllWorkingOrders:
-        for vtOrderID in tempAllWorkingOrders:
-            mainEngine.ctaEngine.cancelOrder(vtOrderID)
-        time.sleep(1)
-    else:
-        break
-################################################################################
-
-
-mainEngine.ctaEngine.startStrategy('YunYang')
-mainEngine.ctaEngine.startStrategy('OiRank')
-
-
-################################################################################
-mainEngine.drEngine.getIndicatorInfo(dbName          = mainEngine.dataBase,
-                                    initCapital      = mainEngine.initCapital,
-                                    flowCapitalPre   = mainEngine.flowCapitalPre,
-                                    flowCapitalToday = mainEngine.flowCapitalToday)
-# mainEngine.cancelOrderAll()
-
-"""
-
-print [mainEngine.getAllWorkingOrders()[j].vtOrderID 
-        for j in range(len(mainEngine.getAllWorkingOrders()))]
-
-stratYY.updateWorkingInfo(stratYY.tradingOrdersOpen, 'open')
-stratOI.updateWorkingInfo(stratOI.tradingOrdersOpen, 'open')
-
-stratYY.updateWorkingInfo(stratYY.tradingOrdersClose, 'close')
-stratOI.updateWorkingInfo(stratOI.tradingOrdersClose, 'close')
-"""
-

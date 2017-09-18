@@ -174,9 +174,9 @@ class DrEngine(object):
                 d[i] = 0
 
         # ########################################################################
-        print "\n"+'#'*80
-        print '在这里获取 Tick Data !!!==>', d['symbol']
-        print d
+        # print "\n"+'#'*80
+        # print '在这里获取 Tick Data !!!==>', d['symbol']
+        # print d
         # ########################################################################
         ## william
         ## 保存到 csv
@@ -257,7 +257,9 @@ class DrEngine(object):
         h  = t.hour
         m  = t.minute
         s  = t.second
-        if ( (h in [2,15] and m == 35) or (h in [8,20] and m == 53) ) and s == 59:
+        if ((h == 2 and m == 32) or 
+            (h == 15 and m == 17)  or
+            (h in [8,20] and m == 53) ) and s == 59:
             re = True
             print h,m,s,re
         return re

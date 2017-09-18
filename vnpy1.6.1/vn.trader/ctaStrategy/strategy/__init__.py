@@ -19,16 +19,16 @@ for root, subdirs, files in os.walk(path):
     ## william
     ## 排除 temp 文件夹下面的策略,
     ## 这里面存储一些临时的修改文件
-    if 'temp' in subdirs:
+    if ('temp' in subdirs) or ('stableVersion' in subdirs):
         for name in files:
             # 只有文件名中包含strategy且非.pyc的文件，才是策略文件
             if 'strategy' in name and '.pyc' not in name:
                 # 模块名称需要上前缀
                 moduleName = 'ctaStrategy.strategy.' + name.replace('.py', '')
-                
+
                 # 使用importlib动态载入模块
                 module = importlib.import_module(moduleName)
-                
+
                 # 遍历模块下的对象，只有名称中包含'Strategy'的才是策略类
                 for k in dir(module):
                     if 'Strategy' in k:

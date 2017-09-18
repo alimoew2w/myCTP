@@ -64,6 +64,9 @@ CANCEL_ALL        = u'全撤'
 CLOSE_ALL         = u'全平'
 CONFIRM_CLOSE_ALL = u'确认全平？'
 
+START_ALL          = u'启动'
+CONFIRM_START_ALL  = u'确定启动？'
+
 STOP_ALL          = u'停止'
 CONFIRM_STOP_ALL  = u'确定停止？'
 ## =============================================================================

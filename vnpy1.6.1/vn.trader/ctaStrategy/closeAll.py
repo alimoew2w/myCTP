@@ -3,6 +3,34 @@ CTAORDER_SELL = u'卖平'
 CTAORDER_SHORT = u'卖开'
 CTAORDER_COVER = u'买平'
 
+########################################################################
+class VtSubscribeReq(object):
+    """订阅行情时传入的对象类"""
+
+    #----------------------------------------------------------------------
+    def __init__(self):
+        """Constructor"""
+        self.symbol = EMPTY_STRING              # 代码
+        self.exchange = EMPTY_STRING            # 交易所
+        
+        ########################################################################
+        ## william
+        # 以下为IB相关
+        self.productClass = EMPTY_UNICODE       # 合约类型
+        self.currency = EMPTY_STRING            # 合约货币
+        self.expiry = EMPTY_STRING              # 到期日
+        self.strikePrice = EMPTY_FLOAT          # 行权价
+        self.optionType = EMPTY_UNICODE         # 期权类型
+        ########################################################################
+
+for i in mainEngine.drEngine.positionInfo.keys():
+    req = VtSubscribeReq()
+    req.symbol = mainEngine.drEngine.positionInfo[i]['symbol']
+    mainEngine.subscribe(req, 'CTP')
+    if req.symbol not in mainEngine.ctaEngine.subscribeContracts:
+        mainEngine.ctaEngine.subscribeContracts.append(req.symbol)
+    mainEngine.ctaEngine.tickInfo[req.symbol] = {k:mainEngine.getContract(req.symbol).__dict__[k] for k in ['vtSymbol','priceTick','size','volumeMultiple']}
+
 class strategyClass(object):
     name = 'CLOSE_ALL'
     productClass = ''
@@ -47,3 +75,5 @@ mainEngine.ctaEngine.sendOrder(vtSymbol = tempInstrumentID,
     volume = tempVolume,
     strategy = tempStrategy)
 """
+
+

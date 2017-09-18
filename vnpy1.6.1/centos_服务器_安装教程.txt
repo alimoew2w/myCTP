@@ -1,0 +1,58 @@
+# 服务器管理
+
+1. 增加用户：
+    
+    useradd fl
+    passwd fl
+
+2. 下载并安装 Anaconda
+
+
+1. 
+    chmod +x Anaconda2-4.0.0-Linux-x86_64.sh
+    sh /Anaconda2-4.0.0-Linux-x86_64.sh
+
+3. sudo yum install -y epel-release
+   sudo yum -y install gcc gcc-c++ kernel-devel  git cmake
+   sudo yum -y install python-devel libxslt-devel libffi-devel openssl-devel
+   sudo yum -y install python-pip
+
+3. 安装 Boost 1.55
+    
+    cd temp
+    wget -O boost_1_55_0.tar.bz2 http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost%2F1.55.0%2F&ts=1385953406&use_mirror=softlayer-ams
+    ls
+    file boost_1_55_0.tar.bz2 
+    tar jxvf boost_1_55_0.tar.bz2
+    ls
+    cd boost_1_55_0
+    ls
+    ./bootstrap.sh
+    ./b2
+    ./b2 install
+
+
+4.  conda uninstall pyqt
+    conda install pyqt=4
+    pip install pymongo qdarkstyle zmq  msgpack-python
+
+
+    pip install --upgrade pip
+    pip install pymongo qdarkstyle zmq msgpack-python websocket
+    pip install pyqtgraph
+    conda install MySQL-python
+    pip install tabulate
+    conda install pandas=0.18.0
+
+
+5. 安装 ta-lib
+    conda install -c https://conda.anaconda.org/quantopian ta-lib
+    pip install websocket
+
+6. cd vn.ctp
+    ./build.sh
+7. cd vn.ib
+    sudo chmod a+x build.sh
+    ./build.sh
+8. cd vn.lts
+    ./build.sh

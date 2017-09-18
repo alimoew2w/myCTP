@@ -10,8 +10,8 @@
 
 rm(list = ls())
 
-# accountDB <- commandArgs(trailingOnly = TRUE)
-accountDB <- 'FL_SimNow'
+accountDB <- commandArgs(trailingOnly = TRUE)
+# accountDB <- 'FL_SimNow'
 setwd("/home/william/Documents/myCTP/vnpy1.6.1/vn.trader")
 suppressWarnings(
   suppressMessages(

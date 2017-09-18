@@ -397,32 +397,32 @@ class CtaTemplate(object):
                     self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values) and \
                     tradingOrders[i]['volume']:
                         self.sendTradingOrder(tradingOrders = tradingOrders,
-                                               orderDict     = tradingOrders[i],
-                                               orderIDList   = orderIDList,
-                                               priceType     = priceType,
-                                               price         = price,
-                                               addTick       = addTick,
-                                               discount      = discount) 
+                                               orderDict    = tradingOrders[i],
+                                               orderIDList  = orderIDList,
+                                               priceType    = priceType,
+                                               price        = price,
+                                               addTick      = addTick,
+                                               discount     = discount) 
                     elif (tradingOrders[i]['vtOrderID'] in self.ctaEngine.mainEngine.getAllOrders().loc[\
                     self.ctaEngine.mainEngine.getAllOrders().status.isin([u'拒单'])][\
                     self.ctaEngine.mainEngine.getAllOrders().vtOrderID.isin(orderIDList)].vtOrderID.values) and \
                     tradingOrders[i]['volume'] and ((datetime.now() - self.tickTimer[vtSymbol]).seconds >= 5) :
                         self.sendTradingOrder(tradingOrders = tradingOrders,
-                                               orderDict     = tradingOrders[i],
-                                               orderIDList   = orderIDList,
-                                               priceType     = priceType,
-                                               price         = price,
-                                               addTick       = addTick,
-                                               discount      = discount)
+                                               orderDict    = tradingOrders[i],
+                                               orderIDList  = orderIDList,
+                                               priceType    = priceType,
+                                               price        = price,
+                                               addTick      = addTick,
+                                               discount     = discount)
                     ## ============================================================================= 
                 else:
                     self.sendTradingOrder(tradingOrders = tradingOrders,
-                                          orderDict      = tradingOrders[i],
-                                          orderIDList    = orderIDList,
-                                          priceType      = priceType,
-                                          price          = price,
-                                          addTick        = addTick,
-                                          discount       = discount)
+                                          orderDict     = tradingOrders[i],
+                                          orderIDList   = orderIDList,
+                                          priceType     = priceType,
+                                          price         = price,
+                                          addTick       = addTick,
+                                          discount      = discount)
         ########################################################################
         ## .....................................................................
         self.putEvent()
@@ -1071,7 +1071,6 @@ class CtaTemplate(object):
                                     mysqlInfoTradingOrders.at[i,'volume'],
                                     tempDirection))
                     conn.commit()
-
         ## ---------------------------------------------------------------------
         conn.close()
 

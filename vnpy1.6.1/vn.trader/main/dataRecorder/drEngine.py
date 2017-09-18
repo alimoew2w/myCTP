@@ -130,7 +130,6 @@ class DrEngine(object):
                         ## req = VtSubscribeReq()
                         ## req.symbol = contract.symbol
                         ## req.exchange = contract.exchange
-
                         self.mainEngine.subscribe(req, contract.gatewayName)
                     else:
                         print vtSymbol,'合约没有找到'
@@ -142,41 +141,6 @@ class DrEngine(object):
                     ############################################################
                     drTick = DrTickData()           # 该tick实例可以用于缓存部分数据（目前未使用）
                     self.tickDict[vtSymbol] = drTick
-
-            # if 'bar' in drSetting:
-            #     l = drSetting['bar']
-
-            #     for setting in l:
-            #         symbol = setting[0]
-            #         vtSymbol = symbol
-
-            #         req = VtSubscribeReq()
-            #         req.symbol = symbol
-
-            #         if len(setting)>=3:
-            #             req.exchange = setting[2]
-            #             vtSymbol = '.'.join([symbol, req.exchange])
-
-            #         if len(setting)>=5:
-            #             req.currency = setting[3]
-            #             req.productClass = setting[4]
-
-            #         self.mainEngine.subscribe(req, setting[1])
-
-            #         bar = DrBarData()
-            #         self.barDict[vtSymbol] = bar
-
-            # ####################################################################
-            # ## william
-            # ## 所有的都变成 active
-            # ####################################################################
-
-            # if 'active' in drSetting:
-            #     d = drSetting['active']
-
-            #     # 注意这里的vtSymbol对于IB和LTS接口，应该后缀.交易所
-            #     for activeSymbol, vtSymbol in d.items():
-            #         self.activeSymbolDict[vtSymbol] = activeSymbol
 
             # 启动数据插入线程
             self.start()
@@ -314,16 +278,6 @@ class DrEngine(object):
                 d[key] = account.__getattribute__(key)
 
         self.accountInfo.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # print self.accountInfo.__dict__
-
-        # print VtAccount.__dict__
-        #return d
-        ########################################################################
-        ## william
-        ## 是不是需要写入数据库:
-        ## gatewayName = 'CTP'
-        ## self.insertData(ACCOUNT_DB_NAME, gatewayName, VtAccountInfo)
-
         # ----------------------------------------------------------------------
     ############################################################################
     ## william
@@ -358,12 +312,7 @@ class DrEngine(object):
 
         self.positionInfo[tempRes.__dict__['symbolPosition']] = tempRes.__dict__
         ########################################################################
-        ## william
-        ## 是不是需要写入数据库:
-        ## gatewayName = 'CTP'
-        ## self.insertData(ACCOUNT_DB_NAME, gatewayName, VtAccountInfo)
 
-        # ----------------------------------------------------------------------
     ############################################################################
     ## william
     ## 返回账户信息
@@ -374,10 +323,7 @@ class DrEngine(object):
         ## william
         ## 1.先在屏幕打印出来
         ## 2.返回一个字典,避免重复
-        # print pd.DataFrame(self.positionInfo)
         return self.positionInfo
-
-
 
     ############################################################################
     ## william
@@ -566,40 +512,17 @@ class DrEngine(object):
         ## 并保存到 vtEngine.dbWriterCSV()
         ## 当持仓中的合约被点击后,开始运行 mainEngine.dbInsert()
         ########################################################################
-        '''
-        while self.active:
-            try:
-                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                self.mainEngine.dbInsert(dbName, collectionName, d)
-            except Empty:
-                pass
-        '''
         ########################################################################
         ## william
         ## 这里,当持仓的合约被鼠标激活后,
         ## 把合约的信息打印到终端
         ########################################################################
-        while self.active:
-            ## 如果需要保存到 csv 文件
-            '''
-            if saveTickData:
-                try:
-                    dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                    ## print d
-                    self.mainEngine.dbWriteCSV(d)
-                except Empty:
-                    pass
-            '''
-            try:
-                dbName, collectionName, d = self.queue.get(block=True, timeout=1)
-                ## print d
-                ############################################################
-                ## william
-                ## 是不是要保存数据到 csv 文件
-                ## self.mainEngine.dbWriteCSV(d)
-                ############################################################
-            except Empty:
-                pass
+        # while self.active:
+        #     try:
+        #         dbName, collectionName, d = self.queue.get(block=True, timeout=1)
+        #     except Empty:
+        #         pass
+        pass
 
     #---------------------------------------------------------------------------
     def start(self):
@@ -665,7 +588,10 @@ class DrEngine(object):
         #     (h in [9,21] and m == 10) ) and s == 59:
         # if (h in [2,15] and 35 <= m <= 40 and s == 59):
         # if (h in [2,15] and 35 <= m <= 35 and s == 59):
-        if (h == 15 and 35 <= m <= 35 and s == 59) and (1 <= (datetime.now().weekday()+1) <= 5):
+        if ((h == 15 and 20 <= m <= 35) and 
+            (1 <= (datetime.now().weekday()+1) <= 5)) or \
+           ((h == 2 and 32 <= m <= 35) and 
+            ((datetime.now().weekday()+1) == 6)):
             re = True
             print h,m,s,re
         return re

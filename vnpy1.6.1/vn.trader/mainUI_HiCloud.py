@@ -4,7 +4,7 @@
 ## 参数设置
 ################################################################################
 ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader"
-accountID = "YY_SimNow"
+accountID = "HiCloud"
 ################################################################################
 
 
@@ -172,13 +172,13 @@ def main():
     mainEngine.dataBase           = accountID
     mainEngine.multiStrategy      = True
     # mainEngine.multiStrategy    = False
-    mainEngine.initCapital        = 1000000
-    mainEngine.flowCapitalPre     = 0
+    mainEngine.initCapital        = 2000000
+    mainEngine.flowCapitalPre     = 1000000
     mainEngine.flowCapitalToday   = 0
     ## 公司内部人员
-    mainEngine.mailReceiverMain   = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+    mainEngine.mailReceiverMain   = ['fl@hicloud-investment.com','lhg@hicloud-investment.com','lcy@hicloud-investment.com','wjh@hicloud-investment.com']
     ## 其他人员
-    mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
+    mainEngine.mailReceiverOthers = ['lxo@hicloud-investment.com','lny@hicloud-investment.com','jy@hicloud-investment.com','564985882@qq.com'] 
     ## =========================================================================
 
 
@@ -208,20 +208,6 @@ def main():
     strat = mainEngine.ctaEngine.strategyDict
     ## =========================================================================
 
-    ## =========================================================================
-    ## william
-    ## 取消所有的订单
-    ## -------------------------------------------------------------------------
-    ## 取消所有订单
-    # print '#'*80 + '\n'
-    # print "开盘启动前取消所有订单......"
-    # mainEngine.cancelOrderAll()
-    # for i in range(33):
-    #     print ".",
-    #     time.sleep(.05)
-    # print '\n' + '#'*80 
-    ## =========================================================================
-
     ###########################################################################
     # 初始化策略
     ## YYStrategy
@@ -248,7 +234,9 @@ def main():
                            set(stratOI.vtOrderIDListClose))
 
     while(1):
-        tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID for j in range(len(mainEngine.getAllWorkingOrders())) if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
+        tempAllWorkingOrders = [mainEngine.getAllWorkingOrders()[j].vtOrderID 
+                for j in range(len(mainEngine.getAllWorkingOrders())) 
+                    if mainEngine.getAllWorkingOrders()[j].vtOrderID not in tempStratOrders]
 
         print tempAllWorkingOrders
 

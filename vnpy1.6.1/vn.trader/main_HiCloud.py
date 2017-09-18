@@ -4,7 +4,7 @@
 ## 参数设置
 ################################################################################
 ROOT_PATH = "/home/william/Documents/myCTP/vnpy1.6.1/vn.trader"
-accountID = "FL_SimNow"
+accountID = "HiCloud"
 ################################################################################
 
 
@@ -48,11 +48,12 @@ with open('ChinaFuturesCalendar.csv') as f:
         if row[1] >= '20170101':
             TradingDay.append(row[1])
 TradingDay.pop(0)
+# print TradingDay
 
-# if datetime.now().strftime("%Y%m%d") not in TradingDay:
-#     print '#'*80
-#     sys.exit("启禀圣上，今日赌场不开张!!!")
-#     print '#'*80
+if datetime.now().strftime("%Y%m%d") not in TradingDay:
+    print '#'*80
+    sys.exit("启禀圣上，今日赌场不开张!!!")
+    print '#'*80
 ################################################################################
 
 
@@ -167,13 +168,13 @@ mainEngine.ROOT_PATH          = ROOT_PATH
 mainEngine.dataBase           = accountID
 mainEngine.multiStrategy      = True
 # mainEngine.multiStrategy    = False
-mainEngine.initCapital        = 1000000
-mainEngine.flowCapitalPre     = 0
+mainEngine.initCapital        = 2000000
+mainEngine.flowCapitalPre     = 1000000
 mainEngine.flowCapitalToday   = 0
 ## 公司内部人员
-mainEngine.mailReceiverMain   = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+mainEngine.mailReceiverMain   = ['fl@hicloud-investment.com','lhg@hicloud-investment.com','lcy@hicloud-investment.com','wjh@hicloud-investment.com']
 ## 其他人员
-mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
+mainEngine.mailReceiverOthers = ['lxo@hicloud-investment.com','lny@hicloud-investment.com','jy@hicloud-investment.com','564985882@qq.com'] 
 ## =============================================================================
 
 

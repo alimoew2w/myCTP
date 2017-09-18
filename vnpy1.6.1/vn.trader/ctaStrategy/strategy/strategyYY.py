@@ -262,7 +262,7 @@ class YYStrategy(CtaTemplate):
         ## william
         ## =====================================================================
         if len(self.failedInfo) != 0 and self.tradingStart:
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersFailedInfo, 
                                      orderIDList   = self.vtOrderIDListFailedInfo,
                                      priceType     = 'chasing',
@@ -273,7 +273,7 @@ class YYStrategy(CtaTemplate):
         if (tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] \
                              for k in self.tradingOrdersOpen.keys()] and 
             self.tradingStart and not self.tradingEnd):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
@@ -283,18 +283,18 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] \
                              for k in self.tradingOrdersOpen.keys()] and self.tradingEnd):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'chasing',
-                                     addTick       = 1)
+                                     addTick       = 0)
         ## =====================================================================
 
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and 
             self.tradingStart and not self.tradingEnd):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'open',
@@ -303,11 +303,11 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         if (tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] \
                             for k in self.tradingOrdersClose.keys()] and self.tradingEnd):
-            self.prepareTradingOrder(vtSymbol     = tick.vtSymbol, 
+            self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
-                                     addTick       = 1)
+                                     addTick       = 0)
         ## =====================================================================
         
         ## =====================================================================

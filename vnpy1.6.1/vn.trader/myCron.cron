@@ -2,14 +2,14 @@
 # m h dom mon dow
 # 
 ## =============================================================================
-MAILTO=fl@hicloud-investment.com
+MAILTO="fl@hicloud-investment.com,williamlfang@163.com"
 ## =============================================================================
 
 ## =============================================================================
 ## System
 ## sudo crontab -e
 ## =============================================================================
-## 0 6 * * 1-6 reboot
+## 0 8 * * 6 reboot
 
 ## =============================================================================
 ## recorderHiCloud
@@ -20,11 +20,11 @@ MAILTO=fl@hicloud-investment.com
 ## =============================================================================
 ## main_FL_SimNow
 ## =============================================================================
-## 14 16 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/main_FL_SimNow.py
+## 50 8,20 * * * /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_FL_SimNow.py
 
 
 ## =============================================================================
 ## mainUI_YY_SimNow
 ## =============================================================================
-50 8,20 * * 1-5 /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py
-
+50 08 * * 1 /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py
+50 20 * * 1-5 /home/william/anaconda2/bin/python /home/william/Documents/myCTP/vnpy1.6.1/vn.trader/mainUI_YY_SimNow.py

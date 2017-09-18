@@ -6,6 +6,10 @@ import ctypes
 import platform
 
 import re
+
+os.putenv('DISPLAY', ':0.0')
+
+import subprocess
 ################################################################################
 ##　william
 ## 加载包
@@ -24,10 +28,6 @@ import vtFunction
 ################################################################################
 ##　william
 ################################################################################
-print "\n#######################################################################"
-print u"vtEngine 测试成功！！！"
-print "#######################################################################"
-
 from uiMainWindow import *
 
 # 文件路径名
@@ -50,90 +50,140 @@ def main():
     # 重载sys模块，设置默认字符串编码方式为utf8
     reload(sys)
     sys.setdefaultencoding('utf8')
-    
+
+    ################################################################################
+    ##　william
+    ## 去掉 windows 的设置
+    ################################################################################
     # 设置Windows底部任务栏图标
     if 'Windows' in platform.uname() :
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')  
-    
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vn.trader')
+
     # 初始化Qt应用对象
     app = QtGui.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon(ICON_FILENAME))
     app.setFont(BASIC_FONT)
-    
+
     # 设置Qt的皮肤
     try:
         f = file(SETTING_FILENAME)
-        setting = json.load(f)    
+        setting = json.load(f)
         if setting['darkStyle']:
             import qdarkstyle
             app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
         f.close()
     except:
         pass
-    
+
     # 初始化主引擎和主窗口对象
+    ################################################################################
+    ## william
+    ## 继承 vtEngine::MainEngine
     mainEngine = MainEngine()
-    # mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
-    # mainWindow.showMaximized()
 
-    print "\n#######################################################################"
-    print u"main 主函数启动成功！！！"
+    print "\n"+'#'*80
+    print "main 主函数启动成功！！！"
     time.sleep(2.0)
-    print "#######################################################################\n"
-    ############################################################################
+    print '#'*80+"\n"
+    ################################################################################
 
-    # ############################################################################
-    # ## william
-    # ## 默认启动连接 CTP 
-    # print "#######################################################################"
-    # print "以下是目前可以使用的 gateway name:"
-    # time.sleep(1.0)
-    # for i in range(len(GATEWAY_DICT)):  
-    #     print u"#---------------------------------------------------------------"
-    #     print i+1, ":===>", list(GATEWAY_DICT)[i]
-    #     print u"#---------------------------------------------------------------"
-    # print "#######################################################################"
 
     gatewayName = 'CTP'
-    print U"GatewayName:", gatewayName
+    # print "GatewayName:", gatewayName
 
     try:
-        mainEngine.connectCTPAccount(accountInfo = 'accountTrade')
-        print u"CTP 正在登录!!!",
-        for i in range(50):
+        # mainEngine.connect(gatewayName)
+        mainEngine.connectCTPAccount(accountInfo = 'FL_SimNow')
+        print "CTP 正在登录!!!",
+        for i in range(33):
             print ".",
-            time.sleep(.1)
+            time.sleep(.05)
 
-        print "\n#---------------------------------------------------------------"
-        print u"CTP 连接成功!!!"
-        print "#---------------------------------------------------------------"
+        print "\n"+'#'*80
+        print "CTP 连接成功!!!"
+        print '#'*80
     except:
-        print "#---------------------------------------------------------------"
-        print u"CTP 连接失败!!!"
-        print "#---------------------------------------------------------------"
-    ############################################################################
+        print "\n"+'#'*80
+        print "CTP 连接失败!!!"
+        print '#'*80
+    ################################################################################
 
+    ################################################################################
+    ## william
+    ## 增加 “启动成功” 的提示。
+    ##'''
     mainWindow = MainWindow(mainEngine, mainEngine.eventEngine)
     mainWindow.showMaximized()
-    
+    # mainWindow.showMinimized()
+
     ################################################################################
     ## william
     ## CTA 策略
 
+    ## ==============================
+    ## 数据库名称
+    mainEngine.dataBase     = 'FL_SimNow'
+    mainEngine.multiStrategy = True
+    # mainEngine.multiStrategy = False
+    mainEngine.initCapital  = 1000000
+    mainEngine.flowCapitalPre = 0
+    mainEngine.flowCapitalToday = 0
+    ## 公司内部人员
+    mainEngine.mailReceiverMain = ['fl@hicloud-investment.com','lhg@hicloud-investment.com']
+    ## 其他人员
+    mainEngine.mailReceiverOthers = ['564985882@qq.com','fl@hicloud-investment.com']
+    ## ==============================
+
+    if mainEngine.multiStrategy:
+        if datetime.now().hour in [8,9,20,21]:
+            subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/open.R',mainEngine.dataBase], shell = False)
+            time.sleep(3)
+        else:
+            subprocess.call(['Rscript','/home/william/Documents/myCTP/vnpy1.6.1/vn.trader/ctaStrategy/close.R',mainEngine.dataBase], shell = False)
+
+
+    ## =============================================================================
     # 加载设置
     mainEngine.ctaEngine.loadSetting()
+
+    print mainEngine.ctaEngine.strategyDict
+    ## 所有的策略字典
+    strat = mainEngine.ctaEngine.strategyDict
+    ## =============================================================================
+
+
 
     ################################################################################
     # 初始化策略
     ## YYStrategy
-    mainEngine.ctaEngine.initStrategy('Yun Yang')
-    time.sleep(10)
-    mainEngine.ctaEngine.startStrategy('Yun Yang')
-    # mainEngine.ctaEngine.stopStrategy('Yun Yang')
-    strat = mainEngine.ctaEngine.strategyDict
-    stratYY = strat['Yun Yang']
+    mainEngine.ctaEngine.initStrategy('YunYang')
+    stratYY = strat['YunYang']
+    # print stratYY.tradingOrdersOpen
+    # print stratYY.tradingOrdersClose
+    mainEngine.ctaEngine.startStrategy('YunYang')
+    # ## 停止策略运行
+    # mainEngine.ctaEngine.stopStrategy('YunYang')
 
-    # print stratYY.tradingOrderSeq
+
+    ################################################################################
+    # 初始化策略
+    ## YYStrategy
+    mainEngine.ctaEngine.initStrategy('OiRank')
+    stratOI = strat['OiRank']
+    # print stratOI.tradingOrdersOpen
+    # print stratOI.tradingOrdersClose
+    mainEngine.ctaEngine.startStrategy('OiRank')
+    ## 停止策略运行
+    # mainEngine.ctaEngine.stopStrategy('OiRank')
+
+    # mainEngine.cancelOrderAll()
+
+    ################################################################################
+    mainEngine.drEngine.getIndicatorInfo(dbName = mainEngine.dataBase,
+                                        initCapital = mainEngine.initCapital,
+                                        flowCapitalPre = mainEngine.flowCapitalPre,
+                                        flowCapitalToday = mainEngine.flowCapitalToday)
+
 
     # 在主线程中启动Qt事件循环
     # mainEngine.drEngine.getIndicatorInfo('fl_trade')

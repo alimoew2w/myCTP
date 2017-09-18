@@ -242,15 +242,6 @@ class CtpGateway(VtGateway):
     def sendOrder(self, orderReq):
         """发单"""
         return self.tdApi.sendOrder(orderReq)
-        ########################################################################
-        ## william
-        ## 发单信息:
-        '''
-        print "#######################################################################"
-        print "ctaGateway.sendOrder():==>", orderReq
-        print "#######################################################################"
-        '''
-        ########################################################################
 
     #----------------------------------------------------------------------
     def cancelOrder(self, cancelOrderReq):
@@ -863,14 +854,7 @@ class CtpTdApi(TdApi):
     def onRspQryInvestorPosition(self, data, error, n, last):
         """持仓查询回报"""
         if not data['InstrumentID']:
-            return
-
-        # ########################################################################
-        # ## william
-        # print "\n#######################################################################"
-        # print data
-        # print "#######################################################################\n"
-        # ########################################################################
+            return 
 
         # 获取持仓缓存对象
         posName = '.'.join([data['InstrumentID'], data['PosiDirection']])
@@ -903,9 +887,6 @@ class CtpTdApi(TdApi):
         ########################################################################
         ## william
         ## 计算持仓均价
-        ## vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == 'cu1709', 'VolumeMultiple'].values
-        # exchangeID = vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'ExchangeID'].values
-        # volumeMultiple = int(vtFunction.getContractInfo().loc[vtFunction.getContractInfo().InstrumentID == data['InstrumentID'], 'VolumeMultiple'].values)
         try:
             volumeMultiple = self.contractDict[data['InstrumentID']].volumeMultiple
             exchangeID     = self.contractDict[data['InstrumentID']].exchange
@@ -997,15 +978,9 @@ class CtpTdApi(TdApi):
         pass
 
     #----------------------------------------------------------------------
-    # def onRspQryInstrumentCommissionRate(self, data, error, n, last):
-    #     """"""
-    #     pass
-
     def onRspQryInstrumentCommissionRate(self, data, error, n, last):
-        """合约交易手续费查询回报"""
-        # print data.keys()
+        """"""
         pass
-
 
     #----------------------------------------------------------------------
     def onRspQryExchange(self, data, error, n, last):
@@ -1306,10 +1281,6 @@ class CtpTdApi(TdApi):
                     order.tradeTime = self.tradeOrderDict[order.vtOrderID].tradeTime
             except:
                 order.tradeTime = datetime.now().strftime('%H:%M:%S')
-            # try:
-            #     order.tradeTime = self.tradeOrderDict[order.vtOrderID].tradeTime
-            # except:
-            #     None
         order.cancelTime   = data['CancelTime']
         order.frontID      = data['FrontID']
         order.sessionID    = data['SessionID']
@@ -1742,12 +1713,7 @@ class CtpTdApi(TdApi):
         '''
         print "\n"+'#'*80
         print "打印下单的详细信息"
-        ## print temp
-        ## print req
-        # print pd.DataFrame([req.values()], columns = req.keys())
-        # print orderReq.__dict__
         print '-'*80
-        # tempFields = ['symbol','price','priceType','direction','offset','volume','tradeStatus','orderTime','orderID']
         tempFields = ['symbol','price','direction','offset','volume','tradeStatus','orderTime','orderID']
         print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
         print '#'*80
@@ -1772,17 +1738,14 @@ class CtpTdApi(TdApi):
         
         req['ActionFlag']   = defineDict['THOST_FTDC_AF_Delete']
         req['BrokerID']     = self.brokerID
-        req['InvestorID']   = self.userID
+        # req['InvestorID']   = self.userID
         ########################################################################
         ## william
         ## 打印撤单的纤详细信息
-        '''
-        print "#######################################################################"
+        print "\n"+'#'*80
         print "撤单的详细信息:"
-        ## print req
         print pd.DataFrame([req.values()], columns = req.keys())
-        print "#######################################################################"
-        '''
+        print '#'*80
         ########################################################################
         self.reqOrderAction(req, self.reqID)
 
