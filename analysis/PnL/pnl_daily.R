@@ -19,9 +19,23 @@ options(width = 150)
 ## =============================================================================
 
 
+ChinaFuturesCalendar <- fread("./analysis/data/ChinaFuturesCalendar/ChinaFuturesCalendar.csv")
+
+## 计算交易日历
+if (as.numeric(format(Sys.time(),'%H')) < 20) {
+    currTradingDay <- ChinaFuturesCalendar[days <= format(Sys.Date(),'%Y%m%d')][.N]
+} else {
+    currTradingDay <- ChinaFuturesCalendar[nights <= format(Sys.Date(),'%Y%m%d')][.N]
+}
+lastTradingday <- ChinaFuturesCalendar[days < currTradingDay[.N, days]][.N]
 ## =============================================================================
-tradingDay <- '20170911'
-# sink(paste0('./analysis/PnL/pnl_',tradingDay,'.txt'), append = FALSE)
+
+
+
+## =============================================================================
+# tradingDay <- '20170914'
+tradingDay <- currTradingDay[,days]
+sink(paste0('./analysis/PnL/pnl_',tradingDay,'.txt'), append = FALSE)
 ## =============================================================================
 
 
@@ -168,6 +182,6 @@ pnlOI <- temp[, .(pnl = (.SD[offset == '平仓', vwap] - .SD[offset == '开仓',
 
 print('## ======================================================================')
 print(paste0('## ','OIStrategy 策略的盈亏'))
-print(pnlOI)
+print(pnlOI[order(InstrumentID)])
 print(pnlOI[, sum(pnl)])
 ## =============================================================================
