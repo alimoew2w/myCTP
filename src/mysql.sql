@@ -23,9 +23,9 @@ create table tradingInfo(
     direction       CHAR(20)     NOT NULL,
     offset          CHAR(20)     NOT NULL,
     volume          INT           NOT NULL,
-    price           DECIMAL(15,5) NOT NULL,
+    price           DECIMAL(15,5) NOT NULL
     -- PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)
-    PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)
+    -- PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)
 );
 
 ## orderTime: 下单时间
@@ -67,3 +67,36 @@ create table orderInfo(
     totalVolume     BIGINT       ,
     PRIMARY KEY(TradingDay, strategyID, vtOrderID, InstrumentID)
 );
+
+################################################################################
+## tradingOrders
+## 记录所有发出去的订单情况
+################################################################################
+create table tradingOrders(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    InstrumentID    CHAR(20)     NOT NULL,
+    orderType       CHAR(50)     NOT NULL,
+    volume          BIGINT       NOT NULL,
+    stage           CHAR(20)     NOT NULL,
+    PRIMARY KEY(TradingDay, strategyID, InstrumentID, orderType, stage)
+);
+
+
+################################################################################
+## workingInfo
+## 记录正在进行的订单
+################################################################################
+create table workingInfo(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    vtSymbol        CHAR(20)     NOT NULL,
+    vtOrderID       CHAR(50)     NOT NULL,   
+    orderType       CHAR(50)     NOT NULL,
+    volume          BIGINT       NOT NULL,
+    stage           CHAR(20)     NOT NULL, 
+    PRIMARY KEY(TradingDay, strategyID, vtSymbol, orderType, stage)
+);
+
+
+

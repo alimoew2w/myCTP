@@ -19,31 +19,41 @@ receivers = ['fl@hicloud-investment.com']
 import codecs
 ## -----------------------------------------------------------------------------
 with codecs.open("/tmp/tradingRecord.txt", "w", "utf-8") as f:
-    f.write('{0}'.format(40*'='))
-    f.write('{0}'.format(u'\n##[策略信息]: '))
+    # f.write('{0}'.format(40*'='))
+    f.write('{0}'.format('\n' + 20 * '#'))
+    f.write('{0}'.format(u'\n## 策略信息'))
+    f.write('{0}'.format('\n' + 20 * '#'))
     f.write('{0}'.format('\n[TradingDay]: ' + mainEngine.ctaEngine.tradingDate.strftime('%Y-%m-%d')))
     f.write('{0}'.format('\n[UpdateTime]: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     f.write('{0}'.format('\n[StrategyID]: ' + stratYY.strategyID))
     f.write('{0}'.format('\n[TraderName]: ' + stratYY.author))
-    f.write('{0}'.format('\n' + 40*'=' + '\n'))
+    f.write('{0}'.format('\n' + 120*'-' + '\n'))
     ## -------------------------------------------------------------------------
-    f.write('{0}'.format(u'\n##[基金净值]: '))
+    f.write('{0}'.format('\n' + 20 * '#'))
+    f.write('{0}'.format(u'\n## 基金净值'))
+    f.write('{0}'.format('\n' + 20 * '#'))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     f.write('{0}'.format(mainEngine.drEngine.accountBalance))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     ## -------------------------------------------------------------------------    
-    f.write('{0}'.format(u'\n##[基金持仓]: '))
+    f.write('{0}'.format('\n' + 20 * '#'))
+    f.write('{0}'.format(u'\n## 基金持仓'))
+    f.write('{0}'.format('\n' + 20 * '#'))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     f.write('{0}'.format(mainEngine.drEngine.accountPosition))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     ## -------------------------------------------------------------------------
-    f.write('{0}'.format('\n##[当日已交易]: '))
+    f.write('{0}'.format('\n' + 20 * '#'))
+    f.write('{0}'.format('\n## 当日已交易'))
+    f.write('{0}'.format('\n' + 20 * '#'))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     if len(stratYY.tradingInfo) != 0:
         f.write('{0}'.format(stratYY.tradingInfo))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     ## -------------------------------------------------------------------------
-    f.write('{0}'.format('\n##[当日未交易]: '))
+    f.write('{0}'.format('\n' + 20 * '#'))
+    f.write('{0}'.format('\n## 当日未交易'))
+    f.write('{0}'.format('\n' + 20 * '#'))
     f.write('{0}'.format('\n' + 120*'-') + '\n')
     if len(stratYY.failedOrders) != 0:
         f.write('{0}'.format(pd.DataFrame(stratYY.failedOrders).transpose()))

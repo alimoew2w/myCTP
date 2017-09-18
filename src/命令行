@@ -1,0 +1,3 @@
+mycli -h gczhang.imwork.net -P 24572 -u fl -pabc@123
+
+mycli -h 192.168.1.106 -P 3306 -u fl -pabc@123
