@@ -1,4 +1,4 @@
-# Install script for directory: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp
+# Install script for directory: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

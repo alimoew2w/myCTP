@@ -10,7 +10,7 @@ The output was:
 
 Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
 
-The C compiler identification is GNU, found in "/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/3.5.1/CompilerIdC/a.out"
+The C compiler identification is GNU, found in "/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/3.5.1/CompilerIdC/a.out"
 
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
 Compiler: /usr/bin/c++ 
@@ -23,33 +23,33 @@ The output was:
 
 Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
 
-The CXX compiler identification is GNU, found in "/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/3.5.1/CompilerIdCXX/a.out"
+The CXX compiler identification is GNU, found in "/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/3.5.1/CompilerIdCXX/a.out"
 
 Determining if the C compiler works passed with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_79df7/fast"
-/usr/bin/make -f CMakeFiles/cmTC_79df7.dir/build.make CMakeFiles/cmTC_79df7.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_79df7.dir/testCCompiler.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_79df7.dir/testCCompiler.c.o   -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/testCCompiler.c
-Linking C executable cmTC_79df7
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_79df7.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_79df7.dir/testCCompiler.c.o  -o cmTC_79df7 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_a5a4a/fast"
+/usr/bin/make -f CMakeFiles/cmTC_a5a4a.dir/build.make CMakeFiles/cmTC_a5a4a.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a5a4a.dir/testCCompiler.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_a5a4a.dir/testCCompiler.c.o   -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_a5a4a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a5a4a.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_a5a4a.dir/testCCompiler.c.o  -o cmTC_a5a4a -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_51d2b/fast"
-/usr/bin/make -f CMakeFiles/cmTC_51d2b.dir/build.make CMakeFiles/cmTC_51d2b.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
-Linking C executable cmTC_51d2b
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_51d2b.dir/link.txt --verbose=1
-/usr/bin/cc      -v CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o  -o cmTC_51d2b -rdynamic  
+Run Build Command:"/usr/bin/make" "cmTC_bb616/fast"
+/usr/bin/make -f CMakeFiles/cmTC_bb616.dir/build.make CMakeFiles/cmTC_bb616.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_bb616
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bb616.dir/link.txt --verbose=1
+/usr/bin/cc      -v CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o  -o cmTC_bb616 -rdynamic  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/cc
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
@@ -59,23 +59,23 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_51d2b' '-rdynamic' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccmouJDu.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_51d2b /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_bb616' '-rdynamic' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cczxGV3b.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_bb616 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
 Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_51d2b/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_51d2b.dir/build.make CMakeFiles/cmTC_51d2b.dir/build]
-  ignore line: [make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building C object CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o]
-  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
-  ignore line: [Linking C executable cmTC_51d2b]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_51d2b.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o  -o cmTC_51d2b -rdynamic  ]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_bb616/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_bb616.dir/build.make CMakeFiles/cmTC_bb616.dir/build]
+  ignore line: [make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building C object CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_bb616]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bb616.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o  -o cmTC_bb616 -rdynamic  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/cc]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper]
@@ -85,13 +85,13 @@ Parsed C implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_51d2b' '-rdynamic' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccmouJDu.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_51d2b /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_bb616' '-rdynamic' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cczxGV3b.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_bb616 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/ccmouJDu.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/cczxGV3b.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -109,7 +109,7 @@ Parsed C implicit link information from above output:
     arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_51d2b] ==> ignore
+    arg [cmTC_bb616] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -121,7 +121,7 @@ Parsed C implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_51d2b.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [CMakeFiles/cmTC_bb616.dir/CMakeCCompilerABI.c.o] ==> ignore
     arg [-lgcc] ==> lib [gcc]
     arg [--as-needed] ==> ignore
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -153,17 +153,17 @@ Parsed C implicit link information from above output:
 
 
 Detecting C [-std=c11] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_aa23d/fast"
-/usr/bin/make -f CMakeFiles/cmTC_aa23d.dir/build.make CMakeFiles/cmTC_aa23d.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_aa23d.dir/feature_tests.c.o
-/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_aa23d.dir/feature_tests.c.o   -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_aa23d
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_aa23d.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_aa23d.dir/feature_tests.c.o  -o cmTC_aa23d -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_e0eae/fast"
+/usr/bin/make -f CMakeFiles/cmTC_e0eae.dir/build.make CMakeFiles/cmTC_e0eae.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_e0eae.dir/feature_tests.c.o
+/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_e0eae.dir/feature_tests.c.o   -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_e0eae
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e0eae.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_e0eae.dir/feature_tests.c.o  -o cmTC_e0eae -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -173,17 +173,17 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
 
 
 Detecting C [-std=c99] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_a9170/fast"
-/usr/bin/make -f CMakeFiles/cmTC_a9170.dir/build.make CMakeFiles/cmTC_a9170.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_a9170.dir/feature_tests.c.o
-/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_a9170.dir/feature_tests.c.o   -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_a9170
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a9170.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_a9170.dir/feature_tests.c.o  -o cmTC_a9170 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_fe66f/fast"
+/usr/bin/make -f CMakeFiles/cmTC_fe66f.dir/build.make CMakeFiles/cmTC_fe66f.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_fe66f.dir/feature_tests.c.o
+/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_fe66f.dir/feature_tests.c.o   -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_fe66f
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fe66f.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_fe66f.dir/feature_tests.c.o  -o cmTC_fe66f -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -193,17 +193,17 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
 
 
 Detecting C [-std=c90] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_77baf/fast"
-/usr/bin/make -f CMakeFiles/cmTC_77baf.dir/build.make CMakeFiles/cmTC_77baf.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_77baf.dir/feature_tests.c.o
-/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_77baf.dir/feature_tests.c.o   -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_77baf
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_77baf.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_77baf.dir/feature_tests.c.o  -o cmTC_77baf -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_502bb/fast"
+/usr/bin/make -f CMakeFiles/cmTC_502bb.dir/build.make CMakeFiles/cmTC_502bb.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_502bb.dir/feature_tests.c.o
+/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_502bb.dir/feature_tests.c.o   -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_502bb
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_502bb.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_502bb.dir/feature_tests.c.o  -o cmTC_502bb -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: C_FEATURE:1c_function_prototypes
@@ -211,30 +211,30 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
     Feature record: C_FEATURE:0c_static_assert
     Feature record: C_FEATURE:0c_variadic_macros
 Determining if the CXX compiler works passed with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_49808/fast"
-/usr/bin/make -f CMakeFiles/cmTC_49808.dir/build.make CMakeFiles/cmTC_49808.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_49808.dir/testCXXCompiler.cxx.o
-/usr/bin/c++      -o CMakeFiles/cmTC_49808.dir/testCXXCompiler.cxx.o -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
-Linking CXX executable cmTC_49808
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49808.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_49808.dir/testCXXCompiler.cxx.o  -o cmTC_49808 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_c49df/fast"
+/usr/bin/make -f CMakeFiles/cmTC_c49df.dir/build.make CMakeFiles/cmTC_c49df.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_c49df.dir/testCXXCompiler.cxx.o
+/usr/bin/c++      -o CMakeFiles/cmTC_c49df.dir/testCXXCompiler.cxx.o -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_c49df
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c49df.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_c49df.dir/testCXXCompiler.cxx.o  -o cmTC_c49df -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_dbfcf/fast"
-/usr/bin/make -f CMakeFiles/cmTC_dbfcf.dir/build.make CMakeFiles/cmTC_dbfcf.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o
-/usr/bin/c++      -o CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
-Linking CXX executable cmTC_dbfcf
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dbfcf.dir/link.txt --verbose=1
-/usr/bin/c++       -v CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_dbfcf -rdynamic  
+Run Build Command:"/usr/bin/make" "cmTC_083f1/fast"
+/usr/bin/make -f CMakeFiles/cmTC_083f1.dir/build.make CMakeFiles/cmTC_083f1.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o
+/usr/bin/c++      -o CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_083f1
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_083f1.dir/link.txt --verbose=1
+/usr/bin/c++       -v CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_083f1 -rdynamic  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/c++
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
@@ -244,23 +244,23 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4) 
 COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_dbfcf' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
- /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc6gM3tU.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_dbfcf /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_083f1' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccwhQXvs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_083f1 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
 Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp]
+  ignore line: [Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_dbfcf/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_dbfcf.dir/build.make CMakeFiles/cmTC_dbfcf.dir/build]
-  ignore line: [make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building CXX object CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o]
-  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
-  ignore line: [Linking CXX executable cmTC_dbfcf]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dbfcf.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_dbfcf -rdynamic  ]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_083f1/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_083f1.dir/build.make CMakeFiles/cmTC_083f1.dir/build]
+  ignore line: [make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building CXX object CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_083f1]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_083f1.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_083f1 -rdynamic  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/c++]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper]
@@ -270,13 +270,13 @@ Parsed CXX implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/5/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_dbfcf' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
-  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc6gM3tU.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_dbfcf /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_083f1' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccwhQXvs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTC_083f1 /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/5/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/5/../../.. CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/cc6gM3tU.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccwhQXvs.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -294,7 +294,7 @@ Parsed CXX implicit link information from above output:
     arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_dbfcf] ==> ignore
+    arg [cmTC_083f1] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/x86_64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -306,7 +306,7 @@ Parsed CXX implicit link information from above output:
     arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/x86_64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_dbfcf.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [CMakeFiles/cmTC_083f1.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
     arg [-lstdc++] ==> lib [stdc++]
     arg [-lm] ==> lib [m]
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -336,17 +336,17 @@ Parsed CXX implicit link information from above output:
 
 
 Detecting CXX [-std=c++14] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_6d043/fast"
-/usr/bin/make -f CMakeFiles/cmTC_6d043.dir/build.make CMakeFiles/cmTC_6d043.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_6d043.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_6d043.dir/feature_tests.cxx.o -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_6d043
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6d043.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_6d043.dir/feature_tests.cxx.o  -o cmTC_6d043 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_167d5/fast"
+/usr/bin/make -f CMakeFiles/cmTC_167d5.dir/build.make CMakeFiles/cmTC_167d5.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_167d5.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_167d5.dir/feature_tests.cxx.o -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_167d5
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_167d5.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_167d5.dir/feature_tests.cxx.o  -o cmTC_167d5 -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:1cxx_aggregate_default_initializers
@@ -409,17 +409,17 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
 
 
 Detecting CXX [-std=c++11] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_5a8bf/fast"
-/usr/bin/make -f CMakeFiles/cmTC_5a8bf.dir/build.make CMakeFiles/cmTC_5a8bf.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_5a8bf.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_5a8bf.dir/feature_tests.cxx.o -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_5a8bf
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5a8bf.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_5a8bf.dir/feature_tests.cxx.o  -o cmTC_5a8bf -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_1b731/fast"
+/usr/bin/make -f CMakeFiles/cmTC_1b731.dir/build.make CMakeFiles/cmTC_1b731.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_1b731.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_1b731.dir/feature_tests.cxx.o -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_1b731
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1b731.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_1b731.dir/feature_tests.cxx.o  -o cmTC_1b731 -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
@@ -482,17 +482,17 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
 
 
 Detecting CXX [-std=c++98] compiler features compiled with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_4bad4/fast"
-/usr/bin/make -f CMakeFiles/cmTC_4bad4.dir/build.make CMakeFiles/cmTC_4bad4.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_4bad4.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_4bad4.dir/feature_tests.cxx.o -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_4bad4
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4bad4.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_4bad4.dir/feature_tests.cxx.o  -o cmTC_4bad4 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_bd6e0/fast"
+/usr/bin/make -f CMakeFiles/cmTC_bd6e0.dir/build.make CMakeFiles/cmTC_bd6e0.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_bd6e0.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_bd6e0.dir/feature_tests.cxx.o -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_bd6e0
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bd6e0.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_bd6e0.dir/feature_tests.cxx.o  -o cmTC_bd6e0 -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
     Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
@@ -553,30 +553,30 @@ make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ct
     Feature record: CXX_FEATURE:0cxx_variadic_macros
     Feature record: CXX_FEATURE:0cxx_variadic_templates
 Determining if the include file pthread.h exists passed with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_ff889/fast"
-/usr/bin/make -f CMakeFiles/cmTC_ff889.dir/build.make CMakeFiles/cmTC_ff889.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_ff889.dir/CheckIncludeFile.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_ff889.dir/CheckIncludeFile.c.o   -c /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
-Linking C executable cmTC_ff889
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ff889.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_ff889.dir/CheckIncludeFile.c.o  -o cmTC_ff889 -rdynamic 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_acd21/fast"
+/usr/bin/make -f CMakeFiles/cmTC_acd21.dir/build.make CMakeFiles/cmTC_acd21.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_acd21.dir/CheckIncludeFile.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_acd21.dir/CheckIncludeFile.c.o   -c /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_acd21
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_acd21.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_acd21.dir/CheckIncludeFile.c.o  -o cmTC_acd21 -rdynamic 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 
 Determining if the function pthread_create exists in the pthread passed with the following output:
-Change Dir: /home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
+Change Dir: /home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_2c03c/fast"
-/usr/bin/make -f CMakeFiles/cmTC_2c03c.dir/build.make CMakeFiles/cmTC_2c03c.dir/build
-make[1]: Entering directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_2c03c.dir/CheckFunctionExists.c.o
-/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_2c03c.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
-Linking C executable cmTC_2c03c
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2c03c.dir/link.txt --verbose=1
-/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_2c03c.dir/CheckFunctionExists.c.o  -o cmTC_2c03c -rdynamic -lpthread 
-make[1]: Leaving directory '/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Run Build Command:"/usr/bin/make" "cmTC_a1235/fast"
+/usr/bin/make -f CMakeFiles/cmTC_a1235.dir/build.make CMakeFiles/cmTC_a1235.dir/build
+make[1]: Entering directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a1235.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_a1235.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_a1235
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a1235.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_a1235.dir/CheckFunctionExists.c.o  -o cmTC_a1235 -rdynamic -lpthread 
+make[1]: Leaving directory '/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/build/CMakeFiles/CMakeTmp'
 
 

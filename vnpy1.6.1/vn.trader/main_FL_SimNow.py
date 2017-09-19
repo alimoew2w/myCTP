@@ -134,6 +134,7 @@ gatewayName = 'CTP'
 
 try:
     mainEngine.connectCTPAccount(accountID = accountID)
+    # mainEngine.connectCTPAccount(accountID = 'g')
     print "CTP 正在登录!!!",
     for i in range(33):
         print ".",

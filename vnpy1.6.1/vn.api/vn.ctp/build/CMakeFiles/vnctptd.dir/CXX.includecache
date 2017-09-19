@@ -16,23 +16,23 @@ ThostFtdcUserApiStruct.h
 ThostFtdcUserApiDataType.h
 ../ctpapi/x64_linux/ThostFtdcUserApiDataType.h
 
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/stdafx.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/stdafx.h
 targetver.h
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/targetver.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/targetver.h
 windows.h
 -
 
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/targetver.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/targetver.h
 SDKDDKVer.h
 -
 
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.cpp
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.cpp
 vnctptd.h
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.h
 
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/vnctptd.h
 stdafx.h
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/stdafx.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/stdafx.h
 string
 -
 queue
@@ -54,5 +54,5 @@ boost/bind.hpp
 boost/any.hpp
 -
 ThostFtdcTraderApi.h
-/home/william/Documents/vnpy/vnpy-1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/ThostFtdcTraderApi.h
+/home/william/Documents/myCTP/vnpy1.6.1/vn.api/vn.ctp/vnctptd/vnctptd/ThostFtdcTraderApi.h
 
