@@ -309,17 +309,26 @@ if (nrow(YYpositionInfo) != 0) {
 ## =============================================================================
 if (nrow(YYpositionInfo) != 0) {
   if (nrow(OIopenInfo) != 0) {
-    dtYY <- merge(dtCloseYY[,.(strategyID = strategyID.x, InstrumentID,
-                              TradingDay = TradingDay.x, direction,
-                              volume = deltaVolume)],
-                  YYopenInfo,
-        by = c('InstrumentID','direction'),
-        all = TRUE)
+    if (nrow(YYopenInfo) != 0) {
+      dtYY <- merge(dtCloseYY[,.(strategyID = strategyID.x, InstrumentID,
+                                TradingDay = TradingDay.x, direction,
+                                volume = deltaVolume)],
+                    YYopenInfo,
+          by = c('InstrumentID','direction'),
+          all = TRUE)
+    } else {
+      dtYY <- dtCloseYY
+    }
   } else {
-    dtYY <- merge(YYpositionInfo,YYopenInfo,
-        by = c('InstrumentID','direction'),
-        all = TRUE)
+      if (nrow(YYopenInfo) != 0) {
+        dtYY <- merge(YYpositionInfo,YYopenInfo,
+            by = c('InstrumentID','direction'),
+            all = TRUE)
+      } else {
+        dtYY <- dtCloseYY
+      }
   }
+
     dtYY[, ":="(volume.x = ifelse(is.na(volume.x), 0, volume.x),
                  volume.y = ifelse(is.na(volume.y), 0, volume.y))] %>%
         .[, deltaVolume := volume.x - volume.y]
@@ -463,22 +472,24 @@ if (nrow(YYpositionInfo) != 0) {
                                 stage = 'open')]
     tempRes <- dtYYtradingOrdersOpen[,.(TradingDay,strategyID,InstrumentID,
                                         orderType,volume,stage)]
-    mysql <- mysqlFetch(accountDB)
-    dbSendQuery(mysql, paste("
-        delete from tradingOrders where strategyID = ",
-        paste0("'","YYStrategy","'"),
-        "and stage = ",
-        paste0("'","open","'"),
-        "and TradingDay = ", currTradingDay[1,days]))
-    dbWriteTable(mysql, 'tradingOrders',
-                tempRes, row.names = FALSE, append = TRUE)
+    if (nrow(tempRes) != 0) {
+      mysql <- mysqlFetch(accountDB)
+      dbSendQuery(mysql, paste("
+          delete from tradingOrders where strategyID = ",
+          paste0("'","YYStrategy","'"),
+          "and stage = ",
+          paste0("'","open","'"),
+          "and TradingDay = ", currTradingDay[1,days]))
+      dbWriteTable(mysql, 'tradingOrders',
+                  tempRes, row.names = FALSE, append = TRUE)
+    }
     ## =============================================================================
     ## 1. 在 OIStrategy 内部先计算开仓、平仓情况
     ## =============================================================================
 
 
 } else {
-  if (nrow(OIopenInfo) != 0) {
+  if (nrow(YYopenInfo) != 0) {
     tempRes <- YYopenInfo[,.(TradingDay,strategyID,InstrumentID,
                            orderType = ifelse(direction == 'long','buy','short'),
                            volume,stage = 'open')]
