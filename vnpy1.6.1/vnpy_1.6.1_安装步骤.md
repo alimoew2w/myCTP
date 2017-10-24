@@ -150,6 +150,15 @@
 
 2. 或者单独建立一个 `myTest.py` 的文件,进行分步调试.
 
+3. 在 CentOS7 下面会报错，virbr0: resource temporally unavailable
+    ✔ 解决：http://xjsunjie.blog.51cto.com/999372/1914963 @done (2017-10-24 16:55)
+    
+    ```bash  
+     virsh net-destroy default
+     virsh net-undefine default 
+     service libvirtd restart
+     ```
+
 
 ## 修改文件
 
