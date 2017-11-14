@@ -413,6 +413,28 @@ class DrEngine(object):
             accInfo['marginPct'] = 0
 
         accInfo['balance'] = accInfo['allMoney'] / initCapital
+
+        ## ---------------------------------------------------------------------
+        ## 按照 preClose 来计算净值变化
+        conn = self.mainEngine.dbMySQLConnect(self.mainEngine.dataBase)
+        cursor = conn.cursor()
+        try:
+            mysqlReportAccountHistory = self.mainEngine.dbMySQLQuery(self.mainEngine.dataBase,
+                                """
+                                SELECT *
+                                FROM report_account_history
+                                WHERE TradingDay < '%s'
+                                order by TradingDay
+                                """ %(self.mainEngine.ctaEngine.tradingDate))
+            
+            if len(mysqlReportAccountHistory) != 0:
+                tempPreClose = mysqlReportAccountHistory.loc[len(mysqlReportAccountHistory) - 1, 'totalMoney']
+                accInfo['preBalance'] = tempPreClose
+        except:
+            None
+        conn.close()
+        ## ---------------------------------------------------------------------
+
         accInfo['preBalance'] = (accInfo['preBalance'] + flowCapitalPre) / initCapital
         if accInfo['preBalance'] != 0:
             accInfo['deltaBalancePct'] = (accInfo['balance'] - accInfo['preBalance']) / accInfo['preBalance'] * 100
@@ -587,11 +609,11 @@ class DrEngine(object):
         # if ((h == 2 and m == 35) or (h == 15 and m == 10 ) or \
         #     (h in [9,21] and m == 10) ) and s == 59:
         # if (h in [2,15] and 35 <= m <= 40 and s == 59):
-        # if (h in [2,15] and 35 <= m <= 35 and s == 59):
-        if ((h == 15 and 20 <= m <= 35) and 
-            (1 <= (datetime.now().weekday()+1) <= 5)) or \
-           ((h == 2 and 32 <= m <= 35) and 
-            ((datetime.now().weekday()+1) == 6)):
+        if (h in [2,15] and 40 <= m <= 45):
+        # if ((h == 15 and 20 <= m <= 35) and 
+        #     (1 <= (datetime.now().weekday()+1) <= 5)) or \
+        #    ((h == 2 and 32 <= m <= 35) and 
+        #     ((datetime.now().weekday()+1) == 6)):
             re = True
             print h,m,s,re
         return re
