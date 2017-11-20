@@ -272,7 +272,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersFailedInfo, 
                                      orderIDList   = self.vtOrderIDListFailedInfo,
                                      priceType     = 'chasing',
-                                     addTick       = 0)
+                                     addTick       = 1)
         ## =====================================================================
 
         ## =====================================================================
@@ -284,7 +284,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = 'open',
-                                     discount      = 0.002)
+                                     discount      = 0.0028)
         ## =====================================================================
 
         ## =====================================================================
@@ -295,7 +295,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'last',
-                                     addTick       = -2)
+                                     discount      = 0.0019)
         ## =====================================================================
 
         ## =====================================================================
@@ -305,7 +305,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'chasing',
-                                     addTick       = 0)
+                                     addTick       = 1)
         ## =====================================================================
 
         ########################################################################
@@ -843,6 +843,8 @@ class OIStrategy(CtaTemplate):
     ############################################################################
     def updateTradingStatus(self, event):
         ## =====================================================================
+        if not self.trading:
+            return 
         tradingCloseHour    = 14
         tradingCloseMinute1 = 50
         tradingCloseMinute2 = 59
@@ -851,7 +853,7 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         ## 启动尾盘交易
         ## =====================================================================
-        if (datetime.now().hour in [8,20] and datetime.now().minute >= 59 and datetime.now().second >= 50) or \
+        if (datetime.now().hour in [8,20] and datetime.now().minute >= 59 and datetime.now().second >= 45) or \
            ( ( (21 <= datetime.now().hour <= 24) or (0 <= datetime.now().hour <= 2) or (9 <= datetime.now().hour <= (tradingCloseHour-1))) and 
             datetime.now().minute <= 59 ) or \
            (datetime.now().hour == tradingCloseHour and datetime.now().minute < tradingCloseMinute1):
@@ -882,7 +884,7 @@ class OIStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             if len(self.vtOrderIDListOpen) != 0:
                 for vtOrderID in self.vtOrderIDListOpen:
-                    if vtOrderID in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].vtOrderID.values:
+                    if vtOrderID in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
                     else:
                         None
@@ -899,7 +901,7 @@ class OIStrategy(CtaTemplate):
             ## -----------------------------------------------------------------
             if len(self.vtOrderIDListClose) != 0:
                 for vtOrderID in self.vtOrderIDListClose:
-                    if vtOrderID in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status == u'未成交'].vtOrderID.values:
+                    if vtOrderID in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
                     else:
                         None
@@ -907,16 +909,15 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
 
         ## =====================================================================
-        ## 如果是收盘交易
-        ## 则取消开盘交易的所有订单
+        ## 生成收盘交易的订单
         if (datetime.now().hour == tradingCloseHour and 
             datetime.now().minute in [tradingCloseMinute1, (tradingCloseMinute2-1)] and 
             20 <= datetime.now().second < 30  and 
             self.ctaEngine.mainEngine.multiStrategy and 
             (datetime.now().second == 29 or datetime.now().second % 10 == 0)):
             subprocess.call(['Rscript',
-                             os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,'ctaStrategy','end.R'),
-                             self.ctaEngine.mainEngine.dataBase], shell = False)
+                             os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,'ctaStrategy','end_signal.R'),
+                             self.ctaEngine.mainEngine.ROOT_PATH, self.ctaEngine.mainEngine.dataBase], shell = False)
 
         ## =====================================================================
         ## 从 MySQL 数据库提取尾盘需要平仓的持仓信息
