@@ -112,7 +112,6 @@ class DrEngine(object):
             # contractInfo = pd.read_csv('contract.csv')
             contractAll = os.path.normpath(os.path.join(self.FILE_PATH,'..','contractAll.csv'))
             contractInfo = pd.read_csv(contractAll)
-            # print contractInfo
             self.contractDict = {}
             for i in range(len(contractInfo)):
                 self.contractDict[contractInfo.loc[i]['symbol']] = contractInfo.loc[i].to_dict()
