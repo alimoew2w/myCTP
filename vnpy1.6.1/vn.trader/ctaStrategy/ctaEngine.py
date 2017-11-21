@@ -145,36 +145,27 @@ class CtaEngine(object):
         ## 有关订阅合约行情
         ## -----------------------------------------------------------------------------------------
         ## 所有的主力合约
-        self.mainContracts                = self.mainEngine.dbMySQLQuery('china_futures_bar',
-                                            """select * from main_contract_daily 
-                                               where TradingDay = %s """ %self.lastTradingDay)
-        
-        ## 持仓的合约
-        self.positionContracts_HiCloud    = self.mainEngine.dbMySQLQuery('HiCloud',
-                                            """select * from positionInfo;""")
-        
-        ## 信号的合约
-        self.signalContracts              = self.mainEngine.dbMySQLQuery('lhg_trade',
-                                            """select * from fl_open_t;""")
-        self.signalContracts2             = self.mainEngine.dbMySQLQuery('lhg_trade',
-                                            """select * from fl_open_t_2;""")
-        
-        ## 前一个交易日未成交的合约
-        self.failedContracts_HiCloud      = self.mainEngine.dbMySQLQuery('HiCloud',
-                                            """select * from failedInfo;""")
-
+        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',
+            """
+            select * 
+            from main_contract_daily 
+            where TradingDay = %s 
+            """ %self.lastTradingDay).Main_contract.values
         ## -----------------------------------------------------------------------------------------
         ## william
         ## 需要订阅的合约
-        self.subscribeContracts = list(set(self.positionContracts_HiCloud.InstrumentID.values) |
-                                       set(self.signalContracts.InstrumentID.values) |
-                                       set(self.signalContracts2.InstrumentID.values) |
-                                       set(self.failedContracts_HiCloud.InstrumentID.values) |
-                                       set(self.accountContracts) |
-                                       set(self.mainContracts.Main_contract.values))
+        self.subscribeContracts = []
+        for dbName in ['HiCloud','FL_SimNow']:
+            for tbName in ['positionInfo','failedInfo','tradingSignal']:
+                try:
+                    temp = self.fetchInstrumentID(dbName, tbName)
+                    self.subscribeContracts = list(set(self.subscribeContracts) | set(temp))
+                except:
+                    None
+        self.subscribeContracts = list(set(self.subscribeContracts) | 
+                                       set(self.mainContracts))
         self.tickInfo = {}
         
-
         ## =========================================================================================
         ## 记录合约相关的 
         ## 1. priceTick
@@ -989,6 +980,15 @@ class CtaEngine(object):
         """
         pass
 
+    ################################################################################################
+    ## 获取基金的 InstrumentID
+    ################################################################################################
+    def fetchInstrumentID(self, dbName, tbName):
+        temp = self.mainEngine.dbMySQLQuery(dbName,
+            """
+            select * from %s
+            """ %(tbName))
+        return(temp.InstrumentID.values)
 
 ########################################################################
 class PositionBuffer(object):
