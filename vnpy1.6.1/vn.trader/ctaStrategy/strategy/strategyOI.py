@@ -411,7 +411,6 @@ class OIStrategy(CtaTemplate):
         tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
         ## =====================================================================
 
-
         ########################################################################
         ## william
         ## 更新数量
