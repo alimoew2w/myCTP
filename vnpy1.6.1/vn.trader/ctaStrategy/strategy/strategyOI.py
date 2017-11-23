@@ -83,6 +83,7 @@ class OIStrategy(CtaTemplate):
     tradingOrders      = {}            # 单日的订单
     tradingOrdersOpen  = {}            # 当日开盘的订单
     tradingOrdersClose = {}            # 当日收盘的订单
+    tradingOrdersUpperLower = {}       # 以涨跌停价格的订单
     ## -------------------------------------------------------------------------
     tradingOrdersFailedInfo = {}       # 上一个交易日没有完成的订单,需要优先处理
     ## -------------------------------------------------------------------------
@@ -90,6 +91,7 @@ class OIStrategy(CtaTemplate):
     tradedOrdersOpen       = {}        # 当日开盘完成的已订单
     tradedOrdersClose      = {}        # 当日收盘完成的已订单
     tradedOrdersFailedInfo = {}        # 昨天未成交订单的已交易订单
+    tradedOrdersUpperLower = {}        # 已经成交的涨跌停订单
     ## -------------------------------------------------------------------------
     failedOrders      = {}             # 当日未成交订单的统计情况,收盘后写入数据库,failedInfo
     failedOrdersOpen  = {}             # 开盘时候的未完成订单
@@ -104,6 +106,7 @@ class OIStrategy(CtaTemplate):
     vtOrderIDList      = []                   # 保存委托代码的列表
     vtOrderIDListOpen  = []                   # 开盘的订单
     vtOrderIDListClose = []                   # 收盘的订单
+    vtOrderIDListUpperLower = []              # 涨跌停价格成交的订单
     ## -------------------------------------------------------------------------
     vtOrderIDListFailedInfo          = []     # 失败的合约订单存储
     vtOrderIDListClosePositionAll    = []     # 一键全平仓
@@ -145,27 +148,31 @@ class OIStrategy(CtaTemplate):
 
         ## ---------------------------------------------------------------------
         ## 上一个交易日未成交订单
-        self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                            """
-                            SELECT *
-                            FROM failedInfo
-                            WHERE strategyID = '%s'
-                            """ %(self.strategyID))
+        self.failedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM failedInfo
+            WHERE strategyID = '%s'
+            """ %(self.strategyID))
 
         ## ---------------------------------------------------------------------
         ## 持仓合约信息
-        self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                            """
-                            SELECT *
-                            FROM positionInfo
-                            WHERE strategyID = '%s'
-                            """ %(self.strategyID))
-        self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                            """
-                            SELECT *
-                            FROM positionInfo
-                            WHERE strategyID = '%s'
-                            """ %(self.strategyID))
+        self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM positionInfo
+            WHERE strategyID = '%s'
+            """ %(self.strategyID))
+        
+        self.positionInfoClose = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM positionInfo
+            WHERE strategyID = '%s'
+            """ %(self.strategyID))
 
         ## ---------------------------------------------------------------------
         ## 查看当日已经交易的订单
@@ -177,6 +184,20 @@ class OIStrategy(CtaTemplate):
                             WHERE strategyID = '%s'
                             AND TradingDay = '%s'
                             """ %(self.strategyID, self.ctaEngine.tradingDay))
+
+        ## =====================================================================
+        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        temp = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
+                            """
+                            SELECT *
+                            FROM UpperLowerInfo
+                            WHERE strategyID = '%s'
+                            AND TradingDay = '%s'
+                            """ %(self.strategyID, self.ctaEngine.tradingDate))
+        self.vtOrderIDListUpperLower = list(temp.vtOrderID)
+        conn.close()
+
         ########################################################################
         ## william
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
@@ -283,8 +304,10 @@ class OIStrategy(CtaTemplate):
             self.prepareTradingOrder(vtSymbol      = tick.vtSymbol, 
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
-                                     priceType     = 'open',
-                                     discount      = 0.0028)
+                                     # priceType     = 'open',
+                                     # discount      = self.ctaEngine.mainEngine.openDiscount)
+                                     priceType     = 'last',
+                                     addTick       = 0)
         ## =====================================================================
 
         ## =====================================================================
@@ -295,6 +318,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'last',
+                                     # discount      = self.ctaEngine.mainEngine.closeDiscount)
                                      discount      = 0.0019)
         ## =====================================================================
 
@@ -340,13 +364,14 @@ class OIStrategy(CtaTemplate):
     
         if trade.vtOrderID not in list(set(self.vtOrderIDListOpen) | 
                                        set(self.vtOrderIDListClose) | 
-                                       set(self.vtOrderIDListFailedInfo)):
+                                       set(self.vtOrderIDListFailedInfo) |
+                                       set(self.vtOrderIDListUpperLower)):
             return None
         ## =====================================================================
         self.tickTimer[trade.vtSymbol] = datetime.now()
         ## =====================================================================
         ## 连接 MySQL 设置
-        conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        conn   = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
         ## =====================================================================
 
@@ -355,9 +380,9 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         self.stratTrade = trade.__dict__
         self.stratTrade['InstrumentID'] = self.stratTrade['vtSymbol']
-        self.stratTrade['strategyID'] = self.strategyID
-        self.stratTrade['tradeTime']  = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
-        self.stratTrade['TradingDay']  = self.ctaEngine.tradingDate
+        self.stratTrade['strategyID']   = self.strategyID
+        self.stratTrade['tradeTime']    = datetime.now().strftime('%Y-%m-%d') + " " + self.stratTrade['tradeTime']
+        self.stratTrade['TradingDay']   = self.ctaEngine.tradingDate
 
         ## ---------------------------------------------------------------------
         if self.stratTrade['offset'] == u'开仓':
@@ -411,7 +436,6 @@ class OIStrategy(CtaTemplate):
             if self.tradingOrdersFailedInfo[tempKey]['volume'] == 0:
                 self.tradingOrdersFailedInfo.pop(tempKey, None)
 
-
         ## =====================================================================
         ## 2. 更新 positionInfo
         ## =====================================================================
@@ -420,12 +444,13 @@ class OIStrategy(CtaTemplate):
             ## 1. 更新 mysql.positionInfo
             ################################################################
             ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                    """
-                                    SELECT *
-                                    FROM positionInfo
-                                    WHERE strategyID = '%s'
-                                    """ %(self.strategyID))
+            mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+                self.ctaEngine.mainEngine.dataBase,
+                """
+                SELECT *
+                FROM positionInfo
+                WHERE strategyID = '%s'
+                """ %(self.strategyID))
 
             ## 看看是不是已经在数据库里面了
             tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempRes.loc[0,'InstrumentID']][mysqlPositionInfo.TradingDay == tempRes.loc[0,'TradingDay']][mysqlPositionInfo.direction == tempRes.loc[0,'direction']]
@@ -433,7 +458,11 @@ class OIStrategy(CtaTemplate):
                 ## 如果不在
                 ## 则直接添加过去即可
                 try:
-                    tempRes.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                    tempRes.to_sql(con=conn, 
+                        name      ='positionInfo', 
+                        if_exists ='append', 
+                        flavor    ='mysql', 
+                        index     = False)
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
@@ -449,7 +478,11 @@ class OIStrategy(CtaTemplate):
                                     WHERE strategyID = '%s'
                                    """ %(self.strategyID))
                     conn.commit()
-                    mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                    mysqlPositionInfo.to_sql(con=conn, 
+                        name      ='positionInfo', 
+                        if_exists ='append', 
+                        flavor    ='mysql', 
+                        index     = False)
                     # conn.close()
                 except:
                     print "\n"+'#'*80
@@ -472,12 +505,13 @@ class OIStrategy(CtaTemplate):
                 ## 因为 failedInfo 已经把未成交的订单记录下来了
                 ## =================================================================================
                 ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-                mysqlFailedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                        """
-                        SELECT *
-                        FROM failedInfo
-                        WHERE strategyID = '%s'
-                        """ %(self.strategyID))
+                mysqlFailedInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+                    self.ctaEngine.mainEngine.dataBase,
+                    """
+                    SELECT *
+                    FROM failedInfo
+                    WHERE strategyID = '%s'
+                    """ %(self.strategyID))
 
                  #-------------------------------------------------------------------
                 if len(mysqlFailedInfo) != 0:
@@ -492,26 +526,30 @@ class OIStrategy(CtaTemplate):
                                         WHERE strategyID = '%s'
                                        """ %(self.strategyID))
                         conn.commit()
-                        mysqlFailedInfo.to_sql(con=conn, name='failedInfo', if_exists='append', flavor='mysql', index = False)
+                        mysqlFailedInfo.to_sql(con=conn, 
+                            name      ='failedInfo', 
+                            if_exists ='append', 
+                            flavor    ='mysql', 
+                            index     = False)
                     except:
                         print "\n"+'#'*80
                         print '写入 MySQL 数据库出错'
                         print '#'*80+"\n"
                     #-------------------------------------------------------------------
-            elif self.stratTrade['vtOrderID'] in self.vtOrderIDListClose:
+            elif self.stratTrade['vtOrderID'] in list(set(self.vtOrderIDListClose) |
+                                                      set(self.vtOrderIDListUpperLower)):
                 ## 只有在 tradingOrders 的平仓信息，需要更新到数据库
                 ## 因为 failedInfo 已经把未成交的订单记录下来了
                 ## =================================================================================
                 ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
-                mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                                        """
-                                        SELECT *
-                                        FROM positionInfo
-                                        WHERE strategyID = '%s'
-                                        """ %(self.strategyID))
-
-                tempPosInfo = self.positionInfo.loc[self.positionInfo.InstrumentID == tempRes.at[0,'InstrumentID']][self.positionInfo.direction == tempDirection]
-                tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == tempPosInfo.at[tempPosInfo.index[0],'InstrumentID']][mysqlPositionInfo.direction == tempPosInfo.at[tempPosInfo.index[0],'direction']].sort_values(by='TradingDay', ascending = True)
+                mysqlPositionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+                    self.ctaEngine.mainEngine.dataBase,
+                    """
+                    SELECT *
+                    FROM positionInfo
+                    WHERE strategyID = '%s'
+                    """ %(self.strategyID))
+                tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlPositionInfo.direction == tempDirection].sort_values(by='TradingDay', ascending = True)
                 ## ---------------------------------------------------------------------------------
                 for i in range(len(tempPosInfo2)):
                     tempResVolume = tempPosInfo2.loc[tempPosInfo2.index[i],'volume'] - tempRes.at[0,'volume']
@@ -570,13 +608,72 @@ class OIStrategy(CtaTemplate):
         #-----------------------------------------------------------------------
         #=======================================================================        
 
+
         tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
             columns = self.tradingInfoFields)
-        ## -----------------------------------------------------------------
-        self.updateTradingInfo(tempTradingInfo)
+        ## ---------------------------------------------------------------------
+        self.updateTradingInfo(df = tempTradingInfo, tbName = 'tradingInfo')
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
-        ## -----------------------------------------------------------------
+        ## ---------------------------------------------------------------------
         # ######################################################################
+
+
+        ## =====================================================================
+        ## william
+        ## 如果有开仓的情况，则相应的发出平仓的订单，
+        ## 成交价格为　UpperLimit / LowerLimit 的 (?)
+        if (self.stratTrade['offset'] == u'开仓' and 
+            self.tradingStart):
+            ## -----------------------------------------------------------------
+            ## 1. 「开多」 --> sell@upper
+            ## 2. 「开空」 --> cover@lower
+            if self.stratTrade['direction'] == 'long':
+                tempDirection = 'sell'
+                # tempPriceType = 'upper'
+                tempPriceType = 'last'
+            elif self.stratTrade['direction'] == 'short':
+                tempDirection = 'cover'
+                # tempPriceType = 'lower'
+                tempPriceType = 'last'
+            ## -----------------------------------------------------------------
+            tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
+            ## -----------------------------------------------------------------
+            ## 生成 tradingOrdersUpperLower
+            self.tradingOrdersUpperLower[tempKey] = {
+                    'vtSymbol'   : self.stratTrade['vtSymbol'],
+                    'direction'  : tempDirection,
+                    'volume'     : self.stratTrade['volume'],
+                    'TradingDay' : self.stratTrade['TradingDay']
+            }
+            ## -----------------------------------------------------------------
+            
+            ## -----------------------------------------------------------------
+            if self.stratTrade['vtSymbol'] in ['i1801','jm1801']:
+                tempAddTick = -1
+            else:
+                tempAddTick = -2
+            ## -----------------------------------------------------------------
+
+            self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
+                                     tradingOrders = self.tradingOrdersUpperLower, 
+                                     orderIDList   = self.vtOrderIDListUpperLower,
+                                     priceType     = tempPriceType,
+                                     addTick       = tempAddTick)
+            ## -----------------------------------------------------------------
+            ## 获得 vtOrderID
+            tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
+            tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
+            tempRes.insert(1,'strategyID', self.strategyID)
+            tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
+            try:
+                tempRes.to_sql(con=conn, name='UpperLowerInfo', 
+                               if_exists='append', flavor='mysql', index = False)
+            except:
+                print "\n"+'#'*80
+                print '写入 MySQL 数据库出错'
+                print '#'*80+"\n"
+        ## =====================================================================
+
         conn.close()
 
         ############################################################################################
@@ -809,10 +906,10 @@ class OIStrategy(CtaTemplate):
                 ## ---------------------------------------------------------------------
                 if stage == 'open':
                     self.tradingOrdersOpen[tempKey] = {
-                        'vtSymbol': tempOrders.at[i,'InstrumentID'],
-                        'direction': tempOrders.at[i,'orderType'],
-                        'volume':tempOrders.at[i,'volume'],
-                        'TradingDay':tempOrders.at[i,'TradingDay']
+                        'vtSymbol'   : tempOrders.at[i,'InstrumentID'],
+                        'direction'  : tempOrders.at[i,'orderType'],
+                        'volume'     :tempOrders.at[i,'volume'],
+                        'TradingDay' :tempOrders.at[i,'TradingDay']
                     }
                     ## -----------------------------------------------------------------------------                
                     self.updateTradingOrdersVtOrderID(tradingOrders = self.tradingOrdersOpen, 
@@ -823,10 +920,10 @@ class OIStrategy(CtaTemplate):
                     self.tickTimer[tempOrders.at[i,'InstrumentID']] = datetime.now()
                 elif stage == 'close':
                     self.tradingOrdersClose[tempKey] = {
-                        'vtSymbol': tempOrders.at[i,'InstrumentID'],
-                        'direction': tempOrders.at[i,'orderType'],
-                        'volume':tempOrders.at[i,'volume'],
-                        'TradingDay':tempOrders.at[i,'TradingDay']
+                        'vtSymbol'   : tempOrders.at[i,'InstrumentID'],
+                        'direction'  : tempOrders.at[i,'orderType'],
+                        'volume'     :tempOrders.at[i,'volume'],
+                        'TradingDay' :tempOrders.at[i,'TradingDay']
                     }
                     ## ----------------------------------------------------------------------------                  
                     self.updateTradingOrdersVtOrderID(tradingOrders = self.tradingOrdersClose, 
@@ -883,7 +980,7 @@ class OIStrategy(CtaTemplate):
             (datetime.now().second % 5 == 0)):
             ## -----------------------------------------------------------------
             if len(self.vtOrderIDListOpen) != 0:
-                for vtOrderID in self.vtOrderIDListOpen:
+                for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListUpperLower:
                     if vtOrderID in self.ctaEngine.mainEngine.getAllOrders().loc[self.ctaEngine.mainEngine.getAllOrders().status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
                     else:
@@ -916,8 +1013,12 @@ class OIStrategy(CtaTemplate):
             self.ctaEngine.mainEngine.multiStrategy and 
             (datetime.now().second == 29 or datetime.now().second % 10 == 0)):
             subprocess.call(['Rscript',
-                             os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,'ctaStrategy','end_signal.R'),
-                             self.ctaEngine.mainEngine.ROOT_PATH, self.ctaEngine.mainEngine.dataBase], shell = False)
+                             os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,
+                             'ctaStrategy',
+                             'end_signal.R'),
+                             self.ctaEngine.mainEngine.ROOT_PATH, 
+                             self.ctaEngine.mainEngine.dataBase], 
+                             shell = False)
 
         ## =====================================================================
         ## 从 MySQL 数据库提取尾盘需要平仓的持仓信息
@@ -931,7 +1032,8 @@ class OIStrategy(CtaTemplate):
             ## 持仓合约信息
             
             ## -----------------------------------------------------------------
-            conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+            conn = self.ctaEngine.mainEngine.dbMySQLConnect(
+                    self.ctaEngine.mainEngine.dataBase)
             cursor = conn.cursor()
             cursor.execute("""
                             TRUNCATE TABLE workingInfo
@@ -941,12 +1043,13 @@ class OIStrategy(CtaTemplate):
             ## -----------------------------------------------------------------            
 
             ## =================================================================
-            self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                    """
-                    SELECT *
-                    FROM positionInfo
-                    WHERE strategyID = '%s'
-                    """ %(self.strategyID))
+            self.positionInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+                self.ctaEngine.mainEngine.dataBase,
+                """
+                SELECT *
+                FROM positionInfo
+                WHERE strategyID = '%s'
+                """ %(self.strategyID))
             ## =================================================================
 
             if self.ctaEngine.mainEngine.multiStrategy:
@@ -967,20 +1070,20 @@ class OIStrategy(CtaTemplate):
                         tempVolume = int(self.positionInfo.loc[i,'volume'])
                         tempKey = self.positionInfo.loc[i,'InstrumentID'] + '-' + tempDirection
                         tempTradingDay = self.positionInfo.loc[i,'TradingDay']
-                        self.tradingOrdersClose[tempKey] = {'vtSymbol':self.positionInfo.loc[i,'InstrumentID'],
-                                                       'direction':tempDirection,
-                                                       'volume':tempVolume,
-                                                       'TradingDay':tempTradingDay,
-                                                       'orderNo':1}
+                        self.tradingOrdersClose[tempKey] = {
+                        'vtSymbol'   :self.positionInfo.loc[i,'InstrumentID'],
+                        'direction'  :tempDirection,
+                        'volume'     :tempVolume,
+                        'TradingDay' :tempTradingDay,
+                        'orderNo'    :1
+                        }
         ## =====================================================================
-
 
         ## =====================================================================
         ## 更新订单字典
         ## =====================================================================
         self.updateTradingOrdersDict(tradingOrders = self.tradingOrdersClose, 
                                      tradedOrders  = self.tradedOrdersClose)
-
 
         ## =====================================================================
         ## 更新 workingInfo
@@ -990,4 +1093,3 @@ class OIStrategy(CtaTemplate):
              self.tradingStart):
             self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
             self.updateWorkingInfo(self.tradingOrdersClose, 'close')
-
