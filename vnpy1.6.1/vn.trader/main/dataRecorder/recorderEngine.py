@@ -22,7 +22,8 @@ from threading import Thread
 from eventEngine import *
 from vtGateway import *
 from drBase import *
-from vtFunction import todayDate
+
+from vtFunction import todayDate,tradingDay
 from language import text
 
 import pandas as pd
@@ -65,26 +66,28 @@ class DrEngine(object):
         ########################################################################
         self.loadSetting()
 
-        self.myFields   = ['timeStamp','date','time','symbol','exchange',\
-                          'lastPrice','preSettlementPrice','preClosePrice',\
-                          'openPrice','highestPrice','lowestPrice','closePrice',\
-                          'upperLimit','lowerLimit','settlementPrice','volume','turnover',\
-                          'preOpenInterest','openInterest','preDelta','currDelta',\
-                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
-                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
-                          'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',\
-                          'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',\
+        self.myFields   = ['timeStamp','date','time','symbol','exchange',
+                          'lastPrice','preSettlementPrice','preClosePrice',
+                          'openPrice','highestPrice','lowestPrice','closePrice',
+                          'upperLimit','lowerLimit','settlementPrice','volume','turnover',
+                          'preOpenInterest','openInterest','preDelta','currDelta',
+                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',
+                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',
+                          'bidVolume1','bidVolume2','bidVolume3','bidVolume4','bidVolume5',
+                          'askVolume1','askVolume2','askVolume3','askVolume4','askVolume5',
                           'averagePrice']
-        self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',\
-                          'upperLimit','lowerLimit','openInterest','preDelta','currDelta',\
-                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',\
-                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',\
+        self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',
+                          'upperLimit','lowerLimit','openInterest','preDelta','currDelta',
+                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',
+                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',
                           'settlementPrice','averagePrice']
         ########################################################################
-        self.SETTING_FILE = os.path.normpath(os.path.join(self.FILE_PATH,'../setting','VT_setting.json'))
+        self.SETTING_FILE = os.path.normpath(os.path.join(self.FILE_PATH,
+                            '../setting','VT_setting.json'))
         self.MAIN_SETTING = json.load(file(self.SETTING_FILE))
-        self.DATA_PATH = os.path.normpath(os.path.join(self.MAIN_SETTING['DATA_PATH'], globalSetting.accountID, 'TickData'))
-        self.dataFile = os.path.join(self.DATA_PATH,(str(self.mainEngine.todayDate) + '.csv'))
+        self.DATA_PATH    = os.path.normpath(os.path.join(self.MAIN_SETTING['DATA_PATH'], 
+                            globalSetting.accountID, 'TickData'))
+        self.dataFile     = os.path.join(self.DATA_PATH,(str(self.tradingDay) + '.csv'))
 
     #----------------------------------------------------------------------
     def loadSetting(self):
@@ -109,8 +112,7 @@ class DrEngine(object):
         
         # contractDict = self.mainEngine.dataEngine.getAllContracts()
         try:
-            # contractInfo = pd.read_csv('contract.csv')
-            contractAll = os.path.normpath(os.path.join(self.FILE_PATH,'..','contractAll.csv'))
+            contractAll  = os.path.normpath(os.path.join(self.FILE_PATH,'..','contractAll.csv'))
             contractInfo = pd.read_csv(contractAll)
             self.contractDict = {}
             for i in range(len(contractInfo)):
@@ -173,15 +175,13 @@ class DrEngine(object):
                 d[i] = 0
 
         # ########################################################################
-        # print "\n"+'#'*80
-        # print '在这里获取 Tick Data !!!==>', d['symbol']
-        # print d
+        print "\n"+'#'*80
+        print '在这里获取 Tick Data !!!==>', d['symbol']
+        print d
         # ########################################################################
         ## william
         ## 保存到 csv
         ## Ref: /vn.trader/vtEngine/def dbWriteCSV(self,d)
-        # ----------------------------------------------------------------------
-        # self.dbWriteCSV(d)
         # ----------------------------------------------------------------------
         with open(self.dataFile, 'a') as f:
             wr = csv.writer(f)
