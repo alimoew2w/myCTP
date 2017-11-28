@@ -157,7 +157,7 @@ class CtaEngine(object):
         ## william
         ## 需要订阅的合约
         self.subscribeContracts = []
-        for dbName in ['HiCloud','FL_SimNow','TianMi1','TianMi3','YunYang1']:
+        for dbName in ['FL_SimNow','TianMi1','TianMi2','TianMi3','YunYang1']:
             for tbName in ['positionInfo','failedInfo','tradingSignal']:
                 try:
                     temp = self.fetchInstrumentID(dbName, tbName)
