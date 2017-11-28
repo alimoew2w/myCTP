@@ -116,7 +116,8 @@ class CtaEngine(object):
         self.lastTickData     = {}
         self.lastTickFileds   = ['symbol', 'vtSymbol', 'datetime',
                                  'lastPrice', 'bidPrice1', 'askPrice1',
-                                 'bidVolume1', 'askVolume1', 'upperLimit', 'lowerLimit', 'openPrice']
+                                 'bidVolume1', 'askVolume1',
+                                 'upperLimit', 'lowerLimit', 'openPrice']
 
         # 保存vtOrderID和strategy对象映射的字典（用于推送order和trade数据）
         # key为vtOrderID，value为strategy对象
@@ -145,7 +146,8 @@ class CtaEngine(object):
         ## 有关订阅合约行情
         ## -----------------------------------------------------------------------------------------
         ## 所有的主力合约
-        self.mainContracts = self.mainEngine.dbMySQLQuery('china_futures_bar',
+        self.mainContracts = self.mainEngine.dbMySQLQuery(
+            'china_futures_bar',
             """
             select * 
             from main_contract_daily 
@@ -155,7 +157,7 @@ class CtaEngine(object):
         ## william
         ## 需要订阅的合约
         self.subscribeContracts = []
-        for dbName in ['HiCloud','FL_SimNow']:
+        for dbName in ['HiCloud','FL_SimNow','TianMi1','TianMi3','YunYang1']:
             for tbName in ['positionInfo','failedInfo','tradingSignal']:
                 try:
                     temp = self.fetchInstrumentID(dbName, tbName)
@@ -630,7 +632,12 @@ class CtaEngine(object):
                  str(startDate) + ' and ' + str(endDate) + ')'
 
         try:
-            conn = MySQLdb.connect(host = host, port = port, db = dbName, user = user, passwd = passwd)
+            conn = MySQLdb.connect(
+                host   = host, 
+                port   = port, 
+                db     = dbName, 
+                user   = user, 
+                passwd = passwd)
             mysqlData = pd.read_sql(query, conn)
             conn.close()
             tempFields = ['TradingDay','InstrumentID','Minute','NumericExchTime',
