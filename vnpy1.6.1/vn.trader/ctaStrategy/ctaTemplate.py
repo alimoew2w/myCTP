@@ -544,14 +544,15 @@ class CtaTemplate(object):
                     tempDirection = 'sell'
             ## -------------------------------------------------------------
             ## volume
-            tempVolume = failedInfo.loc[i,'volume']
-            tempKey    = failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
+            tempVolume     = failedInfo.loc[i,'volume']
+            tempKey        = failedInfo.loc[i,'InstrumentID'] + '-' + tempDirection
             tempTradingDay = failedInfo.loc[i,'TradingDay']
             
-            self.tradingOrdersFailedInfo[tempKey] = {'vtSymbol':failedInfo.loc[i,'InstrumentID'],
-                                                'direction':tempDirection,
-                                                'volume':tempVolume,
-                                                'TradingDay':tempTradingDay}
+            self.tradingOrdersFailedInfo[tempKey] = {
+                'vtSymbol'   :failedInfo.loc[i,'InstrumentID'],
+                'direction'  :tempDirection,
+                'volume'     :tempVolume,
+                'TradingDay' :tempTradingDay}
         ## =====================================================================
 
 
@@ -1170,6 +1171,21 @@ class CtaTemplate(object):
         df.to_sql(con=conn, name='workingInfo', if_exists='append', flavor='mysql', index = False)
         conn.close()
 
+
+    ############################################################################
+    ## 保存到 MySQL
+    ############################################################################
+    # def saveToMySQL(self, df, con = conn, tbName):
+    #     try:
+    #         df.to_sql(
+    #         con       = con, 
+    #         name      = tbName, 
+    #         if_exists = 'append', 
+    #         flavor    = 'mysql', 
+    #         index     = False
+    #         )
+    #     except:
+    #         pass
 
     ############################################################################
     ## 收盘发送交易播报的邮件通知
