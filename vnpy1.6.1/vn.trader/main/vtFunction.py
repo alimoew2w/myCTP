@@ -25,8 +25,8 @@ import pandas as pd
 pd.set_option('display.width', 200)
 pd.set_option('display.max_rows', 100)
 from pandas import DataFrame,Series
-
 from datetime import datetime
+import MySQLdb
 
 MAX_NUMBER = 10000000000000
 MAX_DECIMAL = 4
@@ -106,6 +106,43 @@ def loadMySQLSetting():
         
     return host, port, user, passwd
 
+def dbMySQLConnect(dbName):
+    host, port, user, passwd = loadMySQLSetting()
+    try:
+        conn = MySQLdb.connect(db = dbName, 
+                               host = host, 
+                               port = port, 
+                               user = user, 
+                               passwd = passwd, 
+                               use_unicode = True, 
+                               charset = "utf8")
+        return conn
+    except:
+        None
+
+#---------------------------------------------------------------------------
+def dbMySQLQuery(dbName, query):
+    """ 从 MySQL 中读取数据 """
+    host, port, user, passwd = loadMySQLSetting()
+    db    = dbName
+    query = str(query)
+
+    try:
+        conn = MySQLdb.connect(host = host, 
+                               port = port, 
+                               db = db, 
+                               user = user, 
+                               passwd = passwd, 
+                               use_unicode = True, 
+                               charset = "utf8")
+        mysqlData = pd.read_sql(query, conn)
+        return mysqlData
+    except:
+        None
+    finally:
+        conn.close()
+#---------------------------------------------------------------------------
+
 
 #-------------------------------------------------------------------------------
 def todayDate():
@@ -117,29 +154,28 @@ def todayDate():
 ## william
 ## 当前日期所对应的交易所的交易日历: tradingDay
 ################################################################################
+""" 交易日 """
+fileName = 'ChinaFuturesCalendar.csv'
+############################################################################
+## william
+path     = os.path.abspath(os.path.dirname(__file__))
+ChinaFuturesCalendar = os.path.join(path, fileName)
+############################################################################ 
+ChinaFuturesCalendar = pd.read_csv(ChinaFuturesCalendar)
+ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)    
+# print ChinaFuturesCalendar.dtypes
+ChinaFuturesCalendar.days = ChinaFuturesCalendar.days.apply(str)
+ChinaFuturesCalendar.nights = ChinaFuturesCalendar.nights.apply(str)
+for i in range(len(ChinaFuturesCalendar)):
+    ChinaFuturesCalendar.loc[i, 'nights'] = ChinaFuturesCalendar.loc[i, 'nights'].replace('.0','')
+
 def tradingDay():
-    """ 交易日 """
-    fileName = 'ChinaFuturesCalendar.csv'
-    ############################################################################
-    ## william
-    path     = os.path.abspath(os.path.dirname(__file__))
-    ChinaFuturesCalendar = os.path.join(path, fileName)
-    ############################################################################ 
-    ChinaFuturesCalendar = pd.read_csv(ChinaFuturesCalendar)
-    ChinaFuturesCalendar = ChinaFuturesCalendar[ChinaFuturesCalendar['days'].fillna(0) >= 20170101].reset_index(drop = True)    
-    # print ChinaFuturesCalendar.dtypes
-    ChinaFuturesCalendar.days = ChinaFuturesCalendar.days.apply(str)
-    ChinaFuturesCalendar.nights = ChinaFuturesCalendar.nights.apply(str)
-
-    for i in range(len(ChinaFuturesCalendar)):
-        ChinaFuturesCalendar.loc[i, 'nights'] = ChinaFuturesCalendar.loc[i, 'nights'].replace('.0','')
-
     if 8 <= datetime.now().hour < 17:
         tempRes = datetime.now().strftime("%Y%m%d")
     else:
-        temp = ChinaFuturesCalendar[ChinaFuturesCalendar['nights'] <= datetime.now().strftime("%Y%m%d")]['days']
+        temp = ChinaFuturesCalendar[ChinaFuturesCalendar['nights'] <= 
+                datetime.now().strftime("%Y%m%d")]['days']
         tempRes = temp.tail(1).values[0]
-
     return tempRes
 
 ################################################################################
