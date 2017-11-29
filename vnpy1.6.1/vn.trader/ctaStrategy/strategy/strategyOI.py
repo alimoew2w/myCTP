@@ -28,6 +28,7 @@ from datetime import *
 import time
 from eventType import *
 
+
 ################################################################################
 class OIStrategy(CtaTemplate):
     """ oiRank 交易策略 """
@@ -135,12 +136,13 @@ class OIStrategy(CtaTemplate):
         ##    value 是具体的订单, 参考
         ## ---------------------------------------------------------------------
         ## 开仓信息, 需要检测是不是当前交易日的开仓, 使用了条件筛选
-        self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery('lhg_trade',
-                            """
-                            SELECT *
-                            FROM fl_open_t_2
-                            WHERE TradingDay = '%s'
-                            """ %self.ctaEngine.lastTradingDate)
+        self.openInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM tradingSignal
+            WHERE TradingDay = '%s'
+            """ %self.ctaEngine.lastTradingDate)
         ## ---------------------------------------------------------------------
         ## 把交易日统一为当前交易日, 格式是 tradingDay, 即 20170101
         if len(self.openInfo) != 0:
@@ -177,24 +179,26 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         ## 查看当日已经交易的订单
         ## ---------------------------------------------------------------------
-        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                            """
-                            SELECT *
-                            FROM tradingInfo
-                            WHERE strategyID = '%s'
-                            AND TradingDay = '%s'
-                            """ %(self.strategyID, self.ctaEngine.tradingDay))
+        self.tradingInfo = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM tradingInfo
+            WHERE strategyID = '%s'
+            AND TradingDay = '%s'
+            """ %(self.strategyID, self.ctaEngine.tradingDay))
 
         ## =====================================================================
         conn = self.ctaEngine.mainEngine.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
-        temp = self.ctaEngine.mainEngine.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
-                            """
-                            SELECT *
-                            FROM UpperLowerInfo
-                            WHERE strategyID = '%s'
-                            AND TradingDay = '%s'
-                            """ %(self.strategyID, self.ctaEngine.tradingDate))
+        temp = self.ctaEngine.mainEngine.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM UpperLowerInfo
+            WHERE strategyID = '%s'
+            AND TradingDay = '%s'
+            """ %(self.strategyID, self.ctaEngine.tradingDate))
         self.vtOrderIDListUpperLower = list(temp.vtOrderID)
         conn.close()
 
@@ -234,9 +238,6 @@ class OIStrategy(CtaTemplate):
             print '前一日失败未成交的订单:'
             print self.tradingOrdersFailedInfo
             print '-'*80
-
-        print '#'*80
-        print '%s策略启动' %self.name
 
         print '#'*80
         print '当日开盘需要执行的订单为:'
@@ -305,9 +306,11 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersOpen, 
                                      orderIDList   = self.vtOrderIDListOpen,
                                      # priceType     = 'open',
-                                     # discount      = self.ctaEngine.mainEngine.openDiscount)
+                                     # discount      = self.ctaEngine.mainEngine.openDiscountOI,
+                                     # addTick       = self.ctaEngine.mainEngine.openAddTickOI
                                      priceType     = 'last',
-                                     addTick       = 0)
+                                     addTick       = 0
+                                     )
         ## =====================================================================
 
         ## =====================================================================
@@ -318,8 +321,7 @@ class OIStrategy(CtaTemplate):
                                      tradingOrders = self.tradingOrdersClose, 
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = 'last',
-                                     # discount      = self.ctaEngine.mainEngine.closeDiscount)
-                                     discount      = 0.0019)
+                                     addTick       = self.ctaEngine.mainEngine.closeAddTickOI)
         ## =====================================================================
 
         ## =====================================================================
@@ -406,11 +408,6 @@ class OIStrategy(CtaTemplate):
         tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
         ## ---------------------------------------------------------------------
 
-        ## ---------------------------------------------------------------------
-        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
-        tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
-        ## =====================================================================
-
         ########################################################################
         ## william
         ## 更新数量
@@ -434,6 +431,11 @@ class OIStrategy(CtaTemplate):
             self.tradingOrdersFailedInfo[tempKey]['volume'] -= self.stratTrade['volume']
             if self.tradingOrdersFailedInfo[tempKey]['volume'] == 0:
                 self.tradingOrdersFailedInfo.pop(tempKey, None)
+
+        ## ---------------------------------------------------------------------
+        tempFields = ['strategyID','InstrumentID','TradingDay','direction','volume']
+        tempRes = pd.DataFrame([[self.stratTrade[k] for k in tempFields]], columns = tempFields)
+        ## =====================================================================
 
         ## =====================================================================
         ## 2. 更新 positionInfo
@@ -477,11 +479,12 @@ class OIStrategy(CtaTemplate):
                                     WHERE strategyID = '%s'
                                    """ %(self.strategyID))
                     conn.commit()
-                    mysqlPositionInfo.to_sql(con=conn, 
-                        name      ='positionInfo', 
-                        if_exists ='append', 
-                        flavor    ='mysql', 
-                        index     = False)
+                    mysqlPositionInfo.to_sql(
+                        con       = conn, 
+                        name      = 'positionInfo', 
+                        if_exists = 'append', 
+                        flavor    = 'mysql', 
+                        index     =  False)
                     # conn.close()
                 except:
                     print "\n"+'#'*80
@@ -548,11 +551,11 @@ class OIStrategy(CtaTemplate):
                     FROM positionInfo
                     WHERE strategyID = '%s'
                     """ %(self.strategyID))
-                tempPosInfo2 = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlPositionInfo.direction == tempDirection].sort_values(by='TradingDay', ascending = True)
+                tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == self.stratTrade['InstrumentID']][mysqlPositionInfo.direction == tempDirection].sort_values(by='TradingDay', ascending = True)
                 ## ---------------------------------------------------------------------------------
-                for i in range(len(tempPosInfo2)):
-                    tempResVolume = tempPosInfo2.loc[tempPosInfo2.index[i],'volume'] - tempRes.at[0,'volume']
-                    mysqlPositionInfo.at[tempPosInfo2.index[i], 'volume'] = tempResVolume
+                for i in range(len(tempPosInfo)):
+                    tempResVolume = tempPosInfo.loc[tempPosInfo.index[i],'volume'] - tempRes.at[0,'volume']
+                    mysqlPositionInfo.at[tempPosInfo.index[i], 'volume'] = tempResVolume
                     if tempResVolume >= 0:
                         break
                 ## ---------------------------------------------------------------------------------
@@ -563,7 +566,12 @@ class OIStrategy(CtaTemplate):
                                     WHERE strategyID = '%s'
                                    """ %(self.strategyID))
                     conn.commit()                    
-                    mysqlPositionInfo.to_sql(con=conn, name='positionInfo', if_exists='append', flavor='mysql', index = False)
+                    mysqlPositionInfo.to_sql(
+                        con       = conn, 
+                        name      = 'positionInfo', 
+                        if_exists = 'append', 
+                        flavor    = 'mysql', 
+                        index     = False)
                 except:
                     print "\n"+'#'*80
                     print '写入 MySQL 数据库出错'
@@ -592,7 +600,12 @@ class OIStrategy(CtaTemplate):
                                     WHERE strategyID = '%s'
                                    """ %(self.strategyID))
                     conn.commit()
-                    mysqlFailedInfo.to_sql(con=conn, name='failedInfo', if_exists='append', flavor='mysql', index = False)
+                    mysqlFailedInfo.to_sql(
+                        con       = conn, 
+                        name      = 'failedInfo', 
+                        if_exists = 'append', 
+                        flavor    = 'mysql', 
+                        index     = False)
                 except:
                     print '\n' + '#'*80 
                     print '写入 MySQL 数据库出错'
@@ -617,61 +630,66 @@ class OIStrategy(CtaTemplate):
         # ######################################################################
 
 
-        ## =====================================================================
-        ## william
-        ## 如果有开仓的情况，则相应的发出平仓的订单，
-        ## 成交价格为　UpperLimit / LowerLimit 的 (?)
-        if (self.stratTrade['offset'] == u'开仓' and 
-            self.tradingStart):
-            ## -----------------------------------------------------------------
-            ## 1. 「开多」 --> sell@upper
-            ## 2. 「开空」 --> cover@lower
-            if self.stratTrade['direction'] == 'long':
-                tempDirection = 'sell'
-                # tempPriceType = 'upper'
-                tempPriceType = 'last'
-            elif self.stratTrade['direction'] == 'short':
-                tempDirection = 'cover'
-                # tempPriceType = 'lower'
-                tempPriceType = 'last'
-            ## -----------------------------------------------------------------
-            tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
-            ## -----------------------------------------------------------------
-            ## 生成 tradingOrdersUpperLower
-            self.tradingOrdersUpperLower[tempKey] = {
-                    'vtSymbol'   : self.stratTrade['vtSymbol'],
-                    'direction'  : tempDirection,
-                    'volume'     : self.stratTrade['volume'],
-                    'TradingDay' : self.stratTrade['TradingDay']
-            }
-            ## -----------------------------------------------------------------
+        # ## =====================================================================
+        # ## william
+        # ## 如果有开仓的情况，则相应的发出平仓的订单，
+        # ## 成交价格为　UpperLimit / LowerLimit 的 (?)
+        # tempKey = self.stratTrade['vtSymbol'] + '-' + self.stratTrade['direction']
+        # print 'hello'
+        # print self.ctaEngine.mainEngine.drEngine.positionInfo
+        # if ((self.stratTrade['offset'] == u'开仓') and self.tradingStart and
+        #     (self.ctaEngine.mainEngine.drEngine.positionInfo[tempKey]['position'] != 0)):
+        #     print 'hello'
+        #     print self.ctaEngine.mainEngine.drEngine.positionInfo
+        #     ## -----------------------------------------------------------------
+        #     ## 1. 「开多」 --> sell@upper
+        #     ## 2. 「开空」 --> cover@lower
+        #     if self.stratTrade['direction'] == 'long':
+        #         tempDirection = 'sell'
+        #         # tempPriceType = 'upper'
+        #         tempPriceType = 'last'
+        #     elif self.stratTrade['direction'] == 'short':
+        #         tempDirection = 'cover'
+        #         # tempPriceType = 'lower'
+        #         tempPriceType = 'last'
+        #     ## -----------------------------------------------------------------
+        #     tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
+        #     ## -----------------------------------------------------------------
+        #     ## 生成 tradingOrdersUpperLower
+        #     self.tradingOrdersUpperLower[tempKey] = {
+        #             'vtSymbol'   : self.stratTrade['vtSymbol'],
+        #             'direction'  : tempDirection,
+        #             'volume'     : self.stratTrade['volume'],
+        #             'TradingDay' : self.stratTrade['TradingDay']
+        #     }
+        #     ## -----------------------------------------------------------------
             
-            ## -----------------------------------------------------------------
-            if self.stratTrade['vtSymbol'] in ['i1801','jm1801']:
-                tempAddTick = -1
-            else:
-                tempAddTick = -2
-            ## -----------------------------------------------------------------
+        #     ## -----------------------------------------------------------------
+        #     if self.stratTrade['vtSymbol'] in ['i1805']:
+        #         tempAddTick = -2
+        #     else:
+        #         tempAddTick = -4
+        #     ## -----------------------------------------------------------------
 
-            self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
-                                     tradingOrders = self.tradingOrdersUpperLower, 
-                                     orderIDList   = self.vtOrderIDListUpperLower,
-                                     priceType     = tempPriceType,
-                                     addTick       = tempAddTick)
-            ## -----------------------------------------------------------------
-            ## 获得 vtOrderID
-            tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
-            tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
-            tempRes.insert(1,'strategyID', self.strategyID)
-            tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
-            try:
-                tempRes.to_sql(con=conn, name='UpperLowerInfo', 
-                               if_exists='append', flavor='mysql', index = False)
-            except:
-                print "\n"+'#'*80
-                print '写入 MySQL 数据库出错'
-                print '#'*80+"\n"
-        ## =====================================================================
+        #     self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
+        #                              tradingOrders = self.tradingOrdersUpperLower, 
+        #                              orderIDList   = self.vtOrderIDListUpperLower,
+        #                              priceType     = tempPriceType,
+        #                              addTick       = tempAddTick)
+        #     ## -----------------------------------------------------------------
+        #     ## 获得 vtOrderID
+        #     tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
+        #     tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
+        #     tempRes.insert(1,'strategyID', self.strategyID)
+        #     tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
+        #     try:
+        #         tempRes.to_sql(con=conn, name='UpperLowerInfo', 
+        #                        if_exists='append', flavor='mysql', index = False)
+        #     except:
+        #         print "\n"+'#'*80
+        #         print '写入 MySQL 数据库出错'
+        #         print '#'*80+"\n"
+        # ## =====================================================================
 
         conn.close()
 
@@ -698,184 +716,7 @@ class OIStrategy(CtaTemplate):
     ## 从 MySQL 数据库读取策略持仓信息
     ############################################################################
     def generateTradingOrders(self):
-        """
-        初始化交易订单
-        """
-        ## =====================================================================
-        ## 策略初始化
-        ## 对订单进行预先处理
-        ## =====================================================================
-        if len(self.positionInfo) != 0:
-            self.positionInfoToday = self.positionInfo[self.positionInfo.TradingDay == self.ctaEngine.tradingDate]
-
-            if len(self.positionInfoToday) != 0:
-                for i in self.positionInfoToday.index:
-                    if self.positionInfoToday.at[i,'direction'] == 'long':
-                        tempDirection = 1
-                    elif self.positionInfoToday.at[i,'direction'] == 'short':
-                        tempDirection = -1
-
-                    tempOpenInfo = self.openInfo[self.openInfo.InstrumentID == self.positionInfoToday.at[i,'InstrumentID']][self.openInfo.direction == tempDirection]
-                    if len(tempOpenInfo) != 0:
-                        self.openInfo.at[tempOpenInfo.index[0],'volume'] -= self.positionInfoToday.at[i,'volume']
-                ## -------------------------------------------------------------
-                self.openInfo.drop(self.openInfo[self.openInfo.volume == 0].index, inplace = True)
-                self.openInfo = self.openInfo.reset_index(drop=True)
-
-        if len(self.failedInfo) == 0:
-            if len(self.openInfo) != 0:
-                for i in range(len(self.openInfo)):
-                    ## direction
-                    if self.openInfo.at[i, 'direction'] == 1:
-                        tempDirection = 'buy'
-                    elif self.openInfo.at[i, 'direction'] == -1:
-                        tempDirection = 'short'
-                    self.tradingOrdersOpen[self.openInfo.at[i,'InstrumentID'] + '-' + tempDirection] = {
-                        'vtSymbol': self.openInfo.at[i, 'InstrumentID'],
-                        'direction': tempDirection,
-                        'volume': self.openInfo.at[i, 'volume'],
-                        'TradingDay': self.openInfo.at[i, 'TradingDay'],
-                        'orderNo': 0
-                    }
-            else:
-                pass
-        else:
-            if len(self.openInfo) == 0: 
-                for i in range(len(self.failedInfo)):
-                    ## direction
-                    if self.failedInfo.at[i, 'direction'] == 'long':
-                        tempDirection = 'cover'
-                    elif self.failedInfo.at[i, 'direction'] == 'short':
-                        tempDirection = 'sell'
-                    self.tradingOrdersOpen[self.failedInfo.at[i,'InstrumentID'] + '-' + tempDirection] = {
-                        'vtSymbol': self.failedInfo.at[i, 'InstrumentID'],
-                        'direction': tempDirection,
-                        'volume': self.failedInfo.at[i, 'volume'],
-                        'TradingDay': self.failedInfo.at[i, 'TradingDay'],
-                        'orderNo': 0
-                    }
-            else:
-                self.x = list(set(self.failedInfo.InstrumentID.values) & set(self.openInfo.InstrumentID.values))
-                self.y = [i for i in self.failedInfo.InstrumentID.values if i not in self.openInfo.InstrumentID.values]
-                self.z = [i for i in self.openInfo.InstrumentID.values if i not in self.failedInfo.InstrumentID.values]
-
-                # print x
-                # print y
-                # print z
-
-                if len(self.x) != 0:
-                    for i in self.x:
-                        tempFailedVolume = int(self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'volume'].values)
-                        tempOpenVolume = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'])
-                        tempDiffVolume = tempFailedVolume - tempOpenVolume
-                        tempFailedTradingDay = self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'TradingDay'].values[0]
-                        tempOpenTraingDay = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
-
-                        if self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'direction'].values == 'long':
-                            if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
-                                tempDirection1 = 'cover'
-                                tempVolume1 = tempFailedVolume
-                                tempKey1 = i + '-' + tempDirection1
-                                tempTradingDay1 = tempFailedTradingDay
-                                self.tradingOrdersOpen[tempKey1] = {'vtSymbol':i,
-                                                          'direction':tempDirection1,
-                                                          'volume':tempVolume1,
-                                                          'TradingDay':tempTradingDay1,
-                                                          'orderNo': 0}
-
-                                tempDirection2 = 'buy'
-                                tempVolume2 = tempOpenVolume
-                                tempKey2 = i + '-' + tempDirection2
-                                tempTradingDay2 = tempOpenTraingDay
-                                self.tradingOrdersOpen[tempKey2] = {'vtSymbol':i,
-                                                          'direction':tempDirection2,
-                                                          'volume':tempVolume2,
-                                                          'TradingDay':tempTradingDay2,
-                                                          'orderNo': 0}
-                            elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
-                                if tempDiffVolume > 0:
-                                    tempDirection = 'cover'
-                                    tempTradingDay = tempFailedTradingDay
-                                else:
-                                    tempDirection = 'short'
-                                    tempTradingDay = tempOpenTraingDay
-                                tempKey = i + '-' + tempDirection
-                                self.tradingOrdersOpen[tempKey] = {'vtSymbol':i,
-                                                          'direction':tempDirection,
-                                                          'volume':abs(tempDiffVolume),
-                                                          'TradingDay':tempTradingDay,
-                                                          'orderNo': 0}   
-                        elif self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'direction'].values == 'short':
-                            if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
-                                if tempDiffVolume > 0:
-                                    tempDirection = 'sell'
-                                    tempTradingDay = tempFailedTradingDay
-                                else:
-                                    tempDirection = 'buy'
-                                    tempTradingDay = tempOpenTraingDay
-                                tempKey = i + '-' + tempDirection
-                                self.tradingOrdersOpen[tempKey] = {'vtSymbol':i,
-                                                          'direction':tempDirection,
-                                                          'volume':abs(tempDiffVolume),
-                                                          'TradingDay':tempTradingDay,
-                                                          'orderNo': 0}
-                            elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
-                                tempDirection1 = 'sell'
-                                tempVolume1 = tempFailedVolume
-                                tempKey1 = i + '-' + tempDirection1
-                                tempTradingDay1 = tempFailedTradingDay
-                                self.tradingOrdersOpen[tempKey1] = {'vtSymbol':i,
-                                                          'direction':tempDirection1,
-                                                          'volume':tempVolume1,
-                                                          'TradingDay':tempTradingDay1,
-                                                          'orderNo': 0}
-
-                                tempDirection2 = 'short'
-                                tempVolume2 = tempOpenVolume
-                                tempKey2 = i + '-' + tempDirection2
-                                tempTradingDay2 = tempOpenTraingDay
-                                self.tradingOrdersOpen[tempKey2] = {'vtSymbol':i,
-                                                          'direction':tempDirection2,
-                                                          'volume':tempVolume2,
-                                                          'TradingDay':tempTradingDay2,
-                                                          'orderNo': 0}
-
-                ## 
-                if len(self.y) != 0:
-                    for i in self.y:
-                        ## direction
-                        if self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'direction'].values == 'long':
-                            tempDirection = 'cover'
-                        elif self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'direction'].values == 'short':
-                            tempDirection = 'sell'
-                        tempVolume = int(self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'volume'].values)
-                        tempKey = i + '-' + tempDirection
-                        tempTradingDay = self.failedInfo.loc[self.failedInfo.InstrumentID == i, 'TradingDay'].values[0]
-                        self.tradingOrdersOpen[tempKey] = {'vtSymbol':i,
-                                                  'direction':tempDirection,
-                                                  'volume':tempVolume,
-                                                  'TradingDay':tempTradingDay,
-                                                  'orderNo': 0}
-                ##
-                
-                if len(self.z) != 0:
-                    for i in self.z:
-                        ## -----------------------------------------------------
-                        ## direction
-                        if self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == 1:
-                            tempDirection = 'buy'
-                        elif self.openInfo.loc[self.openInfo.InstrumentID == i, 'direction'].values == -1:
-                            tempDirection = 'short'
-                        ## -----------------------------------------------------
-                        ## volume
-                        tempVolume = int(self.openInfo.loc[self.openInfo.InstrumentID == i, 'volume'].values)
-                        tempKey = i + '-' + tempDirection
-                        tempTradingDay = self.openInfo.loc[self.openInfo.InstrumentID == i, 'TradingDay'].values[0]
-                        self.tradingOrdersOpen[tempKey] = {'vtSymbol':i,
-                                                  'direction':tempDirection,
-                                                  'volume':tempVolume,
-                                                  'TradingDay':tempTradingDay,
-                                                  'orderNo': 0}
+        pass
 
     ############################################################################
     ## william
@@ -939,8 +780,6 @@ class OIStrategy(CtaTemplate):
     ############################################################################
     def updateTradingStatus(self, event):
         ## =====================================================================
-        if not self.trading:
-            return 
         tradingCloseHour    = 14
         tradingCloseMinute1 = 50
         tradingCloseMinute2 = 59
