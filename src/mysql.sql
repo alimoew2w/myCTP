@@ -4,7 +4,7 @@
 ################################################################################
 create table positionInfo(
     strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(20)     NOT NULL,
+    InstrumentID    CHAR(30)     NOT NULL,
     TradingDay      DATE         NOT NULL,
     direction       CHAR(20)     NOT NULL,
     volume          INT          NULL,
@@ -17,7 +17,7 @@ create table positionInfo(
 ################################################################################
 create table tradingInfo(
     strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    VARCHAR(20)  NOT NULL,
+    InstrumentID    VARCHAR(30)  NOT NULL,
     TradingDay      DATE         NOT NULL,
     tradeTime       DATETIME     NOT NULL,
     direction       CHAR(20)     NOT NULL,
@@ -38,7 +38,7 @@ create table tradingInfo(
 ################################################################################
 create table failedInfo(
     strategyID      CHAR(50)      NOT NULL,
-    InstrumentID    CHAR(20)      NOT NULL,
+    InstrumentID    CHAR(30)      NOT NULL,
     TradingDay      DATE          NOT NULL,
     direction       CHAR(20)      NOT NULL,
     offset          CHAR(20)      NOT NULL,
@@ -54,7 +54,7 @@ create table orderInfo(
     TradingDay      DATE         NOT NULL,
     strategyID      CHAR(50)     NOT NULL,
     vtOrderID       CHAR(50)     NOT NULL,    
-    InstrumentID    CHAR(20)     NOT NULL,
+    InstrumentID    CHAR(30)     NOT NULL,
     orderTime       TIME         NOT NULL,
     status          CHAR(50)     ,
     direction       CHAR(20)     ,
@@ -75,7 +75,7 @@ create table orderInfo(
 create table tradingOrders(
     TradingDay      DATE         NOT NULL,
     strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(20)     NOT NULL,
+    InstrumentID    CHAR(30)     NOT NULL,
     orderType       CHAR(50)     NOT NULL,
     volume          BIGINT       NOT NULL,
     stage           CHAR(20)     NOT NULL,
@@ -98,5 +98,66 @@ create table workingInfo(
     PRIMARY KEY(TradingDay, strategyID, vtSymbol, orderType, stage)
 );
 
+################################################################################
+## pnl
+## 记录正在进行的订单
+################################################################################
+create table pnl(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    InstrumentID    CHAR(30)     NOT NULL,
+    pnl             DECIMAL(15,3),
+    PRIMARY KEY(TradingDay, strategyID, InstrumentID)
+);
 
 
+################################################################################
+## signal
+## 记录策略信号
+################################################################################
+create table tradingSignal(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    InstrumentID    CHAR(30)     NOT NULL,
+    volume          BIGINT       NOT NULL,
+    direction       CHAR(20)     NOT NULL,
+    PRIMARY KEY(TradingDay, strategyID, InstrumentID, direction)
+);
+
+
+################################################################################
+## report_account
+## 记录策略信号
+################################################################################
+
+
+
+################################################################################
+## nav
+## 记录基金净值
+################################################################################
+create table nav(
+    TradingDay      DATE          NOT NULL,
+    Futures         DECIMAL(15,5) NOT NULL,
+    Currency        DECIMAL(15,5) ,
+    Bank            DECIMAL(15,5) ,
+    Assets          DECIMAL(15,5) NOT NULL,
+    Shares          BIGINT        NOT NULL,
+    NAV             DECIMAL(15,5) NOT NULL,
+    GrowthRate      DECIMAL(10,5) NOT NULL,
+    Remarks         text(1000)
+);
+
+
+################################################################################
+## UpperLower
+## 记录涨跌停下单平仓的信息
+################################################################################
+create table UpperLowerInfo(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)  NOT NULL,
+    vtOrderID       CHAR(50)     NOT NULL,
+    direction       CHAR(20)     ,
+    volume          INT          
+);
