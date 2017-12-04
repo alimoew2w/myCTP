@@ -481,24 +481,31 @@ class CtaTemplate(object):
         if (tempBestPrice <= 0 or tempBestPrice > 10000000):
             return None
         ## =====================================================================
-        tempPrice = self.priceBetweenUpperLower(min(tempBestPrice * (1-discount), tempLastPrice) + 
-                                                    tempPriceTick * addTick, tempInstrumentID)
+
         ########################################################################
         if tempDirection == 'buy':
             ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
             # tempPrice = min(min(tempBestPrice * (1-discount), tempLastPrice) + tempPriceTick * addTick, tempUpperLimit)
+            tempPrice = self.priceBetweenUpperLower(min(tempBestPrice * (1-discount), tempLastPrice) + 
+                                                        tempPriceTick * addTick, tempInstrumentID)
             vtOrderID = self.buy(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
         elif tempDirection == 'short':
             ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
             # tempPrice = max(max(tempBestPrice * (1+discount), tempLastPrice) - tempPriceTick * addTick, tempLowerLimit)
+            tempPrice = self.priceBetweenUpperLower(min(tempBestPrice * (1-discount), tempLastPrice) - 
+                                                        tempPriceTick * addTick, tempInstrumentID)
             vtOrderID = self.short(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
         elif tempDirection == 'cover':
             ## 如果是买入, AskPrice 需要增加一个 priceTick 的滑点
             # tempPrice = min(min(tempBestPrice * (1-discount), tempLastPrice) + tempPriceTick * addTick, tempUpperLimit)
+            tempPrice = self.priceBetweenUpperLower(min(tempBestPrice * (1-discount), tempLastPrice) + 
+                                                        tempPriceTick * addTick, tempInstrumentID)
             vtOrderID = self.cover(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
         elif tempDirection == 'sell':
             ## 如果是卖出, BidPrice 需要减少一个 priceTick 的滑点
             # tempPrice = max(max(tempBestPrice * (1+discount), tempLastPrice) - tempPriceTick * addTick, tempLowerLimit)
+            tempPrice = self.priceBetweenUpperLower(min(tempBestPrice * (1-discount), tempLastPrice) - 
+                                                        tempPriceTick * addTick, tempInstrumentID)
             vtOrderID = self.sell(vtSymbol = tempInstrumentID, price = tempPrice, volume = tempVolume)
         ## ---------------------------------------------------------------------
         orderIDList.append(vtOrderID)
