@@ -28,6 +28,8 @@ from datetime import *
 import time
 from eventType import *
 
+import threading
+
 
 ################################################################################
 class OIStrategy(CtaTemplate):
@@ -629,18 +631,11 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         # ######################################################################
 
-
-        # ## =====================================================================
-        # ## william
-        # ## 如果有开仓的情况，则相应的发出平仓的订单，
-        # ## 成交价格为　UpperLimit / LowerLimit 的 (?)
-        # tempKey = self.stratTrade['vtSymbol'] + '-' + self.stratTrade['direction']
-        # print 'hello'
-        # print self.ctaEngine.mainEngine.drEngine.positionInfo
-        # if ((self.stratTrade['offset'] == u'开仓') and self.tradingStart and
-        #     (self.ctaEngine.mainEngine.drEngine.positionInfo[tempKey]['position'] != 0)):
-        #     print 'hello'
-        #     print self.ctaEngine.mainEngine.drEngine.positionInfo
+        # if ((self.stratTrade['offset'] == u'开仓') and self.tradingStart and 
+        #     (trade.vtOrderID in self.vtOrderIDListOpen) ):
+        #     # time.sleep(1)
+        #     # print 'hello'
+        #     # time.sleep(10)
         #     ## -----------------------------------------------------------------
         #     ## 1. 「开多」 --> sell@upper
         #     ## 2. 「开空」 --> cover@lower
@@ -671,25 +666,72 @@ class OIStrategy(CtaTemplate):
         #         tempAddTick = -4
         #     ## -----------------------------------------------------------------
 
+        #     # UpperLowerDelayTreading = threading.Timer(30,
         #     self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
         #                              tradingOrders = self.tradingOrdersUpperLower, 
         #                              orderIDList   = self.vtOrderIDListUpperLower,
         #                              priceType     = tempPriceType,
         #                              addTick       = tempAddTick)
+        #     # )
+
+        #     # UpperLowerDelayTreading.start()
         #     ## -----------------------------------------------------------------
-        #     ## 获得 vtOrderID
-        #     tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
-        #     tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
-        #     tempRes.insert(1,'strategyID', self.strategyID)
-        #     tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
-        #     try:
-        #         tempRes.to_sql(con=conn, name='UpperLowerInfo', 
-        #                        if_exists='append', flavor='mysql', index = False)
-        #     except:
-        #         print "\n"+'#'*80
-        #         print '写入 MySQL 数据库出错'
-        #         print '#'*80+"\n"
-        # ## =====================================================================
+
+
+        ## =====================================================================
+        ## william
+        ## 如果有开仓的情况，则相应的发出平仓的订单，
+        ## 成交价格为　UpperLimit / LowerLimit 的 (?)
+        if ((self.stratTrade['offset'] == u'开仓') and self.tradingStart):
+            ## -----------------------------------------------------------------
+            ## 1. 「开多」 --> sell@upper
+            ## 2. 「开空」 --> cover@lower
+            if self.stratTrade['direction'] == 'long':
+                tempDirection = 'sell'
+                # tempPriceType = 'upper'
+                tempPriceType = 'last'
+            elif self.stratTrade['direction'] == 'short':
+                tempDirection = 'cover'
+                # tempPriceType = 'lower'
+                tempPriceType = 'last'
+            ## -----------------------------------------------------------------
+            tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
+            ## -----------------------------------------------------------------
+            ## 生成 tradingOrdersUpperLower
+            self.tradingOrdersUpperLower[tempKey] = {
+                    'vtSymbol'   : self.stratTrade['vtSymbol'],
+                    'direction'  : tempDirection,
+                    'volume'     : self.stratTrade['volume'],
+                    'TradingDay' : self.stratTrade['TradingDay']
+            }
+            ## -----------------------------------------------------------------
+            
+            ## -----------------------------------------------------------------
+            if self.stratTrade['vtSymbol'] in ['i1805']:
+                tempAddTick = -2
+            else:
+                tempAddTick = -5
+            ## -----------------------------------------------------------------
+            time.sleep(0.2)
+            self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
+                                     tradingOrders = self.tradingOrdersUpperLower, 
+                                     orderIDList   = self.vtOrderIDListUpperLower,
+                                     priceType     = tempPriceType,
+                                     addTick       = tempAddTick)
+            # -----------------------------------------------------------------
+            # 获得 vtOrderID
+            tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
+            tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
+            tempRes.insert(1,'strategyID', self.strategyID)
+            tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
+            try:
+                tempRes.to_sql(con=conn, name='UpperLowerInfo', 
+                               if_exists='append', flavor='mysql', index = False)
+            except:
+                print "\n"+'#'*80
+                print '写入 MySQL 数据库出错'
+                print '#'*80+"\n"
+        ## =====================================================================
 
         conn.close()
 
