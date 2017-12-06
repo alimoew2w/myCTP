@@ -28,7 +28,7 @@ from datetime import *
 import time
 from eventType import *
 
-import threading
+import re
 
 
 ################################################################################
@@ -631,52 +631,6 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         # ######################################################################
 
-        # if ((self.stratTrade['offset'] == u'开仓') and self.tradingStart and 
-        #     (trade.vtOrderID in self.vtOrderIDListOpen) ):
-        #     # time.sleep(1)
-        #     # print 'hello'
-        #     # time.sleep(10)
-        #     ## -----------------------------------------------------------------
-        #     ## 1. 「开多」 --> sell@upper
-        #     ## 2. 「开空」 --> cover@lower
-        #     if self.stratTrade['direction'] == 'long':
-        #         tempDirection = 'sell'
-        #         # tempPriceType = 'upper'
-        #         tempPriceType = 'last'
-        #     elif self.stratTrade['direction'] == 'short':
-        #         tempDirection = 'cover'
-        #         # tempPriceType = 'lower'
-        #         tempPriceType = 'last'
-        #     ## -----------------------------------------------------------------
-        #     tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
-        #     ## -----------------------------------------------------------------
-        #     ## 生成 tradingOrdersUpperLower
-        #     self.tradingOrdersUpperLower[tempKey] = {
-        #             'vtSymbol'   : self.stratTrade['vtSymbol'],
-        #             'direction'  : tempDirection,
-        #             'volume'     : self.stratTrade['volume'],
-        #             'TradingDay' : self.stratTrade['TradingDay']
-        #     }
-        #     ## -----------------------------------------------------------------
-            
-        #     ## -----------------------------------------------------------------
-        #     if self.stratTrade['vtSymbol'] in ['i1805']:
-        #         tempAddTick = -2
-        #     else:
-        #         tempAddTick = -4
-        #     ## -----------------------------------------------------------------
-
-        #     # UpperLowerDelayTreading = threading.Timer(30,
-        #     self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
-        #                              tradingOrders = self.tradingOrdersUpperLower, 
-        #                              orderIDList   = self.vtOrderIDListUpperLower,
-        #                              priceType     = tempPriceType,
-        #                              addTick       = tempAddTick)
-        #     # )
-
-        #     # UpperLowerDelayTreading.start()
-        #     ## -----------------------------------------------------------------
-
 
         ## =====================================================================
         ## william
@@ -688,12 +642,10 @@ class OIStrategy(CtaTemplate):
             ## 2. 「开空」 --> cover@lower
             if self.stratTrade['direction'] == 'long':
                 tempDirection = 'sell'
-                # tempPriceType = 'upper'
-                tempPriceType = 'last'
+                tempPriceType = 'upper'
             elif self.stratTrade['direction'] == 'short':
                 tempDirection = 'cover'
-                # tempPriceType = 'lower'
-                tempPriceType = 'last'
+                tempPriceType = 'lower'
             ## -----------------------------------------------------------------
             tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
             ## -----------------------------------------------------------------
@@ -705,14 +657,19 @@ class OIStrategy(CtaTemplate):
                     'TradingDay' : self.stratTrade['TradingDay']
             }
             ## -----------------------------------------------------------------
-            
+            time.sleep(0.5)
             ## -----------------------------------------------------------------
-            if self.stratTrade['vtSymbol'] in ['i1805']:
-                tempAddTick = -2
-            else:
-                tempAddTick = -5
+            # if re.sub('[0-9]', '', self.stratTrade['vtSymbol']) in ['i','jm','j']:
+            #     tempAddTick = -2
+            # elif re.sub('[0-9]', '', self.stratTrade['vtSymbol']) in ['rb']:
+            #     tempAddTick = -10
+            # else:
+            #     tempAddTick = -5
             ## -----------------------------------------------------------------
-            time.sleep(0.2)
+            tempAddTick = 1
+            ## -----------------------------------------------------------------
+
+            ## -----------------------------------------------------------------
             self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
                                      tradingOrders = self.tradingOrdersUpperLower, 
                                      orderIDList   = self.vtOrderIDListUpperLower,
@@ -721,7 +678,8 @@ class OIStrategy(CtaTemplate):
             # -----------------------------------------------------------------
             # 获得 vtOrderID
             tempFields = ['TradingDay','vtSymbol','vtOrderID','direction','volume']
-            tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], columns = tempFields)
+            tempRes = pd.DataFrame([[self.tradingOrdersUpperLower[tempKey][k] for k in tempFields]], 
+                                   columns = tempFields)
             tempRes.insert(1,'strategyID', self.strategyID)
             tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
             try:
@@ -739,7 +697,8 @@ class OIStrategy(CtaTemplate):
         ## 处理 MySQL 数据库的 tradingOrders
         ## 如果成交了，需要从这里面再删除交易订单
         ############################################################################################
-        if trade.vtOrderID in list(set(self.vtOrderIDListOpen) | set(self.vtOrderIDListClose)) and self.ctaEngine.mainEngine.multiStrategy:
+        if (trade.vtOrderID in list(set(self.vtOrderIDListOpen) | set(self.vtOrderIDListClose)) and 
+            self.ctaEngine.mainEngine.multiStrategy):
             self.updateTradingOrdersTable(self.stratTrade)
         # 发出状态更新事件
         self.putEvent()
