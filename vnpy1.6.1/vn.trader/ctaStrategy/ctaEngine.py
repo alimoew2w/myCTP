@@ -37,11 +37,12 @@ import vtFunction
 import pandas as pd
 from datetime import *
 
+import globalSetting
 
 ####################################################################################################
 class CtaEngine(object):
     """CTA策略引擎"""
-    
+
     ## =============================================================================================
     ## CTA 策略配置
     ## -------------------------------------------------------------------------
@@ -54,9 +55,11 @@ class CtaEngine(object):
     ## =============================================================================================
     def __init__(self, mainEngine, eventEngine):
         """Constructor"""
+        global globalSetting
+        # print globalSetting.accountID
+
         self.mainEngine  = mainEngine
         self.eventEngine = eventEngine
-
         ## =========================================================================================
         ## william
         ## 有关日期的设置
@@ -157,15 +160,16 @@ class CtaEngine(object):
         ## william
         ## 需要订阅的合约
         self.subscribeContracts = []
-        for dbName in ['FL_SimNow','TianMi1','TianMi2','TianMi3','YunYang1']:
+        # for dbName in ['FL_SimNow','TianMi1','TianMi2','TianMi3','YunYang1']:
+        for dbName in [globalSetting.accountID]:
             for tbName in ['positionInfo','failedInfo','tradingSignal']:
                 try:
                     temp = self.fetchInstrumentID(dbName, tbName)
                     self.subscribeContracts = list(set(self.subscribeContracts) | set(temp))
                 except:
                     None
-        self.subscribeContracts = list(set(self.subscribeContracts) | 
-                                       set(self.mainContracts))
+        # self.subscribeContracts = list(set(self.subscribeContracts) | 
+        #                                set(self.mainContracts))
         self.tickInfo = {}
         
         ## =========================================================================================
@@ -250,8 +254,10 @@ class CtaEngine(object):
                 req.offset = OFFSET_CLOSETODAY
                 req.volume = min(req.volume, posBuffer.longToday)
             # 其他情况使用平昨
+            # else:
+            #     req.offset = OFFSET_CLOSE
             else:
-                req.offset = OFFSET_CLOSE
+                req.offset = OFFSET_CLOSETODAY
 
         elif orderType == CTAORDER_SHORT:
             req.direction = DIRECTION_SHORT
@@ -275,9 +281,10 @@ class CtaEngine(object):
                 req.offset = OFFSET_CLOSETODAY
                 req.volume = min(req.volume, posBuffer.shortToday)
             # 其他情况使用平昨
+            # else:
+            #     req.offset = OFFSET_CLOSE
             else:
-                req.offset = OFFSET_CLOSE
-
+                req.offset = OFFSET_CLOSETODAY
         ########################################################################
         ## william
         ## 发单
