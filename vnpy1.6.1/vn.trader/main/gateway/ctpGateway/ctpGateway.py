@@ -81,13 +81,22 @@ statusMap[STATUS_NOTTRADED]  = defineDict["THOST_FTDC_OST_NoTradeQueueing"]
 statusMap[STATUS_CANCELLED]  = defineDict["THOST_FTDC_OST_Canceled"]
 statusMapReverse             = {v:k for k,v in statusMap.items()}
 
-
+import globalSetting
 ########################################################################
 class CtpGateway(VtGateway):
     """CTP接口"""
 
+    ## 最后一个数据
+    lastTickDict = {}
+    ## 仓位信息
+    posInfoDict  = {}
+    initialCapation = 0
     #----------------------------------------------------------------------
     def __init__(self, eventEngine, gatewayName='CTP'):
+        global globalSetting
+        # print 'hello'
+        # print globalSetting.accountID
+        # print globalSetting.accountName
         """Constructor"""
         super(CtpGateway, self).__init__(eventEngine, gatewayName)
 
@@ -334,7 +343,10 @@ class CtpMdApi(MdApi):
         self.password          = EMPTY_STRING             # 密码
         self.brokerID          = EMPTY_STRING             # 经纪商代码
         self.address           = EMPTY_STRING             # 服务器地址
-
+        # self.lastTickDict     = {}
+        self.lastTickFileds    = ['vtSymbol',
+                                  'lastPrice', 'bidPrice1', 'askPrice1',
+                                  'bidVolume1', 'askVolume1']
         ########################################################################
         ## william
         ## 定义了当天的交易日
@@ -524,6 +536,10 @@ class CtpMdApi(MdApi):
         ########################################################################
         ## william
         ## tick 数据返回到 /vn.trader/vtEngine.onTick()
+        self.gateway.lastTickDict[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
+        # print self.gateway.lastTickDict[tick.vtSymbol]
+        # print 'hello'
+        # print lastTickDict[tick.vtSymbol]
         self.gateway.onTick(tick)
         ########################################################################
 
@@ -610,6 +626,7 @@ class CtpTdApi(TdApi):
 
     #----------------------------------------------------------------------
     def __init__(self, gateway):
+        global globalSetting
         """API对象的初始化函数"""
         super(CtpTdApi, self).__init__()
 
@@ -639,6 +656,7 @@ class CtpTdApi(TdApi):
         
         self.contractDict          = {}
         self.tradeOrderDict        = {}
+        self.posInfoFields         = ['vtSymbol', 'PosiDirection', 'position']
         ########################################################################
         ## william
 
@@ -855,7 +873,7 @@ class CtpTdApi(TdApi):
         """持仓查询回报"""
         if not data['InstrumentID']:
             return 
-
+        # print data
         # 获取持仓缓存对象
         posName = '.'.join([data['InstrumentID'], data['PosiDirection']])
         if posName in self.posDict:
@@ -868,6 +886,7 @@ class CtpTdApi(TdApi):
             pos.vtSymbol          = pos.symbol
             pos.direction         = posiDirectionMapReverse.get(data['PosiDirection'], '')
             pos.vtPositionName    = '.'.join([pos.vtSymbol, pos.direction])
+            pos.commission        = data['Commission']
 
         # 针对上期所持仓的今昨分条返回（有昨仓、无今仓），读取昨仓数据
         if data['YdPosition'] and not data['TodayPosition']:
@@ -914,6 +933,18 @@ class CtpTdApi(TdApi):
         else:
             pos.frozen += data['ShortFrozen']
 
+        ## =====================================================================
+        try:
+            tempPrice = self.gateway.lastTickDict[pos.vtSymbol]['lastPrice']
+        except:
+            tempPrice = pos.price
+        self.gateway.posInfoDict[pos.vtSymbol] = {'vtSymbol':pos.vtSymbol,
+                                                  'position':pos.position,
+                                                  'price':tempPrice,
+                                                  'size':pos.size}
+        ## =====================================================================
+        pos.value = format(tempPrice * pos.size * pos.position, ',')
+
         # 查询回报结束
         if last:
             # 遍历推送
@@ -933,16 +964,25 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspQryTradingAccount(self, data, error, n, last):
         """资金账户查询回报"""
+        # print 'hello'
+        # print data
         account             = VtAccountData()
         account.gatewayName = self.gatewayName
 
         # 账户代码
         account.accountID   = data['AccountID']
+        account.accountName = globalSetting.accountName
         account.vtAccountID = '.'.join([self.gatewayName, account.accountID])
 
         # 数值相关
         account.preBalance     = data['PreBalance']
         account.available      = data['Available']
+        account.value          = sum(
+                                    [self.gateway.posInfoDict[k]['position'] * self.gateway.posInfoDict[k]['price'] * self.gateway.posInfoDict[k]['size'] for k in self.gateway.posInfoDict.keys()]
+                                    )
+        if self.gateway.initialCapation:
+            account.leverage   = round(account.value / self.gateway.initialCapation,2)  
+        account.value          = format(account.value, ',')     
         account.commission     = data['Commission']
         account.margin         = data['CurrMargin']
         account.closeProfit    = data['CloseProfit']
@@ -953,12 +993,8 @@ class CtpTdApi(TdApi):
                            data['Mortgage'] - data['Withdraw'] + data['Deposit'] +
                            data['CloseProfit'] + data['PositionProfit'] + data['CashIn'] -
                            data['Commission'])
-        '''
-        print "#######################################################################"
-        print "资金账户查询回报"
-        print account.vtAccountID, account.positionProfit
-        print "#######################################################################"
-        '''
+        if self.gateway.initialCapation:
+            account.nav = round(account.balance / self.gateway.initialCapation,4)
         # 推送
         self.gateway.onAccount(account)
 
