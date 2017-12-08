@@ -177,6 +177,29 @@ class AskCell(QtGui.QTableWidgetItem):
         """设置内容"""
         self.setText(text)
 
+
+########################################################################
+class LastCell(QtGui.QTableWidgetItem):
+    """买价单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(LastCell, self).__init__()
+        self.data = None
+
+        # self.setForeground(QtGui.QColor('black'))
+        self.setForeground(QtGui.QColor(77, 255, 255))
+        self.setBackground(QtGui.QColor(0, 153, 153))
+        
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+
 ########################################################################
 class PnlCell(QtGui.QTableWidgetItem):
     """显示盈亏的单元格"""
@@ -210,6 +233,60 @@ class PnlCell(QtGui.QTableWidgetItem):
         except ValueError:
             pass
 
+########################################################################
+class NAVCell(QtGui.QTableWidgetItem):
+    """显示盈亏的单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(NAVCell, self).__init__()
+        self.data = None
+        self.color = ''
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+
+        try:
+            value = float(text)
+            self.setForeground(QtGui.QColor('black'))
+            if value > 1:
+                # self.setForeground(COLOR_RED)
+                self.setBackground(QtGui.QColor(255,174,201))
+            elif value == 1:
+                # self.setForeground(COLOR_GRAY)    
+                self.setBackground(QtGui.QColor('gray'))
+            elif value < 1:
+                # self.setForeground(COLOR_GREEN)
+                self.setBackground(QtGui.QColor(160,255,160))
+        except ValueError:
+            pass
+
+########################################################################
+class GrayCell(QtGui.QTableWidgetItem):
+    """显示盈亏的单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(GrayCell, self).__init__()
+        self.data = None
+        self.color = 'gray'
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+        try:
+            self.setForeground(COLOR_GRAY)
+        except ValueError:
+            pass
 
 ########################################################################
 class BasicMonitor(QtGui.QTableWidget):
@@ -493,35 +570,38 @@ class MarketMonitor(BasicMonitor):
         d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
 
         ## 最新价
-        d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':BasicCell}
+        # d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':BasicCell}
+        d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':LastCell}
 
         ## 昨收盘
-        d['preClosePrice'] = {'chinese':vtText.PRE_CLOSE_PRICE, 'cellType':BasicCell}
+        # d['preClosePrice'] = {'chinese':vtText.PRE_CLOSE_PRICE, 'cellType':BasicCell}
 
         ## 成交量
         d['volume'] = {'chinese':vtText.VOLUME, 'cellType':BasicCell}
 
         ## 持仓量
-        d['openInterest'] = {'chinese':vtText.OPEN_INTEREST, 'cellType':BasicCell}
+        # d['openInterest'] = {'chinese':vtText.OPEN_INTEREST, 'cellType':BasicCell}
 
         ## 开盘价
-        d['openPrice'] = {'chinese':vtText.OPEN_PRICE, 'cellType':BasicCell}
+        d['openPrice'] = {'chinese':vtText.OPEN_PRICE, 'cellType':GrayCell}
+
+        ## 涨停价
+        d['upperLimit']   = {'chinese':vtText.UPPERLIMIT, 'cellType':BidCell}
+        ## 跌停价
+        d['lowerLimit']   = {'chinese':vtText.LOWERLIMIT, 'cellType':AskCell}
 
         ## 最高价
-        d['highestPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':BasicCell}
-
+        d['highestPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':GrayCell}
         ## 最低价
-        d['lowestPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':BasicCell}
+        d['lowestPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':GrayCell}
 
         ## 买一价
         d['bidPrice1'] = {'chinese':vtText.BID_PRICE_1, 'cellType':BidCell}
-
         ## 买一量
         d['bidVolume1'] = {'chinese':vtText.BID_VOLUME_1, 'cellType':BidCell}
 
         ## 卖一价
         d['askPrice1'] = {'chinese':vtText.ASK_PRICE_1, 'cellType':AskCell}
-
         ## 卖一量
         d['askVolume1'] = {'chinese':vtText.ASK_VOLUME_1, 'cellType':AskCell}
 
@@ -529,7 +609,7 @@ class MarketMonitor(BasicMonitor):
         d['time'] = {'chinese':vtText.TIME, 'cellType':BasicCell}
 
         ## 接口
-        d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        # d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         # 设置数据键
@@ -556,8 +636,8 @@ class MarketMonitor(BasicMonitor):
         ## william
         ## 开始监听,反馈有更新的 Tick Data
         # 注册事件监听
-
-        # self.registerEvent()
+        ## 是不是要订阅行情
+        self.registerEvent()
         self.clearContents()
         
         '''
@@ -566,7 +646,6 @@ class MarketMonitor(BasicMonitor):
         print "#######################################################################"
         '''
 
-## [re.sub('-long|-short','', k) for k in temp2.keys()]
 ################################################################################
 ## william
 ## '日志'窗口
@@ -638,7 +717,7 @@ class TradeMonitor(BasicMonitor):
         d['price']       = {'chinese':vtText.PRICE, 'cellType':BasicCell}
         d['volume']      = {'chinese':vtText.VOLUME, 'cellType':BasicCell}
         d['tradeTime']   = {'chinese':vtText.TRADE_TIME, 'cellType':BasicCell}
-        d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        # d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setEventType(EVENT_TRADE)
@@ -682,7 +761,7 @@ class OrderMonitor(BasicMonitor):
         d['cancelTime']   = {'chinese':vtText.CANCEL_TIME, 'cellType':BasicCell}
         #d['frontID']     = {'chinese':vtText.FRONT_ID, 'cellType':BasicCell}         # 考虑到在vn.trader中，ctpGateway的报单号应该是始终递增的，因此这里可以忽略
         #d['sessionID']   = {'chinese':vtText.SESSION_ID, 'cellType':BasicCell}
-        d['gatewayName']  = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        # d['gatewayName']  = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtOrderID')
@@ -738,9 +817,11 @@ class PositionMonitor(BasicMonitor):
         d['frozen']         = {'chinese':vtText.FROZEN, 'cellType':BasicCell}
         d['price']          = {'chinese':vtText.PRICE, 'cellType':BasicCell}
         d['size']           = {'chinese':vtText.SIZE, 'cellType':BasicCell}
+        d['value']          = {'chinese':vtText.VALUE, 'cellType':BasicCell}
         # d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
         d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':PnlCell}
-        d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        d['commission']      = {'chinese':vtText.COMMISSION, 'cellType':GrayCell}
+        # d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtPositionName')
@@ -771,14 +852,18 @@ class AccountMonitor(BasicMonitor):
         
         d = OrderedDict()
         d['accountID']      = {'chinese':vtText.ACCOUNT_ID, 'cellType':BasicCell}
+        d['accountName']    = {'chinese':vtText.ACCOUNT_NAME, 'cellType':BasicCell}
         d['preBalance']     = {'chinese':vtText.PRE_BALANCE, 'cellType':BasicCell}
         d['balance']        = {'chinese':vtText.BALANCE, 'cellType':BasicCell}
         d['available']      = {'chinese':vtText.AVAILABLE, 'cellType':BasicCell}
+        d['value']          = {'chinese':vtText.VALUE, 'cellType':BasicCell}
+        d['leverage']       = {'chinese':vtText.LEVERAGE, 'cellType':BasicCell}
         d['commission']     = {'chinese':vtText.COMMISSION, 'cellType':BasicCell}
         d['margin']         = {'chinese':vtText.MARGIN, 'cellType':BasicCell}
-        d['closeProfit']    = {'chinese':vtText.CLOSE_PROFIT, 'cellType':BasicCell}
-        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
-        d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        d['closeProfit']    = {'chinese':vtText.CLOSE_PROFIT, 'cellType':PnlCell}
+        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':PnlCell}
+        d['nav']            = {'chinese':vtText.ACCOUNT_NAV, 'cellType':NAVCell}
+        # d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtAccountID')
