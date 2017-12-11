@@ -1,0 +1,8 @@
+pymongo 
+websocket-client
+msgpack-python
+qdarkstyle
+SortedContainers
+snappy
+futuquant
+wmi
