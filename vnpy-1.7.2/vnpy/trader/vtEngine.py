@@ -21,8 +21,8 @@ from vnpy.trader.vtGlobal import globalSetting
 from vnpy.trader.vtEvent import *
 from vnpy.trader.vtGateway import *
 from vnpy.trader.language import text
-from vnpy.trader.vtFunction import getTempPath
-
+from vnpy.trader import vtFunction
+from vnpy.trader.vtObject import VtSubscribeReq, VtCancelOrderReq
 
 
 ########################################################################
@@ -34,6 +34,10 @@ class MainEngine(object):
         """Constructor"""
         # 记录今日日期
         self.todayDate = datetime.now().strftime('%Y%m%d')
+        self.tradingDay = vtFunction.tradingDay()
+        self.tradingDate = vtFunction.tradingDate()
+        self.lastTradingDay = vtFunction.lastTradingDay()
+        self.lastTradingDate = vtFunction.lastTradingDate()
 
         # 绑定事件引擎
         self.eventEngine = eventEngine
@@ -42,11 +46,26 @@ class MainEngine(object):
         # 创建数据引擎
         self.dataEngine = DataEngine(self.eventEngine)
         
+        ## -----------------------------------------
+        ## 是否订阅所有合约
+        self.subscribeAll = False
+        ## 是否打印合约
+        self.printData = False
+        ## -----------------------------------------
+
         # MongoDB数据库相关
-        self.dbClient = None    # MongoDB客户端对象
-        
+        # self.dbClient = None    # MongoDB客户端对象
+        ## -------------------------------------------
+        ## william
+        ## 设置数据库连接初始状态
+        # MongoDB数据库相关
+        self.dbMongoClient = None    # MongoDB客户端对象
+        ## MySQL 数据库相关
+        self.dbMySQLClient = None
+        ## ------------------------------------------
+
         # 接口实例
-        self.gatewayDict = OrderedDict()
+        self.gatewayDict = OrderedDict()  # 使用 mainEngine.gatwwayDict['CTP'] 获取
         self.gatewayDetailList = []
         
         # 应用模块实例
@@ -111,15 +130,16 @@ class MainEngine(object):
             return None
         
     #----------------------------------------------------------------------
-    def connect(self, gatewayName):
+    def connect(self, accountID, gatewayName = 'CTP'):
         """连接特定名称的接口"""
         gateway = self.getGateway(gatewayName)
         
         if gateway:
-            gateway.connect()
-            
-            # 接口连接后自动执行数据库连接的任务
-            self.dbConnect()        
+            gateway.connect(accountID)
+            ## -----------------------------------------------------------------
+            ## 接口连接后自动执行数据库连接的任务
+            ## self.dbMySQLConnect()     
+            ## -----------------------------------------------------------------
    
 
     #----------------------------------------------------------------------
@@ -154,6 +174,101 @@ class MainEngine(object):
         if gateway:
             gateway.cancelOrder(cancelOrderReq)   
   
+    ############################################################################
+    ## william
+    ## 一键全部撤单
+    ## ref: /vn.trader/uiBasicWidget.py
+    ##      cancelOrderAll()
+    ############################################################################
+    def cancelAll(self):
+        """一键撤销所有委托"""
+        AllWorkingOrders = self.getAllWorkingOrders()
+        for order in AllWorkingOrders:
+            req = VtCancelOrderReq()
+            req.symbol    = order.symbol
+            req.exchange  = order.exchange
+            req.frontID   = order.frontID
+            req.sessionID = order.sessionID
+            req.orderID   = order.orderID 
+            self.cancelOrder(req, order.gatewayName)
+            self.writeLog(text.CANCEL_ALL)
+
+    ############################################################################
+    ## william
+    ## 全平
+    ############################################################################
+    def closeAll(self):
+        """一键全平"""
+        ## -----------------------------------------------------------------
+        ## 先撤销所有的订单
+        # try:
+        #     self.CtaStrategy.loadSetting()
+        # except:
+        #     None
+        # self.cancelAll()
+        ## -----------------------------------------------------------------
+        
+        CTPAccountPosInfo = {k:{u:self.dataEngine.positionInfo[k][u] for u in self.dataEngine.positionInfo[k].keys() if u in ['vtSymbol','position','direction']} for k in self.dataEngine.positionInfo.keys() if int(self.dataEngine.positionInfo[k]['position']) != 0}
+        # if not CTPAccountPosInfo:
+        #     return
+
+        ## =====================================================================
+        CTAORDER_BUY = u'买开'
+        CTAORDER_SELL = u'卖平'
+        CTAORDER_SHORT = u'卖开'
+        CTAORDER_COVER = u'买平'
+
+        ## ---------------------------------------------------------------------
+        class strategyClass(object):
+            name = 'CLOSE_ALL'
+            productClass = ''
+            currency = ''
+        tempStrategy = strategyClass()
+        ## ---------------------------------------------------------------------
+
+        ## -------------------------------------------------------------------------------------
+        ## 订阅合约行情
+        ## -------------------------------------------------------------------------------------
+        for i in self.dataEngine.positionInfo.keys():
+            req = VtSubscribeReq()
+            req.symbol = self.dataEngine.positionInfo[i]['symbol']
+            self.subscribe(req, 'CTP')
+            if req.symbol not in self.CtaStrategy.subscribeContracts:
+                self.CtaStrategy.subscribeContracts.append(req.symbol)
+        ## -------------------------------------------------------------------------------------
+
+        ## =====================================================================================
+        for i in CTPAccountPosInfo.keys():
+            ## -----------------------------------------------------------------------------
+            try:
+                tempInstrumentID = CTPAccountPosInfo[i]['vtSymbol']
+                tempVolume       = CTPAccountPosInfo[i]['position']
+                tempPriceTick    = self.getContract(tempInstrumentID).priceTick
+                tempLastPrice    = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['lastPrice']
+                tempUpperLimit   = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['upperLimit']
+                tempLowerLimit   = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['lowerLimit']
+                self.writeLog('%s ：全平仓 %0d@%.2f' %(tempInstrumentID, tempVolume, tempLastPrice))
+                ## -------------------------------------------------------------------------
+                # if CTPAccountPosInfo[i]['direction'] == u'多':
+                #     self.CtaStrategy.sendOrder(vtSymbol  = tempInstrumentID,
+                #                                           orderType = CTAORDER_SELL,
+                #                                           price     = self.priceBetweenUpperLower(max(tempUpperLimit, tempLastPrice - 1*tempPriceTick), 
+                #                                                           tempInstrumentID),
+                #                                           volume    = tempVolume,
+                #                                           strategy  = tempStrategy)
+                # elif CTPAccountPosInfo[i]['direction'] == u'空':
+                #     self.CtaStrategy.sendOrder(vtSymbol  = tempInstrumentID,
+                #                                           orderType = CTAORDER_COVER,
+                #                                           price     = self.priceBetweenUpperLower(min(tempLowerLimit, tempLastPrice + 1*tempPriceTick),
+                #                                                           tempInstrumentID),
+                #                                           volume    = tempVolume,
+                #                                           strategy  = tempStrategy)
+                ## -------------------------------------------------------------------------
+            except:
+               self.writeLog('%s ：平仓失败' %tempInstrumentID)
+        ## =====================================================================================
+
+
     #----------------------------------------------------------------------
     def qryAccount(self, gatewayName):
         """查询特定接口的账户"""
@@ -191,48 +306,50 @@ class MainEngine(object):
     def writeLog(self, content):
         """快速发出日志事件"""
         log = VtLogData()
-        log.logContent = content
+        log.logContent = content + '\n'
         log.gatewayName = 'MAIN_ENGINE'
-        event = Event(type_=EVENT_LOG)
+        event = Event(type_= EVENT_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)        
     
     #----------------------------------------------------------------------
-    def dbConnect(self):
+    def dbMongoConnect(self):
         """连接MongoDB数据库"""
-        if not self.dbClient:
+        if not self.dbMongoClient:
             # 读取MongoDB的设置
             try:
                 # 设置MongoDB操作的超时时间为0.5秒
-                self.dbClient = MongoClient(globalSetting['mongoHost'], globalSetting['mongoPort'], connectTimeoutMS=500)
+                self.dbMongoClient = MongoClient(globalSetting().vtSetting['mongoHost'], 
+                                                 globalSetting().vtSetting['mongoPort'], 
+                                                 connectTimeoutMS=500)
                 
                 # 调用server_info查询服务器状态，防止服务器异常并未连接成功
-                self.dbClient.server_info()
+                self.dbMongoClient.server_info()
 
-                self.writeLog(text.DATABASE_CONNECTING_COMPLETED)
+                self.writeLog(text.DATABASE_Mongo_CONNECTING_COMPLETED)
                 
                 # 如果启动日志记录，则注册日志事件监听函数
-                if globalSetting['mongoLogging']:
-                    self.eventEngine.register(EVENT_LOG, self.dbLogging)
+                if globalSetting().vtSetting['mongoLogging']:
+                    self.eventEngine.register(EVENT_LOG, self.dbMongoLogging)
                     
             except ConnectionFailure:
-                self.writeLog(text.DATABASE_CONNECTING_FAILED)
+                self.writeLog(text.DATABASE_Mongo_CONNECTING_FAILED)
 
     #----------------------------------------------------------------------
-    def dbInsert(self, dbName, collectionName, d):
+    def dbMongoInsert(self, dbName, collectionName, d):
         """向MongoDB中插入数据，d是具体数据"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
+        if self.dbMongoClient:
+            db = self.dbMongoClient[dbName]
             collection = db[collectionName]
             collection.insert_one(d)
         else:
-            self.writeLog(text.DATA_INSERT_FAILED)
+            self.writeLog(text.DATA_Mongo_INSERT_FAILED)
     
     #----------------------------------------------------------------------
-    def dbQuery(self, dbName, collectionName, d, sortKey='', sortDirection=ASCENDING):
+    def dbMongoQuery(self, dbName, collectionName, d, sortKey='', sortDirection=ASCENDING):
         """从MongoDB中读取数据，d是查询要求，返回的是数据库查询的指针"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
+        if self.dbMongoClient:
+            db = self.dbMongoClient[dbName]
             collection = db[collectionName]
             
             if sortKey:
@@ -245,21 +362,21 @@ class MainEngine(object):
             else:
                 return []
         else:
-            self.writeLog(text.DATA_QUERY_FAILED)   
+            self.writeLog(text.DATA_Mongo_QUERY_FAILED)   
             return []
         
     #----------------------------------------------------------------------
-    def dbUpdate(self, dbName, collectionName, d, flt, upsert=False):
+    def dbMongoUpdate(self, dbName, collectionName, d, flt, upsert=False):
         """向MongoDB中更新数据，d是具体数据，flt是过滤条件，upsert代表若无是否要插入"""
-        if self.dbClient:
-            db = self.dbClient[dbName]
+        if self.dbMongoClient:
+            db = self.dbCMongolient[dbName]
             collection = db[collectionName]
             collection.replace_one(flt, d, upsert)
         else:
-            self.writeLog(text.DATA_UPDATE_FAILED)        
+            self.writeLog(text.DATA_Mongo_UPDATE_FAILED)        
             
     #----------------------------------------------------------------------
-    def dbLogging(self, event):
+    def dbMongoLogging(self, event):
         """向MongoDB中插入日志"""
         log = event.dict_['data']
         d = {
@@ -267,31 +384,31 @@ class MainEngine(object):
             'time': log.logTime,
             'gateway': log.gatewayName
         }
-        self.dbInsert(LOG_DB_NAME, self.todayDate, d)
+        self.dbMongoInsert(LOG_DB_NAME, self.todayDate, d)
 
 
     ## =========================================================================
     ## william
     ## dbMySQLConnect
     ## -------------------------------------------------------------------------
-    def dbMySQLConnect(self,  dbName):
+    def dbMySQLConnect(self,  dbName = 'dev'):
         """连接MongoDB数据库"""
         if not self.dbMySQLClient:
             # 读取MongoDB的设置
             try:
                 conn = MySQLdb.connect(db          = dbName, 
-                                       host        = host, 
-                                       port        = port, 
-                                       user        = user, 
-                                       passwd      = passwd, 
+                                       host        = globalSetting().vtSetting["mysqlHost"], 
+                                       port        = globalSetting().vtSetting["mysqlPort"], 
+                                       user        = globalSetting().vtSetting["mysqlUser"], 
+                                       passwd      = globalSetting().vtSetting["mysqlPassword"], 
                                        use_unicode = True, 
                                        charset     = "utf8")
-                self.writeLog(text.DATABASE_CONNECTING_COMPLETED)
+                self.writeLog(text.DATABASE_MySQL_CONNECTING_COMPLETED)
                 self.dbMySQLClient = True
                 return conn
             except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
                 print e
-                self.writeLog(text.DATABASE_CONNECTING_FAILED)    
+                self.writeLog(text.DATABASE_MySQL_CONNECTING_FAILED)    
             finally:
                 conn.close()
     ## =========================================================================
@@ -303,7 +420,13 @@ class MainEngine(object):
     def dbMySQLQuery(self, dbName, query):
         """ 从 MySQL 中读取数据 """
         try:
-            conn = self.dbMySQLConnect(dbName)
+            conn = MySQLdb.connect(db          = dbName, 
+                                   host        = globalSetting().vtSetting["mysqlHost"], 
+                                   port        = globalSetting().vtSetting["mysqlPort"], 
+                                   user        = globalSetting().vtSetting["mysqlUser"], 
+                                   passwd      = globalSetting().vtSetting["mysqlPassword"], 
+                                   use_unicode = True, 
+                                   charset     = "utf8")
             mysqlData = pd.read_sql(str(query), conn)
             return mysqlData
             self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
@@ -368,7 +491,7 @@ class MainEngine(object):
     #----------------------------------------------------------------------
     def initLogEngine(self):
         """初始化日志引擎"""
-        if not globalSetting["logActive"]:
+        if not globalSetting().vtSetting["logActive"]:
             return
         
         # 创建引擎
@@ -382,14 +505,14 @@ class MainEngine(object):
             "error": LogEngine.LEVEL_ERROR,
             "critical": LogEngine.LEVEL_CRITICAL,
         }
-        level = levelDict.get(globalSetting["logLevel"], LogEngine.LEVEL_CRITICAL)
+        level = levelDict.get(globalSetting().vtSetting["logLevel"], LogEngine.LEVEL_CRITICAL)
         self.logEngine.setLogLevel(level)
         
         # 设置输出
-        if globalSetting['logConsole']:
+        if globalSetting().vtSetting['logConsole']:
             self.logEngine.addConsoleHandler()
             
-        if globalSetting['logFile']:
+        if globalSetting().vtSetting['logFile']:
             self.logEngine.addFileHandler()
             
         # 注册事件监听
@@ -406,12 +529,18 @@ class MainEngine(object):
         """转换委托请求"""
         return self.dataEngine.convertOrderReq(req)
         
+    def priceBetweenUpperLower(self, price, vtSymbol):
+        """保证价格在 UpperLimit 和 LowerLimit 之间"""
+        tempUpperLimit = self.gatewayDict['CTP'].lastTickDict[vtSymbol]['upperLimit']
+        tempLowerLimit = self.gatewayDict['CTP'].lastTickDict['lowerLimit']
+        return min(max(tempLowerLimit, price), tempUpperLimit)
+
 
 ########################################################################
 class DataEngine(object):
     """数据引擎"""
     contractFileName = 'ContractData.vt'
-    contractFilePath = getTempPath(contractFileName)
+    contractFilePath = vtFunction.getTempPath(contractFileName)
     
     FINISHED_STATUS = [STATUS_ALLTRADED, STATUS_REJECTED, STATUS_CANCELLED]
 
@@ -420,19 +549,37 @@ class DataEngine(object):
         """Constructor"""
         self.eventEngine = eventEngine
         
+        self.tradingDay = vtFunction.tradingDay()
+        self.tradingDate = vtFunction.tradingDate()
+        self.lastTradingDay = vtFunction.lastTradingDay()
+        self.lastTradingDate = vtFunction.lastTradingDate()        
+
         # 保存合约详细信息的字典
         self.contractDict = {}
-        
         # 保存委托数据的字典
         self.orderDict = {}
-        
+        self.tradeDict = {}
         # 保存活动委托数据的字典（即可撤销）
         self.workingOrderDict = {}
         
         # 持仓细节相关
         self.detailDict = {}                                # vtSymbol:PositionDetail
-        self.tdPenaltyList = globalSetting['tdPenalty']     # 平今手续费惩罚的产品代码列表
+        self.tdPenaltyList = globalSetting().vtSetting['tdPenalty']     # 平今手续费惩罚的产品代码列表
         
+        ########################################################################
+        ## william
+        ##
+        self.accountInfo = VtAccountData()
+        ## 多个合约的持仓信息
+        ## 返回一个字典,避免重复
+        ## key 是 vtGateway/VtPositionData/ 下面的 symbolPosition
+        ## symbolPosition 格式:i1709-long(short), 代表合约多空
+        self.positionInfo = {}
+
+        self.tradeInfo = VtTradeData()
+        ########################################################################
+
+
         # 读取保存在硬盘的合约数据
         self.loadContracts()
         
@@ -446,7 +593,10 @@ class DataEngine(object):
         self.eventEngine.register(EVENT_ORDER, self.processOrderEvent)
         self.eventEngine.register(EVENT_TRADE, self.processTradeEvent)
         self.eventEngine.register(EVENT_POSITION, self.processPositionEvent)
-    
+
+        self.eventEngine.register(EVENT_ACCOUNT, self.processAccountEvent)
+        ## ---------------------------------------------------------------------
+
     #----------------------------------------------------------------------
     def processContractEvent(self, event):
         """处理合约事件"""
@@ -457,9 +607,8 @@ class DataEngine(object):
     #----------------------------------------------------------------------
     def processOrderEvent(self, event):
         """处理委托事件"""
-        order = event.dict_['data']        
+        order = event.dict_['data']      
         self.orderDict[order.vtOrderID] = order
-        
         # 如果订单的状态是全部成交或者撤销，则需要从workingOrderDict中移除
         if order.status in self.FINISHED_STATUS:
             if order.vtOrderID in self.workingOrderDict:
@@ -467,29 +616,98 @@ class DataEngine(object):
         # 否则则更新字典中的数据        
         else:
             self.workingOrderDict[order.vtOrderID] = order
-            
+
+        ## ---------------------------------------------------------------------
+        ## 成交订单
+        # print trade.__dict__
+        # if order.status == u'未成交':
+        #     temp = pd.DataFrame([order.__dict__.values()], columns = order.__dict__.keys())
+        #     print "\n"+'#'*100
+        #     print "-"*100
+        #     print temp[['vtOrderID','vtSymbol','offset','direction','price', 
+        #                 'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
+        #     print "\n"+'#'*100
+        ## ---------------------------------------------------------------------
+
         # 更新到持仓细节中
         detail = self.getPositionDetail(order.vtSymbol)
-        detail.updateOrder(order)            
+        detail.updateOrder(order)
             
     #----------------------------------------------------------------------
     def processTradeEvent(self, event):
         """处理成交事件"""
         trade = event.dict_['data']
-    
+
+        ## ---------------------------------------------------------------------
+        trade.status = self.orderDict[trade.vtOrderID].status
+        trade.orderTime   = self.orderDict[trade.vtOrderID].orderTime
+        trade.totalVolume = self.orderDict[trade.vtOrderID].totalVolume
+        trade.tradedVolume = self.orderDict[trade.vtOrderID].tradedVolume
+        self.tradeDict[trade.vtOrderID] = trade
+        self.orderDict[trade.vtOrderID].tradeTime = trade.tradeTime
+        ## ---------------------------------------------------------------------
+
         # 更新到持仓细节中
         detail = self.getPositionDetail(trade.vtSymbol)
         detail.updateTrade(trade)        
 
+        ## ---------------------------------------------------------------------
+        ## 成交订单
+        # print trade.__dict__
+        temp = pd.DataFrame([trade.__dict__.values()], columns = trade.__dict__.keys())
+        # print "\n"+'#'*100
+        # print "-"*100
+        # print temp[['vtOrderID','vtSymbol','offset','direction','price', 
+        #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
+        # print "\n"+'#'*100
+        ## ---------------------------------------------------------------------
+        if globalSetting.CONTRACT_DATA_RECEIVED:
+            # content = "\n %s %s %s" %(trade.vtOrderID, trade.vtSymbol, trade.status)
+            content = "%s" %(temp[['vtOrderID','vtSymbol','offset','direction','price', 
+                    'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']])
+            self.writeLog(content)
+        ## ---------------------------------------------------------------------
+
+
     #----------------------------------------------------------------------
     def processPositionEvent(self, event):
         """处理持仓事件"""
-        pos = event.dict_['data']
-    
+        position = event.dict_['data']
+
+        ## ---------------------------------------------------------------------
+        position.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if position.direction == u"多":
+            position.symbolPosition = position.symbol + '-' + 'long'
+        elif position.direction == u"空":
+            position.symbolPosition = position.symbol + '-' + 'short'
+        else:
+            position.symbolPosition = position.symbol + '-' + 'unknown'
+        ## ---------------------------------------------------------------------
+
         # 更新到持仓细节中
-        detail = self.getPositionDetail(pos.vtSymbol)
-        detail.updatePosition(pos)                
+        detail = self.getPositionDetail(position.vtSymbol)
+        detail.updatePosition(position)            
+
+        ## ---------------------------------------------------------------------
+        # print position.__dict__
+        self.positionInfo[position.vtSymbol] = position.__dict__
+        ## ---------------------------------------------------------------------
         
+    ############################################################################
+    ## william
+    ## 获取账户信息
+    ## def processAccountEvent(self, event):
+    ############################################################################
+    def processAccountEvent(self, event):
+        """处理账户推送"""
+        self.accountInfo = event.dict_['data']
+
+        ########################################################################
+        # 转化 VtAccount 格式
+        self.accountInfo.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # ----------------------------------------------------------------------
+        # print self.accountInfo.__dict__
+
     #----------------------------------------------------------------------
     def getContract(self, vtSymbol):
         """查询合约对象"""
@@ -585,7 +803,172 @@ class DataEngine(object):
             return [req]
         else:
             return detail.convertOrderReq(req)
-        
+
+    ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    def getIndicatorInfo(self, dbName, initialCapital, flowCapitalPre, flowCapitalToday):
+        """读取指标并写入相应的数据库"""
+        ## =====================================================================
+        ## 持仓合约信息
+        posInfo = copy(self.positionInfo)
+        tempPosInfo = {}
+        tempPositionFields = ['symbol','direction','price','position','positionProfit','size']
+        tempAccountFields  = ['vtAccountID','TradingDay','datetime','preBalance','balance','deltaBalancePct','marginPct','positionProfit','closeProfit','availableMoney','totalMoney','flowMoney','allMoney','commission']
+        # ----------------------------------------------------------------------
+        if len(posInfo) != 0:
+            for key in posInfo.keys():
+                if (posInfo[key]['position'] > 0) and (posInfo[key]['price'] != 0):
+                    tempPosInfo[key] = {k:posInfo[key][k] for k in tempPositionFields}
+                    tempPosInfo[key]['size'] = int(tempPosInfo[key]['size'])
+                    tempPosInfo[key]['positionProfit'] = round(tempPosInfo[key]['positionProfit'],3)
+                    # ------------------------------------------------------------------------------
+                    if tempPosInfo[key]['direction'] == u'多':
+                        tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.getContract(tempPosInfo[key]['symbol']).longMarginRatio)
+                    elif tempPosInfo[key]['direction'] == u'空':
+                        tempPosInfo[key]['positionPct'] = (tempPosInfo[key]['price'] * tempPosInfo[key]['size'] * self.getContract(tempPosInfo[key]['symbol']).shortMarginRatio)
+                    # ------------------------------------------------------------------------------
+                    if self.accountInfo.balance:
+                        tempPosInfo[key]['positionPct'] = round(tempPosInfo[key]['positionPct'] * tempPosInfo[key]['position'] / self.accountInfo.balance * 100, 4)
+                    else:
+                        tempPosInfo[key]['positionPct'] = 0
+        # ----------------------------------------------------------------------
+        if len(tempPosInfo) != 0:
+            self.accountPosition = pd.DataFrame(tempPosInfo).transpose()
+            self.accountPosition['TradingDay'] = self.tradingDate.strftime('%Y-%m-%d')
+        else:
+            self.accountPosition = pd.DataFrame()
+
+        ## =====================================================================
+        ## 账户基金净值
+        tempAccountInfo = copy(self.accountInfo)
+
+        ## -------------------------------------------------------------------------
+        if len(tempAccountInfo.datetime) != 0:
+            try:
+                tempAccountInfo.datetime = datetime.strptime(tempAccountInfo.datetime,
+                                           '%Y-%m-%d %H:%M:%S').strftime('%H:%M:%S')
+            except:
+                pass
+        ## -------------------------------------------------------------------------
+
+        tempAccountInfo.availableMoney = tempAccountInfo.available
+        tempAccountInfo.totalMoney = tempAccountInfo.balance
+        tempAccountInfo.flowMoney = flowCapitalPre + flowCapitalToday
+        tempAccountInfo.allMoney = tempAccountInfo.totalMoney + tempAccountInfo.flowMoney
+
+        if tempAccountInfo.balance != 0:
+            tempAccountInfo.marginPct = tempAccountInfo.margin / tempAccountInfo.balance * 100
+        else:
+            tempAccountInfo.marginPct = 0
+
+        tempAccountInfo.balance = tempAccountInfo.allMoney / initialCapital
+        tempAccountInfo.preBalance = (tempAccountInfo.preBalance + flowCapitalPre) / initialCapital
+
+        if tempAccountInfo.preBalance != 0:
+            tempAccountInfo.deltaBalancePct = (tempAccountInfo.balance - 
+                                               tempAccountInfo.preBalance) / tempAccountInfo.preBalance * 100
+        else:
+            tempAccountInfo.deltaBalancePct = 0
+
+        tempAccountInfo.TradingDay = self.tradingDate.strftime('%Y-%m-%d')
+
+        tempFields = ['balance','preBalance','deltaBalancePct','marginPct', 'positionProfit','closeProfit','commission']
+        for k in tempFields:
+            tempAccountInfo.__dict__[k] = round(tempAccountInfo.__dict__[k],4)
+        self.accountBalance = pd.DataFrame([[tempAccountInfo.__dict__[k] for k in tempAccountFields]], columns = tempAccountFields)
+
+        ## =====================================================================
+        conn = vtFunction.dbMySQLConnect(dbName)
+        cursor = conn.cursor()
+        ## ---------------------------------------------------------------------
+        if len(tempPosInfo) != 0:
+            self.accountPosition.to_sql(con       = conn, 
+                                        name      = 'report_position', 
+                                        if_exists = 'replace', 
+                                        flavor    = 'mysql', 
+                                        index     =  True)
+        else:
+            cursor.execute('truncate table report_position')
+            conn.commit()
+        ## ---------------------------------------------------------------------
+        ## 保证能够连 CTP 成功
+        if len(tempAccountInfo.accountID) != 0:
+            self.accountBalance.to_sql(con       = conn, 
+                                       name      = 'report_account', 
+                                       if_exists = 'replace', 
+                                       flavor    = 'mysql', 
+                                       index     = False)
+        ## ---------------------------------------------------------------------
+        # if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 10):
+        if (8 <= datetime.now().hour <= 17) and (len(tempAccountInfo.accountID) != 0):
+        # ----------------------------------------------------------------------
+            if len(tempPosInfo) != 0:
+                ## -------------------------------------------------------------
+                try:
+                    cursor.execute("""
+                                    DELETE FROM report_position_history
+                                    WHERE TradingDay = %s
+                                   """,[self.tradingDate.strftime('%Y-%m-%d')])
+                    conn.commit()
+                except:
+                    pass
+                ## -------------------------------------------------------------
+                self.accountPosition.to_sql(con       = conn, 
+                                            name      = 'report_position_history',
+                                            if_exists = 'append',
+                                            flavor    = 'mysql', 
+                                            index     = True)
+            # ----------------------------------------------------------------------
+            try:
+                cursor.execute("""
+                                DELETE FROM report_account_history
+                                WHERE TradingDay = %s
+                               """,[self.tradingDate.strftime('%Y-%m-%d')])
+                conn.commit()
+            except:
+                pass
+            ## -----------------------------------------------------------------
+            self.accountBalance.to_sql(con       = conn, 
+                                       name      = 'report_account_history',
+                                       if_exists = 'append', 
+                                       flavor    = 'mysql', 
+                                       index     =  False)
+        ## ---------------------------------------------------------------------
+        conn.close()
+
+
+    def printAllOrders(self):
+        """查询所有委托（返回列表）"""
+        ########################################################################
+        ## william
+        ########################################################################
+        allOrders = self.orderDict.values()
+
+        if len(allOrders) != 0:
+            dfHeader = ['vtOrderID','symbol','offset','direction','price',
+                        'totalVolume','tradedVolume','orderTime','tradeTime','status']
+            dfData   = []
+            for i in range(len(allOrders)):
+                dfData.append([allOrders[i].__dict__[k] for k in dfHeader])
+            df = pd.DataFrame(dfData, columns = dfHeader)
+            ## -----------------------------------------------------------------
+            print '\n'+'#'*100
+            print df
+            print '#'*100+'\n'
+        else:
+            print "没有查询到订单!!!"
+            return None
+
+    ## =========================================================================
+    ## william
+    ## -------------------------------------------------------------------------
+    def writeLog(self, content):
+        """快速发出日志事件"""
+        log = VtLogData()
+        log.logContent = '\n' + "-"*100 + '\n' + content + '\n'+ "-"*100 + '\n'
+        log.gatewayName = 'DATA_ENGINE'
+        event = Event(type_= EVENT_LOG)
+        event.dict_['data'] = log
+        self.eventEngine.put(event)        
         
 ########################################################################
 class LogEngine(object):
@@ -646,18 +1029,24 @@ class LogEngine(object):
             self.consoleHandler.setFormatter(self.formatter)
             self.logger.addHandler(self.consoleHandler)
             
-    #----------------------------------------------------------------------
+    ## =========================================================================
+    ## william
+    ## 保存日志
+    ## -------------------------------------------------------------------------
     def addFileHandler(self, filename=''):
         """添加文件输出"""
         if not self.fileHandler:
             if not filename:
-                filename = 'vt_' + datetime.now().strftime('%Y%m%d') + '.log'
-            filepath = getTempPath(filename)
+                # filename = 'vt_' + datetime.now().strftime('%Y%m%d') + '.log'
+                filename = globalSetting.accountID + "_" + vtFunction.tradingDay() + '.log'
+            # filepath = vtFunction.getTempPath(filename)
+            filepath = vtFunction.getLogPath(filename)
             self.fileHandler = logging.FileHandler(filepath)
             self.fileHandler.setLevel(self.level)
             self.fileHandler.setFormatter(self.formatter)
             self.logger.addHandler(self.fileHandler)
-    
+    ## =========================================================================    
+
     #----------------------------------------------------------------------
     def debug(self, msg):
         """开发时用"""
