@@ -7,17 +7,20 @@ vn.ctp的gateway接入
 vtSymbol直接使用symbol
 '''
 
-
-import os
-import json
+import os,sys
+import json,shelve
+import pandas as pd
 from copy import copy
 from datetime import datetime, timedelta
 
+
 from vnpy.api.ctp import MdApi, TdApi, defineDict
 from vnpy.trader.vtGateway import *
-from vnpy.trader.vtFunction import getJsonPath, getTempPath
+# from vnpy.trader.vtFunction import getJsonPath, getTempPath,tradingDay
+from vnpy.trader import vtFunction 
 from vnpy.trader.vtConstant import GATEWAYTYPE_FUTURES
 from .language import text
+from vnpy.trader.vtGlobal import globalSetting
 
 
 # 以下为一些VT类型和CTP类型的映射字典
@@ -83,14 +86,20 @@ symbolExchangeDict = {}
 # 夜盘交易时间段分隔判断
 NIGHT_TRADING = datetime(1900, 1, 1, 20).time()
 
-
 ########################################################################
 class CtpGateway(VtGateway):
     """CTP接口"""
 
+    ## 最后一个数据
+    lastTickDict = {}
+    ## 仓位信息
+    posInfoDict  = {}
+    initialCapital = 0
+
     #----------------------------------------------------------------------
     def __init__(self, eventEngine, gatewayName='CTP'):
         """Constructor"""
+        # print globalSetting()
         super(CtpGateway, self).__init__(eventEngine, gatewayName)
         
         self.mdApi = CtpMdApi(self)     # 行情API
@@ -101,14 +110,19 @@ class CtpGateway(VtGateway):
         
         self.qryEnabled = False         # 循环查询
         
-        self.fileName = self.gatewayName + '_connect.json'
-        self.filePath = getJsonPath(self.fileName, __file__)        
+        self.CTPConnectFile = self.gatewayName + '_connect.json'
+        path     = os.path.normpath(
+                          os.path.join(
+                            os.path.dirname(__file__),
+                            '..', '..', '..', '..')
+                        )
+        self.CTPConnectPath = os.path.join(path, 'trading', 'account', self.CTPConnectFile)       
         
     #----------------------------------------------------------------------
-    def connect(self):
+    def connect(self, accountID):
         """连接"""
         try:
-            f = file(self.filePath)
+            f = file(self.CTPConnectPath)
         except IOError:
             log = VtLogData()
             log.gatewayName = self.gatewayName
@@ -117,7 +131,8 @@ class CtpGateway(VtGateway):
             return
         
         # 解析json文件
-        setting = json.load(f)
+        info = json.load(f)
+        setting = info[accountID]
         try:
             userID = str(setting['userID'])
             password = str(setting['password'])
@@ -141,6 +156,13 @@ class CtpGateway(VtGateway):
             self.onLog(log)
             return            
         
+        ########################################################################
+        ## william
+        ## 连接到
+        ## 1. MdAPI
+        ## 2. TdAPI
+        ########################################################################
+        # 创建行情和交易接口对象
         # 创建行情和交易接口对象
         self.mdApi.connect(userID, password, brokerID, mdAddress)
         self.tdApi.connect(userID, password, brokerID, tdAddress, authCode, userProductInfo)
@@ -246,11 +268,23 @@ class CtpMdApi(MdApi):
         self.password = EMPTY_STRING        # 密码
         self.brokerID = EMPTY_STRING        # 经纪商代码
         self.address = EMPTY_STRING         # 服务器地址
-        
+        # self.lastTickDict     = {}
+        self.lastTickFileds    = ['vtSymbol', 'lastPrice',
+                                  'openPrice', 'highestPrice', 'lowestPrice',
+                                  'bidPrice1', 'askPrice1',
+                                  'bidVolume1', 'askVolume1',
+                                  'upperLimit','lowerLimit'
+                                  ]
         self.tradingDt = None               # 交易日datetime对象
         self.tradingDate = EMPTY_STRING     # 交易日期字符串
+        self.tradingDay = vtFunction.tradingDay()      # 交易日期
         self.tickTime = None                # 最新行情time对象
-        
+        self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',
+                          'upperLimit','lowerLimit','openInterest','preDelta','currDelta',
+                          'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',
+                          'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',
+                          'settlementPrice','averagePrice']
+
     #----------------------------------------------------------------------
     def onFrontConnected(self):
         """服务器连接"""
@@ -347,40 +381,84 @@ class CtpMdApi(MdApi):
     #----------------------------------------------------------------------  
     def onRtnDepthMarketData(self, data):
         """行情推送"""
+        ## ---------------------------------------------------------------------
+        # 忽略无效的报价单
+        if data['LastPrice'] > 1.70e+300:
+            return
         # 过滤尚未获取合约交易所时的行情推送
         symbol = data['InstrumentID']
         if symbol not in symbolExchangeDict:
             return
-        
+        # print symbolExchangeDict
+        ## ---------------------------------------------------------------------
+
         # 创建对象
         tick = VtTickData()
         tick.gatewayName = self.gatewayName
-        
         tick.symbol = symbol
+        tick.symbol = data['InstrumentID']
         tick.exchange = symbolExchangeDict[tick.symbol]
-        tick.vtSymbol = tick.symbol #'.'.join([tick.symbol, tick.exchange])
+        tick.vtSymbol = tick.symbol      #'.'.join([tick.symbol, tick.exchange])
         
-        tick.lastPrice = data['LastPrice']
-        tick.volume = data['Volume']
-        tick.openInterest = data['OpenInterest']
-        tick.time = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
-        
+        tick.timeStamp  = str(datetime.now().strftime('%Y%m%d %H:%M:%S.%f'))
         # 上期所和郑商所可以直接使用，大商所需要转换
         tick.date = data['ActionDay']
-        
-        tick.openPrice = data['OpenPrice']
-        tick.highPrice = data['HighestPrice']
-        tick.lowPrice = data['LowestPrice']
-        tick.preClosePrice = data['PreClosePrice']
-        
-        tick.upperLimit = data['UpperLimitPrice']
-        tick.lowerLimit = data['LowerLimitPrice']
-        
-        # CTP只有一档行情
-        tick.bidPrice1 = data['BidPrice1']
+        tick.time = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
+
+        ## 价格信息
+        tick.lastPrice          = round(data['LastPrice'],5)
+        # tick.preSettlementPrice = data['PreSettlementPrice']
+        tick.preClosePrice      = round(data['PreClosePrice'],5)
+        tick.openPrice          = round(data['OpenPrice'],5)
+        tick.highestPrice       = round(data['HighestPrice'],5)
+        tick.lowestPrice        = round(data['LowestPrice'],5)
+        tick.closePrice         = round(data['ClosePrice'],5)
+
+        tick.upperLimit         = round(data['UpperLimitPrice'],5)
+        tick.lowerLimit         = round(data['LowerLimitPrice'],5)
+
+        ## 成交量, 成交额
+        tick.volume   = round(data['Volume'],5)
+        tick.turnover = round(data['Turnover'],5)
+
+        ## 持仓数据
+        tick.preOpenInterest    = data['PreOpenInterest']
+        tick.openInterest       = data['OpenInterest']
+
+        # ## 期权数据
+        tick.preDelta           = data['PreDelta']
+        tick.currDelta          = data['CurrDelta']
+
+        #! CTP只有一档行情
+        tick.bidPrice1  = round(data['BidPrice1'],5)
         tick.bidVolume1 = data['BidVolume1']
-        tick.askPrice1 = data['AskPrice1']
+        tick.askPrice1  = round(data['AskPrice1'],5)
         tick.askVolume1 = data['AskVolume1']
+
+        tick.bidPrice2  = data['BidPrice2']
+        tick.bidVolume2 = data['BidVolume2']
+        tick.askPrice2  = data['AskPrice2']
+        tick.askVolume2 = data['AskVolume2']
+
+        tick.bidPrice3  = data['BidPrice3']
+        tick.bidVolume3 = data['BidVolume3']
+        tick.askPrice3  = data['AskPrice3']
+        tick.askVolume3 = data['AskVolume3']
+
+        tick.bidPrice4  = data['BidPrice4']
+        tick.bidVolume4 = data['BidVolume4']
+        tick.AskPrice4  = data['AskPrice4']
+        tick.askVolume4 = data['AskVolume4']
+
+        tick.bidPrice5  = data['BidPrice5']
+        tick.bidVolume5 = data['BidVolume5']
+        tick.askPrice5  = data['AskPrice5']
+        tick.askVolume5 = data['AskVolume5']
+
+        ########################################################################
+        tick.settlementPrice    = round(data['SettlementPrice'],5)
+        tick.averagePrice       = round(data['AveragePrice'],5)
+        ########################################################################
         
         # 大商所日期转换
         if tick.exchange is EXCHANGE_DCE:
@@ -394,10 +472,20 @@ class CtpMdApi(MdApi):
                 self.tradingDate = self.tradingDt.strftime('%Y%m%d')    # 生成新的日期字符串
                 
             tick.date = self.tradingDate    # 使用本地维护的日期
-            
             self.tickTime = newTime         # 更新上一个tick时间
-        
+        ## -------------------------------
+        for i in self.tempFields:
+            if tick.__dict__[i] > 1.7e+300:
+                tick.__dict__[i] = 0
+        ## -------------------------------
+        ########################################################################
+        ## william
+        ## tick 数据返回到 /vn.trader/vtEngine.onTick()
+        self.gateway.lastTickDict[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
+        # print self.gateway.lastTickDict[tick.vtSymbol]
+        ## ---------------------------------------------------------------------
         self.gateway.onTick(tick)
+        ## ---------------------------------------------------------------------
         
     #---------------------------------------------------------------------- 
     def onRspSubForQuoteRsp(self, data, error, n, last):
@@ -425,7 +513,7 @@ class CtpMdApi(MdApi):
         # 如果尚未建立服务器连接，则进行连接
         if not self.connectionStatus:
             # 创建C++环境中的API对象，这里传入的参数是需要用来保存.con文件的文件夹路径
-            path = getTempPath(self.gatewayName + '_')
+            path = vtFunction.getTempPath(self.gatewayName + '_')
             self.createFtdcMdApi(path)
             
             # 注册服务器地址
@@ -508,6 +596,25 @@ class CtpTdApi(TdApi):
 
         self.requireAuthentication = False
         
+        self.contractDict  = {}
+        self.orderDict     = {}
+        self.tradeDict     = {}
+        self.posInfoFields = ['vtSymbol', 'PosiDirection', 'position']
+        ## ---------------------------------------------------------------------
+        try:
+            self.preBalance = vtFunction.dbMySQLQuery(
+                globalSetting.accountID,
+                """
+                select totalMoney
+                from report_account_history
+                where TradingDay = '%s'
+                """ % vtFunction.lastTradingDate().strftime('%Y-%m-%d')).totalMoney.iat[0]
+        except:
+            self.preBalance = None
+        ## ---------------------------------------------------------------------
+
+        
+
     #----------------------------------------------------------------------
     def onFrontConnected(self):
         """服务器连接"""
@@ -625,7 +732,7 @@ class CtpTdApi(TdApi):
         order.price = data['LimitPrice']
         order.totalVolume = data['VolumeTotalOriginal']
         self.gateway.onOrder(order)
-        
+
         # 推送错误信息
         err = VtErrorData()
         err.gatewayName = self.gatewayName
@@ -740,29 +847,40 @@ class CtpTdApi(TdApi):
             pos.vtSymbol = pos.symbol
             pos.direction = posiDirectionMapReverse.get(data['PosiDirection'], '')
             pos.vtPositionName = '.'.join([pos.vtSymbol, pos.direction]) 
+            pos.commission = data['Commission']
         
         # 针对上期所持仓的今昨分条返回（有昨仓、无今仓），读取昨仓数据
         if data['YdPosition'] and not data['TodayPosition']:
             pos.ydPosition = data['Position']
             
         # 计算成本
-        size = self.symbolSizeDict[pos.symbol]
-        cost = pos.price * pos.position * size
+        pos.size = self.symbolSizeDict[pos.symbol]
+        cost = pos.price * pos.position * pos.size
         
         # 汇总总仓
         pos.position += data['Position']
         pos.positionProfit += data['PositionProfit']
         
         # 计算持仓均价
-        if pos.position and size:    
-            pos.price = (cost + data['PositionCost']) / (pos.position * size)
+        if pos.position and pos.size:    
+            pos.price = (cost + data['PositionCost']) / (pos.position * pos.size)
         
         # 读取冻结
         if pos.direction is DIRECTION_LONG: 
             pos.frozen += data['LongFrozen']
         else:
             pos.frozen += data['ShortFrozen']
-        
+        ## =====================================================================
+        try:
+            tempPrice = self.gateway.lastTickDict[pos.vtSymbol]['lastPrice']
+        except:
+            tempPrice = pos.price
+        self.gateway.posInfoDict[pos.vtSymbol] = {'vtSymbol':pos.vtSymbol,
+                                                  'position':pos.position,
+                                                  'price':tempPrice,
+                                                  'size':pos.size}
+        ## =====================================================================
+        pos.value = format(tempPrice * pos.size * pos.position, ',')
         # 查询回报结束
         if last:
             # 遍历推送
@@ -779,23 +897,37 @@ class CtpTdApi(TdApi):
         account.gatewayName = self.gatewayName
     
         # 账户代码
-        account.accountID = data['AccountID']
+        account.accountID   = data['AccountID']
+        account.accountName = globalSetting.accountName
         account.vtAccountID = '.'.join([self.gatewayName, account.accountID])
-    
+
         # 数值相关
-        account.preBalance = data['PreBalance']
-        account.available = data['Available']
-        account.commission = data['Commission']
-        account.margin = data['CurrMargin']
-        account.closeProfit = data['CloseProfit']
+        if self.preBalance:
+            account.preBalance = self.preBalance
+        else:
+            account.preBalance = data['PreBalance']
+        account.available      = data['Available']
+        account.value          = sum(
+                                    [self.gateway.posInfoDict[k]['position'] * self.gateway.posInfoDict[k]['price'] * self.gateway.posInfoDict[k]['size'] for k in self.gateway.posInfoDict.keys()]
+                                    )
+        if self.gateway.initialCapital:
+            account.leverage   = round(account.value / self.gateway.initialCapital,2)  
+        account.value          = format(account.value, ',')     
+        account.commission     = data['Commission']
+        account.margin         = data['CurrMargin']
+        account.closeProfit    = data['CloseProfit']
         account.positionProfit = data['PositionProfit']
-    
+
         # 这里的balance和快期中的账户不确定是否一样，需要测试
         account.balance = (data['PreBalance'] - data['PreCredit'] - data['PreMortgage'] +
                            data['Mortgage'] - data['Withdraw'] + data['Deposit'] +
                            data['CloseProfit'] + data['PositionProfit'] + data['CashIn'] -
                            data['Commission'])
-    
+        ## 基金净值
+        if self.gateway.initialCapital:
+            account.nav = round(account.balance / self.gateway.initialCapital,4)
+        ## 收益波动
+        account.volitility = round(account.balance / account.preBalance - 1, 4) * 100
         # 推送
         self.gateway.onAccount(account)
         
@@ -855,18 +987,71 @@ class CtpTdApi(TdApi):
             elif data['OptionsType'] == '2':
                 contract.optionType = OPTION_PUT
 
+        # print "\n#######################################################################"
+        # print 'contract.__dict__'
+        # print contract.__dict__
+        # print "#######################################################################\n"
+
+        contract.volumeMultiple         = data['VolumeMultiple']
+
+        if data['LongMarginRatio'] < 1e+99 and data['ShortMarginRatio'] < 1e+99:
+            contract.longMarginRatio        = round(data['LongMarginRatio'],5)
+            contract.shortMarginRatio       = round(data['ShortMarginRatio'],5)
         # 缓存代码和交易所的印射关系
         self.symbolExchangeDict[contract.symbol] = contract.exchange
         self.symbolSizeDict[contract.symbol] = contract.size
 
         # 推送
         self.gateway.onContract(contract)
-        
+        ## =====================================================================
+        ## william
+        ## ---------------------------------------------------------------------
+        self.contractDict[contract.symbol]   = contract
+        self.contractDict[contract.vtSymbol] = contract
+        ## =====================================================================
+
         # 缓存合约代码和交易所映射
         symbolExchangeDict[contract.symbol] = contract.exchange
 
         if last:
+            # print self.contractDict
+            dfHeader = ['symbol','vtSymbol','name','productClass','gatewayName','exchange',
+                        'priceTick','size','shortMarginRatio','longMarginRatio',
+                        'optionType','underlyingSymbol','strikePrice']
+            dfData   = []
+            # print len(self.contractDict)
+            for k in self.contractDict.keys():
+                temp = self.contractDict[k].__dict__
+                dfData.append([temp[kk] for kk in dfHeader])
+                # print dfData
+            df = pd.DataFrame(dfData, columns = dfHeader)
+
+            reload(sys) # reload 才能调用 setdefaultencoding 方法
+            sys.setdefaultencoding('utf-8')
+
+            df.to_csv('./temp/contract.csv', index = False)
+            if not os.path.exists('./temp/contractAll.csv'):
+                df.to_csv('./temp/contractAll.csv', index = False)
+
+            ## =================================================================
+            try:
+                dfAll = pd.read_csv('./temp/contractAll.csv')
+                for i in range(df.shape[0]):
+                    if df.at[i,'symbol'] not in dfAll.symbol.values:
+                        dfAll = dfAll.append(df.loc[i], ignore_index = True)
+                dfAll.to_csv('./temp/contractAll.csv', index = False)
+            except:
+                None
+            ## =================================================================
+            self.contractFileName = './temp/ContractData.vt'
+            f = shelve.open(self.contractFileName)
+            f['data'] = self.contractDict
+            f.close()
+            ## =================================================================
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
+            ## 交易合约信息获取是否成功
+            globalSetting.CONTRACT_DATA_RECEIVED = True
+            
         
     #----------------------------------------------------------------------
     def onRspQryDepthMarketData(self, data, error, n, last):
@@ -1060,6 +1245,17 @@ class CtpTdApi(TdApi):
         
         # 推送
         self.gateway.onOrder(order)
+
+        ## ---------------------------------------------------------------------
+        # print order.__dict__
+        # temp = pd.DataFrame([order.__dict__.values()], columns = order.__dict__.keys())
+        # print "\n"+'#'*100
+        # print "-"*100
+        # print temp[['vtOrderID','vtSymbol','offset','direction','price', 
+        #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
+        # print "\n"+'#'*100
+        ## ---------------------------------------------------------------------
+        ## ---------------------------------------------------------------------
         
     #----------------------------------------------------------------------
     def onRtnTrade(self, data):
@@ -1090,8 +1286,13 @@ class CtpTdApi(TdApi):
         trade.volume = data['Volume']
         trade.tradeTime = data['TradeTime']
         
+        # self.tradeDict[trade.vtOrderID] = trade
+        # print self.tradeDict[trade.vtOrderID]
+        
         # 推送
         self.gateway.onTrade(trade)
+
+        # print trade.__d__
         
     #----------------------------------------------------------------------
     def onErrRtnOrderInsert(self, data, error):
@@ -1365,7 +1566,7 @@ class CtpTdApi(TdApi):
         # 如果尚未建立服务器连接，则进行连接
         if not self.connectionStatus:
             # 创建C++环境中的API对象，这里传入的参数是需要用来保存.con文件的文件夹路径
-            path = getTempPath(self.gatewayName + '_')
+            path = vtFunction.getTempPath(self.gatewayName + '_')
             self.createFtdcTraderApi(path)
             
             # 设置数据同步模式为推送从今日开始所有数据
@@ -1467,7 +1668,27 @@ class CtpTdApi(TdApi):
             req['OrderPriceType'] = defineDict["THOST_FTDC_OPT_LimitPrice"]
             req['TimeCondition'] = defineDict['THOST_FTDC_TC_IOC']
             req['VolumeCondition'] = defineDict['THOST_FTDC_VC_CV']        
-        
+
+        orderReq.orderTime   = datetime.now().strftime('%H:%M:%S')
+        orderReq.orderID     = self.orderRef
+        orderReq.tradeStatus = u'未成交'        
+
+        ########################################################################
+        ## william
+        ## orderReq
+        '''
+        temp = ['InstrumentID','LimitPrice','VolumeTotalOriginal','OrderPriceType','Direction','OrderRef','InvestorID','UserID','BrokerID']
+        temp = {k: req[k] for k in req.keys()}
+        '''
+        print "\n"+'#'*80
+        print "打印下单的详细信息"
+        print '-'*80
+        tempFields = ['orderID','vtSymbol','price','direction','offset',
+                      'volume','orderTime','tradeStatus']
+        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
+        print '#'*80
+        ########################################################################
+
         self.reqOrderInsert(req, self.reqID)
         
         # 返回订单号（字符串），便于某些算法进行动态管理
@@ -1482,15 +1703,22 @@ class CtpTdApi(TdApi):
         req = {}
         
         req['InstrumentID'] = cancelOrderReq.symbol
-        req['ExchangeID'] = cancelOrderReq.exchange
-        req['OrderRef'] = cancelOrderReq.orderID
-        req['FrontID'] = cancelOrderReq.frontID
-        req['SessionID'] = cancelOrderReq.sessionID
+        req['ExchangeID']   = cancelOrderReq.exchange
+        req['OrderRef']     = cancelOrderReq.orderID
+        req['FrontID']      = cancelOrderReq.frontID
+        req['SessionID']    = cancelOrderReq.sessionID
         
-        req['ActionFlag'] = defineDict['THOST_FTDC_AF_Delete']
-        req['BrokerID'] = self.brokerID
-        req['InvestorID'] = self.userID
-        
+        req['ActionFlag']   = defineDict['THOST_FTDC_AF_Delete']
+        req['BrokerID']     = self.brokerID
+        req['InvestorID']   = self.userID
+        # ## ---------------------------------------------------------------------
+        # ## william
+        # ## 打印撤单的纤详细信息
+        print "\n"+'#'*80
+        print "撤单的详细信息:"
+        print pd.DataFrame([req.values()], columns = req.keys())
+        print '#'*80
+        # ## ---------------------------------------------------------------------       
         self.reqOrderAction(req, self.reqID)
         
     #----------------------------------------------------------------------
@@ -1498,16 +1726,18 @@ class CtpTdApi(TdApi):
         """关闭"""
         self.exit()
 
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def writeLog(self, content):
         """发出日志"""
         log = VtLogData()
         log.gatewayName = self.gatewayName
         log.logContent = content
-        self.gateway.onLog(log)        
+        self.gateway.onLog(log)     
 
-
-
-
-
-    
+    # #---------------------------------------------------------------------------
+    # def printLog(self, content):
+    #     """发出日志"""
+    #     log = VtLogData()
+    #     log.gatewayName = self.gatewayName
+    #     log.logContent = content
+    #     self.gateway.onLog(log)        
