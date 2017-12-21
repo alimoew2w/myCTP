@@ -3,6 +3,7 @@
 import os
 import shelve
 import logging
+from logging import INFO, ERROR
 from collections import OrderedDict
 from datetime import datetime
 from copy import copy
@@ -136,6 +137,17 @@ class MainEngine(object):
         
         if gateway:
             gateway.connect(accountID)
+            if gatewayName == 'CTP':
+                ## -------------------------------------------------------------
+                if not self.gatewayDict['CTP'].mdConnected:
+                    self.writeLog(content = u'CTP [md] 行情服务器连接失败', logLevel=ERROR)
+                ## -------------------------------------------------------------
+                if not self.gatewayDict['CTP'].tdConnected:
+                    self.writeLog(content = u'CTP [td] 交易服务器连接失败', logLevel=ERROR)
+                ## -------------------------------------------------------------
+                if (not self.gatewayDict['CTP'].mdConnected and
+                    not self.gatewayDict['CTP'].tdConnected):
+                    self.writeLog(content = u'CTP 连接失败', logLevel=ERROR)
             ## -----------------------------------------------------------------
             ## 接口连接后自动执行数据库连接的任务
             ## self.dbMySQLConnect()     
@@ -303,11 +315,13 @@ class MainEngine(object):
         self.dataEngine.saveContracts()
     
     #----------------------------------------------------------------------
-    def writeLog(self, content):
+    def writeLog(self, content, logLevel = INFO):
         """快速发出日志事件"""
         log = VtLogData()
-        log.logContent = content + '\n'
+        # log.logContent = content + '\n'
+        log.logContent = content
         log.gatewayName = 'MAIN_ENGINE'
+        log.logLevel = logLevel
         event = Event(type_= EVENT_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)        
@@ -663,8 +677,10 @@ class DataEngine(object):
         ## ---------------------------------------------------------------------
         if globalSetting.CONTRACT_DATA_RECEIVED:
             # content = "\n %s %s %s" %(trade.vtOrderID, trade.vtSymbol, trade.status)
-            content = "%s" %(temp[['vtOrderID','vtSymbol','offset','direction','price', 
-                    'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']])
+            content = "\n%s\n%s\n%s" %('-'*100,
+                temp[['vtOrderID','vtSymbol','offset','direction','price', 
+                      'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']],
+                '-'*100)
             self.writeLog(content)
         ## ---------------------------------------------------------------------
 
@@ -961,11 +977,12 @@ class DataEngine(object):
     ## =========================================================================
     ## william
     ## -------------------------------------------------------------------------
-    def writeLog(self, content):
+    def writeLog(self, content, logLevel = INFO):
         """快速发出日志事件"""
         log = VtLogData()
-        log.logContent = '\n' + "-"*100 + '\n' + content + '\n'+ "-"*100 + '\n'
+        log.logContent = content + '\n'
         log.gatewayName = 'DATA_ENGINE'
+        log.logLevel = logLevel
         event = Event(type_= EVENT_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)        
@@ -1038,7 +1055,7 @@ class LogEngine(object):
         if not self.fileHandler:
             if not filename:
                 # filename = 'vt_' + datetime.now().strftime('%Y%m%d') + '.log'
-                filename = globalSetting.accountID + "_" + vtFunction.tradingDay() + '.log'
+                filename = vtFunction.tradingDay() + "_" + globalSetting.accountID + '.log'
             # filepath = vtFunction.getTempPath(filename)
             filepath = vtFunction.getLogPath(filename)
             self.fileHandler = logging.FileHandler(filepath)
@@ -1084,8 +1101,8 @@ class LogEngine(object):
         function = self.levelFunctionDict[log.logLevel]     # 获取日志级别对应的处理函数
         msg = '\t'.join([log.gatewayName, log.logContent])
         function(msg)
-    
-    
+
+
 ########################################################################
 class PositionDetail(object):
     """本地维护的持仓信息"""
