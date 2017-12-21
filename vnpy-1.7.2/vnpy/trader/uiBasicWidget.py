@@ -17,6 +17,7 @@ from .vtConstant import *
 
 
 COLOR_RED = QtGui.QColor('red')
+COLOR_GRAY = QtGui.QColor('gray')
 COLOR_GREEN = QtGui.QColor('green')
 
 
@@ -109,7 +110,7 @@ class NameCell(QtWidgets.QTableWidgetItem):
         if self.mainEngine:
             # 首先尝试正常获取合约对象
             contract = self.mainEngine.getContract(text)
-            
+            self.setForeground(COLOR_GRAY)
             # 如果能读取合约信息
             if contract:
                 self.setText(contract.name)
@@ -158,6 +159,27 @@ class AskCell(QtWidgets.QTableWidgetItem):
         """设置内容"""
         self.setText(text)
 
+########################################################################
+class ColdColorCell(QtWidgets.QTableWidgetItem):
+    """买价单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(ColdColorCell, self).__init__()
+        self.data = None
+
+        # self.setForeground(QtGui.QColor('black'))
+        self.setForeground(QtGui.QColor(77, 255, 255))
+        self.setBackground(QtGui.QColor(65, 100, 105))
+        
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
 
 ########################################################################
 class PnlCell(QtWidgets.QTableWidgetItem):
@@ -179,15 +201,69 @@ class PnlCell(QtWidgets.QTableWidgetItem):
 
         try:
             value = float(text)
-            if value >= 0 and self.color != 'red':
+            if value > 0 and self.color != 'red':
                 self.color = 'red'
                 self.setForeground(COLOR_RED)
+            elif value == 0 and self.color != 'gray':
+                self.color = 'gray'
+                self.setForeground(COLOR_GRAY)    
             elif value < 0 and self.color != 'green':
                 self.color = 'green'
                 self.setForeground(COLOR_GREEN)
         except ValueError:
             pass
 
+########################################################################
+class NAVCell(QtWidgets.QTableWidgetItem):
+    """显示盈亏的单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(NAVCell, self).__init__()
+        self.data = None
+        self.color = ''
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+
+        try:
+            value = float(text)
+            self.setForeground(QtGui.QColor('black'))
+            if value > 1:
+                self.setBackground(QtGui.QColor(255,174,201))
+            elif value == 1:
+                self.setBackground(QtGui.QColor('gray'))
+            elif value < 1:
+                self.setBackground(QtGui.QColor(160,255,160))
+        except ValueError:
+            pass
+
+########################################################################
+class GrayCell(QtWidgets.QTableWidgetItem):
+    """显示盈亏的单元格"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, text=None, mainEngine=None):
+        """Constructor"""
+        super(GrayCell, self).__init__()
+        self.data = None
+        self.color = 'gray'
+        if text:
+            self.setContent(text)
+    
+    #----------------------------------------------------------------------
+    def setContent(self, text):
+        """设置内容"""
+        self.setText(text)
+        try:
+            self.setForeground(COLOR_GRAY)
+        except ValueError:
+            pass
 
 ########################################################################
 class BasicMonitor(QtWidgets.QTableWidget):
@@ -220,7 +296,8 @@ class BasicMonitor(QtWidgets.QTableWidget):
         self.eventType = ''
         
         # 列宽调整状态（只在第一次更新数据时调整一次列宽）
-        self.columnResized = False
+        # self.columnResized = False
+        self.columnResized = True
         
         # 字体
         self.font = None
@@ -428,21 +505,53 @@ class MarketMonitor(BasicMonitor):
         
         # 设置表头有序字典
         d = OrderedDict()
+        ## 合约代码
         d['symbol'] = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':BasicCell}
+
+        ## 名称
         # d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
-        d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':BasicCell}
+
+        ## 最新价
+        # d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':BasicCell}
+        d['lastPrice'] = {'chinese':vtText.LAST_PRICE, 'cellType':ColdColorCell}
+
+        ## 昨收盘
         # d['preClosePrice'] = {'chinese':vtText.PRE_CLOSE_PRICE, 'cellType':BasicCell}
+
+        ## 涨停价
+        d['upperLimit']   = {'chinese':vtText.UPPERLIMIT, 'cellType':BidCell}
+        ## 跌停价
+        d['lowerLimit']   = {'chinese':vtText.LOWERLIMIT, 'cellType':AskCell}
+        
+        ## 成交量
         d['volume'] = {'chinese':vtText.VOLUME, 'cellType':BasicCell}
+        ## 持仓量
         # d['openInterest'] = {'chinese':vtText.OPEN_INTEREST, 'cellType':BasicCell}
-        d['openPrice'] = {'chinese':vtText.OPEN_PRICE, 'cellType':BasicCell}
-        d['highPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':BasicCell}
-        d['lowPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':BasicCell}
+
+        ## 开盘价
+        d['openPrice'] = {'chinese':vtText.OPEN_PRICE, 'cellType':GrayCell}
+
+        ## 买一价
         d['bidPrice1'] = {'chinese':vtText.BID_PRICE_1, 'cellType':BidCell}
+        ## 买一量
         d['bidVolume1'] = {'chinese':vtText.BID_VOLUME_1, 'cellType':BidCell}
+
+        ## 卖一价
         d['askPrice1'] = {'chinese':vtText.ASK_PRICE_1, 'cellType':AskCell}
+        ## 卖一量
         d['askVolume1'] = {'chinese':vtText.ASK_VOLUME_1, 'cellType':AskCell}
+
+        ## 最高价
+        d['highestPrice'] = {'chinese':vtText.HIGH_PRICE, 'cellType':GrayCell}
+        ## 最低价
+        d['lowestPrice'] = {'chinese':vtText.LOW_PRICE, 'cellType':GrayCell}
+
+        ## 时间
         d['time'] = {'chinese':vtText.TIME, 'cellType':BasicCell}
+
+        ## 接口
         # d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+  
         self.setHeaderDict(d)
         
         # 设置数据键
@@ -462,7 +571,7 @@ class MarketMonitor(BasicMonitor):
         
         # 注册事件监听
         self.registerEvent()
-
+        # self.clearContents()
 
 ########################################################################
 class LogMonitor(BasicMonitor):
@@ -517,10 +626,10 @@ class TradeMonitor(BasicMonitor):
         super(TradeMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()
-        d['tradeID'] = {'chinese':vtText.TRADE_ID, 'cellType':NumCell}
+        # d['tradeID'] = {'chinese':vtText.TRADE_ID, 'cellType':NumCell}
         d['orderID'] = {'chinese':vtText.ORDER_ID, 'cellType':NumCell}
         d['symbol'] = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':BasicCell}
-        d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
+        # d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
         d['direction'] = {'chinese':vtText.DIRECTION, 'cellType':DirectionCell}
         d['offset'] = {'chinese':vtText.OFFSET, 'cellType':BasicCell}
         d['price'] = {'chinese':vtText.PRICE, 'cellType':BasicCell}
@@ -559,10 +668,11 @@ class OrderMonitor(BasicMonitor):
         d['tradedVolume'] = {'chinese':vtText.TRADED_VOLUME, 'cellType':BasicCell}
         d['status'] = {'chinese':vtText.ORDER_STATUS, 'cellType':BasicCell}
         d['orderTime'] = {'chinese':vtText.ORDER_TIME, 'cellType':BasicCell}
+        d['tradeTime'] = {'chinese':vtText.TRADE_TIME, 'cellType':BasicCell}
         d['cancelTime'] = {'chinese':vtText.CANCEL_TIME, 'cellType':BasicCell}
         #d['frontID'] = {'chinese':vtText.FRONT_ID, 'cellType':BasicCell}         # 考虑到在vn.trader中，ctpGateway的报单号应该是始终递增的，因此这里可以忽略
         #d['sessionID'] = {'chinese':vtText.SESSION_ID, 'cellType':BasicCell}
-        d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        # d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtOrderID')
@@ -604,15 +714,19 @@ class PositionMonitor(BasicMonitor):
         super(PositionMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()
-        d['symbol'] = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':BasicCell}
-        d['vtSymbol'] = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
-        d['direction'] = {'chinese':vtText.DIRECTION, 'cellType':DirectionCell}
-        d['position'] = {'chinese':vtText.POSITION, 'cellType':BasicCell}
-        d['ydPosition'] = {'chinese':vtText.YD_POSITION, 'cellType':BasicCell}
-        d['frozen'] = {'chinese':vtText.FROZEN, 'cellType':BasicCell}
-        d['price'] = {'chinese':vtText.PRICE, 'cellType':BasicCell}
+        d['symbol']         = {'chinese':vtText.CONTRACT_SYMBOL, 'cellType':ColdColorCell}
+        d['vtSymbol']       = {'chinese':vtText.CONTRACT_NAME, 'cellType':NameCell}
+        d['direction']      = {'chinese':vtText.DIRECTION, 'cellType':DirectionCell}
+        d['position']       = {'chinese':vtText.POSITION, 'cellType':BasicCell}
+        d['ydPosition']     = {'chinese':vtText.YD_POSITION, 'cellType':BasicCell}
+        d['frozen']         = {'chinese':vtText.FROZEN, 'cellType':GrayCell}
+        d['price']          = {'chinese':vtText.PRICE, 'cellType':BasicCell}
+        # d['size']           = {'chinese':vtText.SIZE, 'cellType':GrayCell}
+        d['value']          = {'chinese':vtText.VALUE, 'cellType':ColdColorCell}
+        # d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
         d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':PnlCell}
-        # d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        d['commission']     = {'chinese':vtText.COMMISSION, 'cellType':GrayCell}
+        # d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtPositionName')
@@ -634,15 +748,20 @@ class AccountMonitor(BasicMonitor):
         super(AccountMonitor, self).__init__(mainEngine, eventEngine, parent)
         
         d = OrderedDict()
-        d['accountID'] = {'chinese':vtText.ACCOUNT_ID, 'cellType':BasicCell}
-        d['preBalance'] = {'chinese':vtText.PRE_BALANCE, 'cellType':BasicCell}
-        d['balance'] = {'chinese':vtText.BALANCE, 'cellType':BasicCell}
-        d['available'] = {'chinese':vtText.AVAILABLE, 'cellType':BasicCell}
-        d['commission'] = {'chinese':vtText.COMMISSION, 'cellType':BasicCell}
-        d['margin'] = {'chinese':vtText.MARGIN, 'cellType':BasicCell}
-        d['closeProfit'] = {'chinese':vtText.CLOSE_PROFIT, 'cellType':BasicCell}
-        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':BasicCell}
-        d['gatewayName'] = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
+        # d['accountID']      = {'chinese':vtText.ACCOUNT_ID, 'cellType':GrayCell}
+        d['accountName']    = {'chinese':vtText.ACCOUNT_NAME, 'cellType':ColdColorCell}
+        d['preBalance']     = {'chinese':vtText.PRE_BALANCE, 'cellType':BasicCell}
+        d['balance']        = {'chinese':vtText.BALANCE, 'cellType':BasicCell}
+        d['available']      = {'chinese':vtText.AVAILABLE, 'cellType':BasicCell}
+        d['value']          = {'chinese':vtText.VALUE, 'cellType':ColdColorCell}
+        d['leverage']       = {'chinese':vtText.LEVERAGE, 'cellType':BidCell}
+        d['commission']     = {'chinese':vtText.COMMISSION, 'cellType':GrayCell}
+        d['margin']         = {'chinese':vtText.MARGIN, 'cellType':BasicCell}
+        d['closeProfit']    = {'chinese':vtText.CLOSE_PROFIT, 'cellType':PnlCell}
+        d['positionProfit'] = {'chinese':vtText.POSITION_PROFIT, 'cellType':PnlCell}
+        d['volitility']     = {'chinese':vtText.RETURN_VOLATILITY , 'cellType':PnlCell}
+        d['nav']            = {'chinese':vtText.ACCOUNT_NAV, 'cellType':NAVCell}
+        # d['gatewayName']    = {'chinese':vtText.GATEWAY, 'cellType':BasicCell}
         self.setHeaderDict(d)
         
         self.setDataKey('vtAccountID')
@@ -881,10 +1000,29 @@ class TradingWidget(QtWidgets.QFrame):
         # 发单按钮
         buttonSendOrder = QtWidgets.QPushButton(vtText.SEND_ORDER)
         buttonCancelAll = QtWidgets.QPushButton(vtText.CANCEL_ALL)
-        
+
+        ## =====================================================================
+        ## william
+        ## 全停
+        buttonStartAll = QtWidgets.QPushButton(vtText.START_ALL)
+        ## 全停
+        buttonStopAll = QtWidgets.QPushButton(vtText.STOP_ALL)
+        ## 全平
+        buttonCloseAll = QtWidgets.QPushButton(vtText.CLOSE_ALL)
+        ## =====================================================================
+
         size = buttonSendOrder.sizeHint()
-        buttonSendOrder.setMinimumHeight(size.height()*2)   # 把按钮高度设为默认两倍
-        buttonCancelAll.setMinimumHeight(size.height()*2)
+        buttonSendOrder.setMinimumHeight(size.height()*1.5)   # 把按钮高度设为默认两倍
+        buttonCancelAll.setMinimumHeight(size.height()*1.5)
+        ## =====================================================================
+        ## william
+        ## 全启
+        buttonStartAll.setMinimumHeight(size.height()*1.5)
+        ## 全停
+        buttonStopAll.setMinimumHeight(size.height()*1.5)
+        ## 全平
+        buttonCloseAll.setMinimumHeight(size.height()*1.5)
+        ## =====================================================================
 
         # 整合布局
         hbox = QtWidgets.QHBoxLayout()
@@ -895,6 +1033,15 @@ class TradingWidget(QtWidgets.QFrame):
         vbox.addLayout(hbox)
         vbox.addWidget(buttonSendOrder)
         vbox.addWidget(buttonCancelAll)
+        ## =====================================================================
+        ## william
+        ## 全撤
+        vbox.addWidget(buttonStartAll)
+        ## 全撤
+        vbox.addWidget(buttonStopAll)
+        ## 全平
+        vbox.addWidget(buttonCloseAll)
+        ## =====================================================================
         vbox.addStretch()
 
         self.setLayout(vbox)
@@ -902,17 +1049,26 @@ class TradingWidget(QtWidgets.QFrame):
         # 关联更新
         buttonSendOrder.clicked.connect(self.sendOrder)
         buttonCancelAll.clicked.connect(self.cancelAll)
+        ## =====================================================================
+        ## william
+        ## 全撤
+        buttonStartAll.clicked.connect(self.startAll)
+        ## 全撤
+        buttonStopAll.clicked.connect(self.stopAll)
+        ## 全平
+        buttonCloseAll.clicked.connect(self.closeAll)
+        ## =====================================================================
         self.lineSymbol.returnPressed.connect(self.updateSymbol)
 
     #----------------------------------------------------------------------
     def updateSymbol(self):
         """合约变化"""
         # 读取组件数据
-        symbol = str(self.lineSymbol.text())
-        exchange = unicode(self.comboExchange.currentText())
-        currency = unicode(self.comboCurrency.currentText())
+        symbol       = str(self.lineSymbol.text())
+        exchange     = unicode(self.comboExchange.currentText())
+        currency     = unicode(self.comboCurrency.currentText())
         productClass = unicode(self.comboProductClass.currentText())           
-        gatewayName = unicode(self.comboGateway.currentText())
+        gatewayName  = unicode(self.comboGateway.currentText())
         
         # 查询合约
         if exchange:
@@ -1057,19 +1213,87 @@ class TradingWidget(QtWidgets.QFrame):
         
         self.mainEngine.sendOrder(req, gatewayName)
             
+    ############################################################################
+    ## william
+    ## 全撤
+    ############################################################################
     #----------------------------------------------------------------------
     def cancelAll(self):
         """一键撤销所有委托"""
-        l = self.mainEngine.getAllWorkingOrders()
-        for order in l:
-            req = VtCancelOrderReq()
-            req.symbol = order.symbol
-            req.exchange = order.exchange
-            req.frontID = order.frontID
-            req.sessionID = order.sessionID
-            req.orderID = order.orderID
-            self.mainEngine.cancelOrder(req, order.gatewayName)
-            
+        reply = QtWidgets.QMessageBox.question(self, vtText.CANCEL_ALL,
+                                   vtText.CONFIRM_CLOSE_ALL, QtWidgets.QMessageBox.Yes | 
+                                   QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+
+        if reply == QtWidgets.QMessageBox.Yes: 
+            self.mainEngine.cancelAll()
+
+    ############################################################################
+    ## william
+    ## 全停
+    ############################################################################
+    def startAll(self):
+        """
+        一键全平仓
+        """
+        
+        reply = QtWidgets.QMessageBox.question(self, vtText.START_ALL,
+                                   vtText.CONFIRM_START_ALL, QtWidgets.QMessageBox.Yes | 
+                                   QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+
+        ## =====================================================================
+        if reply == QtWidgets.QMessageBox.Yes: 
+            if self.mainEngine.CtaStrategy.strategyDict:
+                for k in self.mainEngine.CtaStrategy.strategyDict.keys():
+                    self.mainEngine.CtaStrategy.startStrategy(k)
+        ## ===================================================================== 
+
+    ############################################################################
+    ## william
+    ## 全停
+    ############################################################################
+    def stopAll(self):
+        """
+        一键全平仓
+        """
+        # pass
+        
+        reply = QtWidgets.QMessageBox.question(self, vtText.STOP_ALL,
+                                   vtText.CONFIRM_STOP_ALL, QtWidgets.QMessageBox.Yes | 
+                                   QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+
+        ## =====================================================================
+        if reply == QtWidgets.QMessageBox.Yes: 
+            if self.mainEngine.CtaStrategy.strategyDict:
+                for k in self.mainEngine.CtaStrategy.strategyDict.keys():
+                    self.mainEngine.CtaStrategy.stopStrategy(k)
+        ## =====================================================================  
+
+
+    ############################################################################
+    ## william
+    ## 全平
+    ############################################################################
+    def closeAll(self):
+        """
+        一键全平仓
+        """
+        # pass
+        
+        reply = QtWidgets.QMessageBox.question(self, vtText.CLOSE_ALL,
+                                   vtText.CONFIRM_CLOSE_ALL, QtWidgets.QMessageBox.Yes | 
+                                   QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+
+        if reply == QtWidgets.QMessageBox.Yes: 
+            self.mainEngine.closeAll()
+        else:
+            pass
+            # event.ignore()
+
+    def priceBetweenUpperLower(self, price, vtSymbol):
+        tempUpperLimit = self.lastTickData[vtSymbol]['upperLimit']
+        tempLowerLimit = self.lastTickData[vtSymbol]['lowerLimit']
+        return min(max(tempLowerLimit, price), tempUpperLimit)
+
     #----------------------------------------------------------------------
     def closePosition(self, cell):
         """根据持仓信息自动填写交易组件"""
@@ -1237,6 +1461,7 @@ class ContractManager(QtWidgets.QWidget):
 ########################################################################
 class WorkingOrderMonitor(OrderMonitor):
     """活动委托监控"""
+    """ 可撤 窗口"""
     STATUS_COMPLETED = [STATUS_ALLTRADED, STATUS_CANCELLED, STATUS_REJECTED]
 
     #----------------------------------------------------------------------
