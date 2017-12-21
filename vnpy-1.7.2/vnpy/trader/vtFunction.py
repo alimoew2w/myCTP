@@ -74,6 +74,15 @@ def getTempPath(name):
     path = os.path.join(tempPath, name)
     return path
 
+## -----------------------------------------------------------------------------
+def getLogPath(name):
+    """获取存放临时文件的路径"""
+    logPath = os.path.join(os.getcwd(), 'trading/log')
+    if not os.path.exists(logPath):
+        os.makedirs(logPath)
+        
+    path = os.path.join(logPath, name)
+    return path
 
 # JSON配置文件路径
 jsonPathDict = {}
@@ -137,6 +146,27 @@ def lastTradingDate():
 
 ## =========================================================================
 ## william
+## dbMySQLConnect
+## -------------------------------------------------------------------------
+def dbMySQLConnect(dbName):
+    """连接 mySQL 数据库"""
+    try:
+        conn = MySQLdb.connect(db          = dbName, 
+                               host        = globalSetting().vtSetting["mysqlHost"], 
+                               port        = globalSetting().vtSetting["mysqlPort"], 
+                               user        = globalSetting().vtSetting["mysqlUser"], 
+                               passwd      = globalSetting().vtSetting["mysqlPassword"], 
+                               use_unicode = True, 
+                               charset     = "utf8")
+        return conn
+    except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
+        print e
+    # finally:
+    #     conn.close()
+## =========================================================================
+
+## =========================================================================
+## william
 ## 从 MySQL 数据库查询数据
 ## -------------------------------------------------------------------------
 def dbMySQLQuery(dbName, query):
@@ -151,10 +181,8 @@ def dbMySQLQuery(dbName, query):
                                charset     = "utf8")
         mysqlData = pd.read_sql(str(query), conn)
         return mysqlData
-        self.writeLog(text.DATA_MySQL_QUERY_COMPLETED)
     except (MySQLdb.Error, MySQLdb.Warning, TypeError) as e:
         print e
-        self.writeLog(text.DATA_MySQL_QUERY_FAILED)
     finally:
         conn.close()
 ## =========================================================================
