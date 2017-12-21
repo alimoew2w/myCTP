@@ -12,7 +12,7 @@ import json,shelve
 import pandas as pd
 from copy import copy
 from datetime import datetime, timedelta
-
+from logging import *
 
 from vnpy.api.ctp import MdApi, TdApi, defineDict
 from vnpy.trader.vtGateway import *
@@ -312,11 +312,13 @@ class CtpMdApi(MdApi):
     #----------------------------------------------------------------------   
     def onRspError(self, error, n, last):
         """错误回报"""
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        self.gateway.onError(err)
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## ---------------------------------------------------------------------
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
         
     #----------------------------------------------------------------------
     def onRspUserLogin(self, data, error, n, last):
@@ -342,11 +344,15 @@ class CtpMdApi(MdApi):
                 
         # 否则，推送错误信息
         else:
-            err = VtErrorData()
-            err.gatewayName = self.gatewayName
-            err.errorID = error['ErrorID']
-            err.errorMsg = error['ErrorMsg'].decode('gbk')
-            self.gateway.onError(err)
+            # err = VtErrorData()
+            # err.gatewayName = self.gatewayName
+            # err.errorID = error['ErrorID']
+            # err.errorMsg = error['ErrorMsg'].decode('gbk')
+            # self.gateway.onError(err)
+            ## -----------------------------------------------------------------
+            # print error
+            self.writeError(error['ErrorID'], error['ErrorMsg'])
+            
 
     #---------------------------------------------------------------------- 
     def onRspUserLogout(self, data, error, n, last):
@@ -360,12 +366,14 @@ class CtpMdApi(MdApi):
                 
         # 否则，推送错误信息
         else:
-            err = VtErrorData()
-            err.gatewayName = self.gatewayName
-            err.errorID = error['ErrorID']
-            err.errorMsg = error['ErrorMsg'].decode('gbk')
-            self.gateway.onError(err)
-        
+            # err = VtErrorData()
+            # err.gatewayName = self.gatewayName
+            # err.errorID = error['ErrorID']
+            # err.errorMsg = error['ErrorMsg'].decode('gbk')
+            # self.gateway.onError(err)
+            ## -----------------------------------------------------------------
+            self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------  
     def onRspSubMarketData(self, data, error, n, last):
         """订阅合约回报"""
@@ -553,13 +561,27 @@ class CtpMdApi(MdApi):
         """关闭"""
         self.exit()
         
-    #----------------------------------------------------------------------
-    def writeLog(self, content):
+    #---------------------------------------------------------------------------
+    def writeLog(self, content, logLevel = INFO):
         """发出日志"""
         log = VtLogData()
         log.gatewayName = self.gatewayName
         log.logContent = content
-        self.gateway.onLog(log)        
+        log.logLevel = logLevel
+        self.gateway.onLog(log)     
+
+    #---------------------------------------------------------------------------
+    def writeError(self, errorID, errorMsg):
+        """发出错误"""
+        err = VtErrorData()
+        err.gatewayName = self.gatewayName
+        err.errorID = errorID
+        err.errorMsg = errorMsg.decode('gbk')
+        self.gateway.onError(err) 
+        ## ---------------------------------------------------------------------
+        if globalSetting.CONTRACT_DATA_RECEIVED:
+            self.writeLog(u"[错误代码]:%s [提示信息] %s" %(err.errorID, err.errorMsg),
+                     logLevel = ERROR)
 
 
 ########################################################################
@@ -651,11 +673,13 @@ class CtpTdApi(TdApi):
             
             self.login()
         else:
-            err = VtErrorData()
-            err.gatewayName = self.gatewayName
-            err.errorID = error['ErrorID']
-            err.errorMsg = error['ErrorMsg'].decode('gbk')
-            self.gateway.onError(err)
+            # err = VtErrorData()
+            # err.gatewayName = self.gatewayName
+            # err.errorID = error['ErrorID']
+            # err.errorMsg = error['ErrorMsg'].decode('gbk')
+            # self.gateway.onError(err)
+            ## -----------------------------------------------------------------
+            self.writeError(error['ErrorID'], error['ErrorMsg'])
         
     #----------------------------------------------------------------------
     def onRspUserLogin(self, data, error, n, last):
@@ -678,12 +702,16 @@ class CtpTdApi(TdApi):
                 
         # 否则，推送错误信息
         else:
-            err = VtErrorData()
-            err.gatewayName = self.gatewayName
-            err.errorID = error['ErrorID']
-            err.errorMsg = error['ErrorMsg'].decode('gbk')
-            self.gateway.onError(err)
-            
+            # err = VtErrorData()
+            # err.gatewayName = self.gatewayName
+            # err.errorID = error['ErrorID']
+            # err.errorMsg = error['ErrorMsg'].decode('gbk')
+            # self.gateway.onError(err)
+            ## -----------------------------------------------------------------
+            # print 'hello'
+            # print error
+            self.writeError(error['ErrorID'], error['ErrorMsg'])
+            ## -----------------------------------------------------------------
             # 标识登录失败，防止用错误信息连续重复登录
             self.loginFailed =  True
         
@@ -699,12 +727,14 @@ class CtpTdApi(TdApi):
                 
         # 否则，推送错误信息
         else:
-            err = VtErrorData()
-            err.gatewayName = self.gatewayName
-            err.errorID = error['ErrorID']
-            err.errorMsg = error['ErrorMsg'].decode('gbk')
-            self.gateway.onError(err)
-        
+            # err = VtErrorData()
+            # err.gatewayName = self.gatewayName
+            # err.errorID = error['ErrorID']
+            # err.errorMsg = error['ErrorMsg'].decode('gbk')
+            # self.gateway.onError(err)
+            ## -----------------------------------------------------------------
+            self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------
     def onRspUserPasswordUpdate(self, data, error, n, last):
         """"""
@@ -734,18 +764,12 @@ class CtpTdApi(TdApi):
         self.gateway.onOrder(order)
 
         # 推送错误信息
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        ## =====================================================================
-        ## william
-        # print 'hello'
-        # print err.errorMsg
-        # print err.__dict__
-        self.writeLog(err.errorMsg)
-        ## =====================================================================
-        self.gateway.onError(err)
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## -----------------------------------------------------------------
         
     #----------------------------------------------------------------------
     def onRspParkedOrderInsert(self, data, error, n, last):
@@ -760,12 +784,14 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspOrderAction(self, data, error, n, last):
         """撤单错误（柜台）"""
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        self.gateway.onError(err)
-        
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## -----------------------------------------------------------------
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------
     def onRspQueryMaxOrderVolume(self, data, error, n, last):
         """"""
@@ -1208,12 +1234,14 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspError(self, error, n, last):
         """错误回报"""
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        self.gateway.onError(err)
-        
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## -----------------------------------------------------------------
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------
     def onRtnOrder(self, data):
         """报单回报"""
@@ -1318,23 +1346,28 @@ class CtpTdApi(TdApi):
         order.price = data['LimitPrice']
         order.totalVolume = data['VolumeTotalOriginal']
         self.gateway.onOrder(order)
+        # print data
     
         # 推送错误信息        
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        self.gateway.onError(err)
-        
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## -----------------------------------------------------------------
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------
     def onErrRtnOrderAction(self, data, error):
         """撤单错误回报（交易所）"""
-        err = VtErrorData()
-        err.gatewayName = self.gatewayName
-        err.errorID = error['ErrorID']
-        err.errorMsg = error['ErrorMsg'].decode('gbk')
-        self.gateway.onError(err)
-        
+        # err = VtErrorData()
+        # err.gatewayName = self.gatewayName
+        # err.errorID = error['ErrorID']
+        # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # self.gateway.onError(err)
+        ## -----------------------------------------------------------------
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
+
     #----------------------------------------------------------------------
     def onRtnInstrumentStatus(self, data):
         """"""
@@ -1740,17 +1773,25 @@ class CtpTdApi(TdApi):
         self.exit()
 
     #---------------------------------------------------------------------------
-    def writeLog(self, content):
+    def writeLog(self, content, logLevel = INFO):
         """发出日志"""
         log = VtLogData()
         log.gatewayName = self.gatewayName
         log.logContent = content
+        log.logLevel = logLevel
         self.gateway.onLog(log)     
 
-    # #---------------------------------------------------------------------------
-    # def printLog(self, content):
-    #     """发出日志"""
-    #     log = VtLogData()
-    #     log.gatewayName = self.gatewayName
-    #     log.logContent = content
-    #     self.gateway.onLog(log)        
+    #---------------------------------------------------------------------------
+    def writeError(self, errorID, errorMsg):
+        """发出错误"""
+        err = VtErrorData()
+        err.gatewayName = self.gatewayName
+        err.errorID = errorID
+        err.errorMsg = errorMsg.decode('gbk')
+        self.gateway.onError(err) 
+        ## ---------------------------------------------------------------------
+        if globalSetting.CONTRACT_DATA_RECEIVED:
+            self.writeLog(u"[错误代码]:%s [提示信息] %s" %(err.errorID, err.errorMsg),
+                     logLevel = ERROR)
+            
+
