@@ -738,6 +738,13 @@ class CtpTdApi(TdApi):
         err.gatewayName = self.gatewayName
         err.errorID = error['ErrorID']
         err.errorMsg = error['ErrorMsg'].decode('gbk')
+        ## =====================================================================
+        ## william
+        # print 'hello'
+        # print err.errorMsg
+        # print err.__dict__
+        self.writeLog(err.errorMsg)
+        ## =====================================================================
         self.gateway.onError(err)
         
     #----------------------------------------------------------------------
@@ -1680,13 +1687,16 @@ class CtpTdApi(TdApi):
         temp = ['InstrumentID','LimitPrice','VolumeTotalOriginal','OrderPriceType','Direction','OrderRef','InvestorID','UserID','BrokerID']
         temp = {k: req[k] for k in req.keys()}
         '''
-        print "\n"+'#'*80
-        print "打印下单的详细信息"
-        print '-'*80
+        # print "\n"+'#'*80
+        # print "打印下单的详细信息"
+        # print '-'*80
         tempFields = ['orderID','vtSymbol','price','direction','offset',
                       'volume','orderTime','tradeStatus']
-        print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
-        print '#'*80
+        # print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
+        # print '#'*80
+        ## ---------------------------------------------------------------------
+        content = u'下单的详细信息\n%s%s\n%s' %('-'*80+'\n',pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields],'-'*80)
+        self.writeLog(content)
         ########################################################################
 
         self.reqOrderInsert(req, self.reqID)
@@ -1714,11 +1724,14 @@ class CtpTdApi(TdApi):
         # ## ---------------------------------------------------------------------
         # ## william
         # ## 打印撤单的纤详细信息
-        print "\n"+'#'*80
-        print "撤单的详细信息:"
-        print pd.DataFrame([req.values()], columns = req.keys())
-        print '#'*80
-        # ## ---------------------------------------------------------------------       
+        # print "\n"+'#'*80
+        # print "撤单的详细信息:"
+        # print pd.DataFrame([req.values()], columns = req.keys())
+        # print '#'*80
+        ## ---------------------------------------------------------------------
+        content = u'撤单的纤详细信息\n%s%s\n%s' %('-'*80+'\n',pd.DataFrame([req.values()], columns = req.keys()),'-'*80)
+        self.writeLog(content)
+        ## ---------------------------------------------------------------------       
         self.reqOrderAction(req, self.reqID)
         
     #----------------------------------------------------------------------
