@@ -73,6 +73,9 @@ class RmEngine(object):
         with open(self.settingFilePath) as f:
             d = json.load(f)
 
+            ####################################################################
+            ## william
+            ## 把风控模块设置为激活状态
             # 设置风控参数
             self.active = d['active']
 
@@ -189,43 +192,53 @@ class RmEngine(object):
         if not self.active:
             return True
 
-        # 检查委托数量
+        ## =====================================================================
+        ## 检查委托数量
         if orderReq.volume <= 0:
             self.writeRiskLog(u'委托数量必须大于0')
             return False
-        
         if orderReq.volume > self.orderSizeLimit:
             self.writeRiskLog(u'单笔委托数量%s，超过限制%s'
                               %(orderReq.volume, self.orderSizeLimit))
             return False
 
-        # 检查成交合约量
+        ## =====================================================================
+        ## 检查成交合约量
         if self.tradeCount >= self.tradeLimit:
             self.writeRiskLog(u'今日总成交合约数量%s，超过限制%s'
                               %(self.tradeCount, self.tradeLimit))
             return False
 
-        # 检查流控
+        ## =====================================================================
+        ## 检查流控
         if self.orderFlowCount >= self.orderFlowLimit:
             self.writeRiskLog(u'委托流数量%s，超过限制每%s秒%s'
                               %(self.orderFlowCount, self.orderFlowClear, self.orderFlowLimit))
             return False
 
-        # 检查总活动合约
+        ## =====================================================================
+        ## 检查总活动合约
         workingOrderCount = len(self.mainEngine.getAllWorkingOrders())
         if workingOrderCount >= self.workingOrderLimit:
             self.writeRiskLog(u'当前活动委托数量%s，超过限制%s'
                               %(workingOrderCount, self.workingOrderLimit))
             return False
 
-        # 检查撤单次数
+        ## =====================================================================
+        ## 检查撤单次数
         if orderReq.symbol in self.orderCancelDict and self.orderCancelDict[orderReq.symbol] >= self.orderCancelLimit:
             self.writeRiskLog(u'当日%s撤单次数%s，超过限制%s'
                               %(orderReq.symbol, self.orderCancelDict[orderReq.symbol], self.orderCancelLimit))
             return False
         
-        # 检查保证金比例
-        if gatewayName in self.marginRatioDict and self.marginRatioDict[gatewayName] >= self.marginRatioLimit:
+        ########################################################################
+        ## william
+        ## 对于开仓的订单, 需要检查以下两项风控:
+        ## 1. 保证金比例
+        ## 2. 开仓, 如果是平仓, 就不需要了
+        ## =====================================================================
+        ## 检查保证金比例
+        if gatewayName in self.marginRatioDict and self.marginRatioDict[gatewayName] >= self.marginRatioLimit and orderReq.offset == u'开仓':
             self.writeRiskLog(u'%s接口保证金占比%s，超过限制%s'
                               %(gatewayName, self.marginRatioDict[gatewayName], self.marginRatioLimit))
             return False
