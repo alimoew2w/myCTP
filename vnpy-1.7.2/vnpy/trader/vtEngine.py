@@ -6,6 +6,7 @@ import logging
 from logging import INFO, ERROR
 from collections import OrderedDict
 from datetime import datetime
+from time import sleep
 from copy import copy
 
 from pymongo import MongoClient, ASCENDING
@@ -137,17 +138,24 @@ class MainEngine(object):
         
         if gateway:
             gateway.connect(accountID)
+            sleep(1)
             if gatewayName == 'CTP':
                 ## -------------------------------------------------------------
                 if not self.gatewayDict['CTP'].mdConnected:
-                    self.writeLog(content = u'CTP [md] 行情服务器连接失败', logLevel=ERROR)
+                    self.writeLog(content = u'CTP [md] 行情服务器连接失败', 
+                                  logLevel = ERROR, 
+                                  gatewayName = 'CTP')
                 ## -------------------------------------------------------------
                 if not self.gatewayDict['CTP'].tdConnected:
-                    self.writeLog(content = u'CTP [td] 交易服务器连接失败', logLevel=ERROR)
+                    self.writeLog(content = u'CTP [td] 交易服务器连接失败', 
+                                  logLevel = ERROR, 
+                                  gatewayName = 'CTP')
                 ## -------------------------------------------------------------
                 if (not self.gatewayDict['CTP'].mdConnected and
                     not self.gatewayDict['CTP'].tdConnected):
-                    self.writeLog(content = u'CTP 连接失败', logLevel=ERROR)
+                    self.writeLog(content = u'账户登录失败', 
+                                  logLevel = ERROR, 
+                                  gatewayName = 'CTP')
             ## -----------------------------------------------------------------
             ## 接口连接后自动执行数据库连接的任务
             ## self.dbMySQLConnect()     
@@ -315,12 +323,12 @@ class MainEngine(object):
         self.dataEngine.saveContracts()
     
     #----------------------------------------------------------------------
-    def writeLog(self, content, logLevel = INFO):
+    def writeLog(self, content, logLevel = INFO, gatewayName = 'MAIN_ENGINE'):
         """快速发出日志事件"""
         log = VtLogData()
         # log.logContent = content + '\n'
         log.logContent = content
-        log.gatewayName = 'MAIN_ENGINE'
+        log.gatewayName = gatewayName
         log.logLevel = logLevel
         event = Event(type_= EVENT_LOG)
         event.dict_['data'] = log
@@ -406,9 +414,9 @@ class MainEngine(object):
     ## dbMySQLConnect
     ## -------------------------------------------------------------------------
     def dbMySQLConnect(self,  dbName = 'dev'):
-        """连接MongoDB数据库"""
+        """连接 MySQL 数据库"""
         if not self.dbMySQLClient:
-            # 读取MongoDB的设置
+            # 读取 MySQL 的设置
             try:
                 conn = MySQLdb.connect(db          = dbName, 
                                        host        = globalSetting().vtSetting["mysqlHost"], 
@@ -675,13 +683,13 @@ class DataEngine(object):
         #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
         # print "\n"+'#'*100
         ## ---------------------------------------------------------------------
-        if globalSetting.CONTRACT_DATA_RECEIVED:
+        if globalSetting.LOGIN:
             # content = "\n %s %s %s" %(trade.vtOrderID, trade.vtSymbol, trade.status)
-            content = "\n%s\n%s\n%s" %('-'*100,
+            content = u"成交的详细信息\n%s\n%s\n%s" %('-'*80,
                 temp[['vtOrderID','vtSymbol','offset','direction','price', 
-                      'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']],
-                '-'*100)
-            self.writeLog(content)
+                      'tradedVolume','tradeTime','status']],
+                '-'*80)
+            self.writeLog(content, gatewayName = 'CTP')
         ## ---------------------------------------------------------------------
 
 
@@ -977,11 +985,12 @@ class DataEngine(object):
     ## =========================================================================
     ## william
     ## -------------------------------------------------------------------------
-    def writeLog(self, content, logLevel = INFO):
+    def writeLog(self, content, logLevel = INFO, gatewayName = 'DATA_ENGINE'):
         """快速发出日志事件"""
         log = VtLogData()
-        log.logContent = content + '\n'
-        log.gatewayName = 'DATA_ENGINE'
+        # log.logContent = content + '\n'
+        log.logContent = content
+        log.gatewayName = gatewayName
         log.logLevel = logLevel
         event = Event(type_= EVENT_LOG)
         event.dict_['data'] = log
@@ -1318,52 +1327,97 @@ class PositionDetail(object):
         
         # 上期所模式拆分今昨，优先平今
         elif self.mode is self.MODE_SHFE:
-            # 开仓无需转换
+            ## -----------------------------------------------------------------
+            ## william
+            ## 开仓无需转换
             if req.offset is OFFSET_OPEN:
                 return [req]
-            
-            # 多头
+            ## -----------------------------------------------------------------
+
+            ## -----------------------------------------------------------------
+            ## william
+            ## 平仓需要考虑平今，平昨
+            ## 
+            ## 多头平仓 --> 空头仓位
+            ## -------------------------------
             if req.direction is DIRECTION_LONG:
                 posAvailable = self.shortPos - self.shortPosFrozen
                 tdAvailable = self.shortTd- self.shortTdFrozen
                 ydAvailable = self.shortYd - self.shortYdFrozen            
-            # 空头
+            ## 空头平仓 --> 多头仓位
+            ## -------------------------------
             else:
                 posAvailable = self.longPos - self.longPosFrozen
                 tdAvailable = self.longTd - self.longTdFrozen
                 ydAvailable = self.longYd - self.longYdFrozen
+            ## -----------------------------------------------------------------
                 
+            ## -----------------------------------------------------------------
+            # # 平仓量超过总可用，拒绝，返回空列表
+            # if req.volume > posAvailable:
+            #     return []
+            # # 平仓量小于今可用，全部平今
+            # elif req.volume <= tdAvailable:
+            #     req.offset = OFFSET_CLOSETODAY
+            #     return [req]
+            # # 平仓量大于今可用，平今再平昨
+            # else:
+            #     l = []
+                
+            #     if tdAvailable > 0:
+            #         reqTd = copy(req)
+            #         reqTd.offset = OFFSET_CLOSETODAY
+            #         reqTd.volume = tdAvailable
+            #         l.append(reqTd)
+                    
+            #     reqYd = copy(req)
+            #     reqYd.offset = OFFSET_CLOSEYESTERDAY
+            #     reqYd.volume = req.volume - tdAvailable
+            #     l.append(reqYd)
+                
+            #     return l
+            ## -----------------------------------------------------------------
+            
+            ## -----------------------------------------------------------------
             # 平仓量超过总可用，拒绝，返回空列表
             if req.volume > posAvailable:
                 return []
-            # 平仓量小于今可用，全部平今
-            elif req.volume <= tdAvailable:
-                req.offset = OFFSET_CLOSETODAY
+            # 平仓量小于昨可用，全部平昨
+            elif req.volume <= ydAvailable:
+                req.offset = OFFSET_CLOSEYESTERDAY
                 return [req]
-            # 平仓量大于今可用，平今再平昨
+            # 平仓量大于昨可用，先平昨再平今
             else:
                 l = []
                 
-                if tdAvailable > 0:
-                    reqTd = copy(req)
-                    reqTd.offset = OFFSET_CLOSETODAY
-                    reqTd.volume = tdAvailable
-                    l.append(reqTd)
-                    
-                reqYd = copy(req)
-                reqYd.offset = OFFSET_CLOSEYESTERDAY
-                reqYd.volume = req.volume - tdAvailable
-                l.append(reqYd)
+                ## -------------------------------------------------------------
+                ## 平昨
+                if ydAvailable > 0:
+                    reqYd = copy(req)
+                    reqYd.offset = OFFSET_CLOSEYESTERDAY
+                    reqYd.volume = ydAvailable
+                    l.append(reqYd)
+                
+                ## -------------------------------------------------------------
+                ## 平今
+                reqTd = copy(req)
+                reqTd.offset = OFFSET_CLOSETODAY
+                reqTd.volume = req.volume - ydAvailable
+                l.append(reqTd)
                 
                 return l
-            
+            ## -----------------------------------------------------------------
+
+
         # 平今惩罚模式，没有今仓则平昨，否则锁仓
         elif self.mode is self.MODE_TDPENALTY:
-            # 多头
+            ## 多头平仓 --> 空头仓位
+            ## -------------------------------
             if req.direction is DIRECTION_LONG:
                 td = self.shortTd
                 ydAvailable = self.shortYd - self.shortYdFrozen
-            # 空头
+            ## 空头平仓 --> 多头仓位
+            ## -------------------------------
             else:
                 td = self.longTd
                 ydAvailable = self.longYd - self.longYdFrozen
