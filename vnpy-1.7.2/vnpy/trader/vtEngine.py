@@ -225,7 +225,7 @@ class MainEngine(object):
         #     self.CtaStrategy.loadSetting()
         # except:
         #     None
-        # self.cancelAll()
+        self.cancelAll()
         ## -----------------------------------------------------------------
         
         CTPAccountPosInfo = {k:{u:self.dataEngine.positionInfo[k][u] for u in self.dataEngine.positionInfo[k].keys() if u in ['vtSymbol','position','direction']} for k in self.dataEngine.positionInfo.keys() if int(self.dataEngine.positionInfo[k]['position']) != 0}
@@ -246,20 +246,20 @@ class MainEngine(object):
         tempStrategy = strategyClass()
         ## ---------------------------------------------------------------------
 
-        ## -------------------------------------------------------------------------------------
+        ## ---------------------------------------------------------------------
         ## 订阅合约行情
-        ## -------------------------------------------------------------------------------------
+        ## ---------------------------------------------------------------------
         for i in self.dataEngine.positionInfo.keys():
             req = VtSubscribeReq()
             req.symbol = self.dataEngine.positionInfo[i]['symbol']
             self.subscribe(req, 'CTP')
             if req.symbol not in self.CtaStrategy.subscribeContracts:
                 self.CtaStrategy.subscribeContracts.append(req.symbol)
-        ## -------------------------------------------------------------------------------------
+        ## ---------------------------------------------------------------------
 
-        ## =====================================================================================
+        ## =====================================================================
         for i in CTPAccountPosInfo.keys():
-            ## -----------------------------------------------------------------------------
+            ## -----------------------------------------------------------------
             try:
                 tempInstrumentID = CTPAccountPosInfo[i]['vtSymbol']
                 tempVolume       = CTPAccountPosInfo[i]['position']
@@ -267,26 +267,33 @@ class MainEngine(object):
                 tempLastPrice    = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['lastPrice']
                 tempUpperLimit   = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['upperLimit']
                 tempLowerLimit   = self.gatewayDict['CTP'].lastTickDict[tempInstrumentID]['lowerLimit']
-                self.writeLog('%s ：全平仓 %0d@%.2f' %(tempInstrumentID, tempVolume, tempLastPrice))
-                ## -------------------------------------------------------------------------
-                # if CTPAccountPosInfo[i]['direction'] == u'多':
-                #     self.CtaStrategy.sendOrder(vtSymbol  = tempInstrumentID,
-                #                                           orderType = CTAORDER_SELL,
-                #                                           price     = self.priceBetweenUpperLower(max(tempUpperLimit, tempLastPrice - 1*tempPriceTick), 
-                #                                                           tempInstrumentID),
-                #                                           volume    = tempVolume,
-                #                                           strategy  = tempStrategy)
-                # elif CTPAccountPosInfo[i]['direction'] == u'空':
-                #     self.CtaStrategy.sendOrder(vtSymbol  = tempInstrumentID,
-                #                                           orderType = CTAORDER_COVER,
-                #                                           price     = self.priceBetweenUpperLower(min(tempLowerLimit, tempLastPrice + 1*tempPriceTick),
-                #                                                           tempInstrumentID),
-                #                                           volume    = tempVolume,
-                #                                           strategy  = tempStrategy)
-                ## -------------------------------------------------------------------------
+                self.writeLog('%s ：全平仓 %0d@%.2f' %(tempInstrumentID, tempVolume, tempLastPrice),
+                              gatewayName = 'CTP')
+                ## -------------------------------------------------------------
+                if CTPAccountPosInfo[i]['direction'] == u'多':
+                    self.CtaStrategy.sendOrder(
+                        vtSymbol  = tempInstrumentID,
+                        orderType = CTAORDER_SELL,
+                        price     = self.priceBetweenUpperLower(
+                                         max(tempLowerLimit, tempLastPrice - 1*tempPriceTick), 
+                                         tempInstrumentID),
+                        volume    = tempVolume,
+                        strategy  = tempStrategy)
+                elif CTPAccountPosInfo[i]['direction'] == u'空':
+                    self.CtaStrategy.sendOrder(
+                        vtSymbol  = tempInstrumentID,
+                        orderType = CTAORDER_COVER,
+                        price     = self.priceBetweenUpperLower(
+                                         min(tempUpperLimit, tempLastPrice + 1*tempPriceTick),
+                                         tempInstrumentID),
+                        volume    = tempVolume,
+                        strategy  = tempStrategy)
+                ## -------------------------------------------------------------
             except:
-               self.writeLog('%s ：平仓失败' %tempInstrumentID)
-        ## =====================================================================================
+               # self.writeLog('%s ：平仓失败' %tempInstrumentID, logLevel = ERROR,
+               #               gatewayName = 'CTP')
+               pass
+        ## =====================================================================
 
 
     #----------------------------------------------------------------------
@@ -491,6 +498,11 @@ class MainEngine(object):
         return self.dataEngine.getAllOrders()
     
     #----------------------------------------------------------------------
+    def getAllOrdersDataFrame(self):
+        """查询所有委托"""
+        return self.dataEngine.getAllOrdersDataFrame()
+
+    #----------------------------------------------------------------------
     def getAllPositionDetails(self):
         """查询本地持仓缓存细节"""
         return self.dataEngine.getAllPositionDetails()
@@ -554,7 +566,7 @@ class MainEngine(object):
     def priceBetweenUpperLower(self, price, vtSymbol):
         """保证价格在 UpperLimit 和 LowerLimit 之间"""
         tempUpperLimit = self.gatewayDict['CTP'].lastTickDict[vtSymbol]['upperLimit']
-        tempLowerLimit = self.gatewayDict['CTP'].lastTickDict['lowerLimit']
+        tempLowerLimit = self.gatewayDict['CTP'].lastTickDict[vtSymbol]['lowerLimit']
         return min(max(tempLowerLimit, price), tempUpperLimit)
 
 
@@ -779,7 +791,29 @@ class DataEngine(object):
     def getAllOrders(self):
         """获取所有委托"""
         return self.orderDict.values()
-    
+
+    #----------------------------------------------------------------------
+    def getAllOrdersDataFrame(self):
+        """获取所有委托"""
+        # return self.orderDict.values()
+        ########################################################################
+        ## william
+        ########################################################################
+        allOrders = self.orderDict.values()
+
+        if len(allOrders) != 0:
+            dfHeader = allOrders[0].__dict__.keys()
+            dfData   = []
+            for i in range(len(allOrders)):
+                dfData.append(allOrders[i].__dict__.values())
+            df = pd.DataFrame(dfData, columns = dfHeader)
+            ## -----------------------------------------------------------------
+            return df
+        else:
+            self.writeLog("没有查询到订单!!!", logLevel = ERROR)
+            # return None
+            return pd.DataFrame()
+
     #----------------------------------------------------------------------
     def getPositionDetail(self, vtSymbol):
         """查询持仓细节"""
