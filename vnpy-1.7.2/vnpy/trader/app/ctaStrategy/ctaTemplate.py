@@ -5,6 +5,7 @@
 '''
 
 from __future__ import division
+import os,sys,subprocess
 
 from vnpy.trader.vtConstant import *
 from vnpy.trader.vtObject import VtBarData
@@ -16,20 +17,17 @@ from vnpy.trader import vtFunction
 ## -----------------------------------------------------------------------------
 from logging import INFO, ERROR
 import talib
-import numpy as np
 import pandas as pd
 from tabulate import tabulate
 from pandas.io import sql
 from datetime import *
 import time
 
-import json
-import ast
+import re,ast,json
 from copy import copy
 
 pd.set_option('display.max_rows', 1000)
 ## -----------------------------------------------------------------------------
-import sys   
 reload(sys) # Python2.5 初始化后会删除 sys.setdefaultencoding 这个方法，我们需要重新载入   
 sys.setdefaultencoding('utf-8')   
 
@@ -84,14 +82,14 @@ class CtaTemplate(object):
     ## -------------------------------------------------------------------------
     ## 从 TickData 提取的字段
     ## -------------------------------------------------------------------------
-    lastTickFileds = ['vtSymbol', 'datetime', 'lastPrice',
-                      'volume', 'turnover',
-                      'openPrice', 'highestPrice', 'lowestPrice',
-                      'bidPrice1', 'askPrice1',
-                      'bidVolume1', 'askVolume1',
-                      'upperLimit','lowerLimit'
-                      ]
-    lastTickDict = {}                  # 保留最新的价格数据
+    # lastTickFileds = ['vtSymbol', 'datetime', 'lastPrice',
+    #                   'volume', 'turnover',
+    #                   'openPrice', 'highestPrice', 'lowestPrice',
+    #                   'bidPrice1', 'askPrice1',
+    #                   'bidVolume1', 'askVolume1',
+    #                   'upperLimit','lowerLimit'
+    #                   ]
+    # lastTickDict = {}                  # 保留最新的价格数据
     tickTimer    = {}                  # 计时器, 用于记录单个合约发单的间隔时间
     vtSymbolList = []                  # 策略的所有合约存放在这里
     ## -------------------------------------------------------------------------
@@ -212,7 +210,9 @@ class CtaTemplate(object):
         ## =====================================================================
         ## 策略启动
         ## =====================================================================
+        self.ctaEngine.mainEngine.writeLog('-'*48, gatewayName = '')
         self.writeCtaLog(u'%s策略启动' %self.name)
+        self.ctaEngine.mainEngine.writeLog('-'*48, gatewayName = '')
         self.trading = True
         self.putEvent()
         
@@ -734,7 +734,7 @@ class CtaTemplate(object):
         ## 则取消开盘交易的所有订单
         if (h == self.tradingCloseHour and 
             (self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
-            s <= 20 and (s % 5 == 0)):
+            s <= 20 and (s % 10 == 0)):
             ## -----------------------------------------------------------------
             if len(self.vtOrderIDListClose) != 0:
                 allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
@@ -751,6 +751,7 @@ class CtaTemplate(object):
             20 <= s < 30  and 
             self.ctaEngine.mainEngine.multiStrategy and 
             (s == 29 or s % 10 == 0)):
+            self.writeCtaLog(u'Rscript end_signal.R')
             subprocess.call(['Rscript',
                              os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,
                              'vnpy/trader/app/ctaStrategy/Rscripts',
@@ -1226,134 +1227,6 @@ class CtaTemplate(object):
         ## ---------------------------------------------------------------------
 
 
-
-
-########################################################################
-class TargetPosTemplate(CtaTemplate):
-    """
-    允许直接通过修改目标持仓来实现交易的策略模板
-    
-    开发策略时，无需再调用buy/sell/cover/short这些具体的委托指令，
-    只需在策略逻辑运行完成后调用setTargetPos设置目标持仓，底层算法
-    会自动完成相关交易，适合不擅长管理交易挂撤单细节的用户。    
-    
-    使用该模板开发策略时，请在以下回调方法中先调用母类的方法：
-    onTick
-    onBar
-    onOrder
-    
-    假设策略名为TestStrategy，请在onTick回调中加上：
-    super(TestStrategy, self).onTick(tick)
-    
-    其他方法类同。
-    """
-    
-    className = 'TargetPosTemplate'
-    author = u'量衍投资'
-    
-    # 目标持仓模板的基本变量
-    tickAdd = 1             # 委托时相对基准价格的超价
-    lastTick = None         # 最新tick数据
-    lastBar = None          # 最新bar数据
-    targetPos = EMPTY_INT   # 目标持仓
-    orderList = []          # 委托号列表
-
-    # 变量列表，保存了变量的名称
-    varList = ['inited',
-               'trading',
-               'pos',
-               'targetPos']
-
-    #----------------------------------------------------------------------
-    def __init__(self, ctaEngine, setting):
-        """Constructor"""
-        super(TargetPosTemplate, self).__init__(ctaEngine, setting)
-        
-    #----------------------------------------------------------------------
-    def onTick(self, tick):
-        """收到行情推送"""
-        self.lastTick = tick
-        
-        # 实盘模式下，启动交易后，需要根据tick的实时推送执行自动开平仓操作
-        if self.trading:
-            self.trade()
-        
-    #----------------------------------------------------------------------
-    def onBar(self, bar):
-        """收到K线推送"""
-        self.lastBar = bar
-    
-    #----------------------------------------------------------------------
-    def onOrder(self, order):
-        """收到委托推送"""
-        if order.status == STATUS_ALLTRADED or order.status == STATUS_CANCELLED:
-            if order.vtOrderID in self.orderList:
-                self.orderList.remove(order.vtOrderID)
-    
-    #----------------------------------------------------------------------
-    def setTargetPos(self, targetPos):
-        """设置目标仓位"""
-        self.targetPos = targetPos
-        
-        self.trade()
-        
-    #----------------------------------------------------------------------
-    def trade(self):
-        """执行交易"""
-        # 先撤销之前的委托
-        for vtOrderID in self.orderList:
-            self.cancelOrder(vtOrderID)
-        self.orderList = []
-        
-        # 如果目标仓位和实际仓位一致，则不进行任何操作
-        posChange = self.targetPos - self.pos
-        if not posChange:
-            return
-        
-        # 确定委托基准价格，有tick数据时优先使用，否则使用bar
-        longPrice = 0
-        shortPrice = 0
-        
-        if self.lastTick:
-            if posChange > 0:
-                longPrice = self.lastTick.askPrice1 + self.tickAdd
-            else:
-                shortPrice = self.lastTick.bidPrice1 - self.tickAdd
-        else:
-            if posChange > 0:
-                longPrice = self.lastBar.close + self.tickAdd
-            else:
-                shortPrice = self.lastBar.close - self.tickAdd
-        
-        # 回测模式下，采用合并平仓和反向开仓委托的方式
-        if self.getEngineType() == ENGINETYPE_BACKTESTING:
-            if posChange > 0:
-                l = self.buy(longPrice, abs(posChange))
-            else:
-                l = self.short(shortPrice, abs(posChange))
-            self.orderList.extend(l)
-        
-        # 实盘模式下，首先确保之前的委托都已经结束（全成、撤销）
-        # 然后先发平仓委托，等待成交后，再发送新的开仓委托
-        else:
-            # 检查之前委托都已结束
-            if self.orderList:
-                return
-            
-            # 买入
-            if posChange > 0:
-                if self.pos < 0:
-                    l = self.cover(longPrice, abs(self.pos))
-                else:
-                    l = self.buy(longPrice, abs(posChange))
-            # 卖出
-            else:
-                if self.pos > 0:
-                    l = self.sell(shortPrice, abs(self.pos))
-                else:
-                    l = self.short(shortPrice, abs(posChange))
-            self.orderList.extend(l)
-    
     
 ########################################################################
 class BarManager(object):
