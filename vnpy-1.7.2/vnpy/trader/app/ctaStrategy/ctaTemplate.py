@@ -153,6 +153,13 @@ class CtaTemplate(object):
         self.ctaEngine = ctaEngine
 
         ## =====================================================================
+        ## 交易时点
+        self.tradingCloseHour    = 14
+        self.tradingCloseMinute1 = 50
+        self.tradingCloseMinute2 = 59
+        ## =====================================================================
+
+        ## =====================================================================
         ## 把　MySQL 数据库的　TradingDay　调整为　datetime 格式
         conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
@@ -669,6 +676,108 @@ class CtaTemplate(object):
         # self.putEvent()
         ## .....................................................................
 
+
+    ############################################################################
+    ## 更新 交易状态
+    ## self.trading
+    ## self.tradingStart
+    ## self.tradingEnd
+    ## self.tradingBetween
+    ############################################################################
+    def updateTradingStatus(self):
+        h = datetime.now().hour
+        m = datetime.now().minute
+        s = datetime.now().second
+        ## =====================================================================
+        ## 启动尾盘交易
+        ## =====================================================================
+        if ((h in [8,20] and m >= 59 and s >= 45) or 
+           ( ((21 <= h <= 24) or (0 <= h <= 2) or (9 <= h <= (self.tradingCloseHour-1))) and m <= 59 ) or 
+           (h == self.tradingCloseHour and m < self.tradingCloseMinute1)):
+            self.tradingStart = True
+        else:
+            self.tradingStart = False
+
+        ## ---------------------------------------------------------------------
+        if (h == self.tradingCloseHour and 
+           (self.tradingCloseMinute1+1) <= m < (self.tradingCloseMinute2-1)):
+            self.tradingBetween = True
+        else:
+            self.tradingBetween = False
+
+        ## ---------------------------------------------------------------------
+        if (h == self.tradingCloseHour and m == self.tradingCloseMinute2 and 
+           (s >= (59 - max(15, len(self.tradingOrdersClose)*1.0)))):
+            self.tradingEnd = True
+        else:
+            self.tradingEnd = False
+        ## ---------------------------------------------------------------------
+
+        ## =====================================================================
+        ## 如果是开盘交易
+        ## 则取消开盘交易的所有订单
+        if (h == self.tradingCloseHour and 
+            self.tradingCloseMinute1 <= m <= self.tradingCloseMinute1 and 
+            s <= 20 and (s % 10 == 0)):
+            ## -----------------------------------------------------------------
+            if (len(self.vtOrderIDListOpen) != 0 or 
+                len(self.vtOrderIDListUpperLower) != 0):
+                allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
+                for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListUpperLower:
+                    if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
+                            self.cancelOrder(vtOrderID)
+            ## -----------------------------------------------------------------
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 如果是收盘交易
+        ## 则取消开盘交易的所有订单
+        if (h == self.tradingCloseHour and 
+            (self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
+            s <= 20 and (s % 5 == 0)):
+            ## -----------------------------------------------------------------
+            if len(self.vtOrderIDListClose) != 0:
+                allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
+                for vtOrderID in self.vtOrderIDListClose:
+                    if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
+                            self.cancelOrder(vtOrderID)
+            ## -----------------------------------------------------------------
+        ## =====================================================================
+
+        ## =====================================================================
+        ## 生成收盘交易的订单
+        if (h == self.tradingCloseHour and 
+            m in [self.tradingCloseMinute1, (self.tradingCloseMinute2-1)] and 
+            20 <= s < 30  and 
+            self.ctaEngine.mainEngine.multiStrategy and 
+            (s == 29 or s % 10 == 0)):
+            subprocess.call(['Rscript',
+                             os.path.join(self.ctaEngine.mainEngine.ROOT_PATH,
+                             'vnpy/trader/app/ctaStrategy/Rscripts',
+                             'end_signal.R'),
+                             self.ctaEngine.mainEngine.ROOT_PATH, 
+                             self.ctaEngine.mainEngine.dataBase], 
+                             shell = False)
+
+        ## =====================================================================
+        ## 从 MySQL 数据库提取尾盘需要平仓的持仓信息
+        ## postionInfoClose
+        ## =====================================================================
+        if (h == self.tradingCloseHour and 
+            m in [self.tradingCloseMinute1, (self.tradingCloseMinute2-1)] and 
+            30 <= s <= 59 and (s % 10 == 0 or len(self.tradingOrdersClose) == 0)):
+            ## -----------------------------------------------------------------
+            conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+            cursor = conn.cursor()
+            cursor.execute("""
+                            TRUNCATE TABLE workingInfo
+                           """)
+            conn.commit()
+            conn.close()
+            ## -----------------------------------------------------------------  
+
+
+
     ############################################################################
     ## 更新 workingInfo
     ############################################################################
@@ -718,11 +827,6 @@ class CtaTemplate(object):
                   index = False)
         conn.close()
         ## ---------------------------------------------------------------------
-
-    ############################################################################
-    ## 更新 orderInfo
-    ############################################################################
-    # def updateOrderInfo(self, tradingOrders, stage):
 
 
     ############################################################################
@@ -808,6 +912,7 @@ class CtaTemplate(object):
 
     ############################################################################
     ## 更新订单字典
+    ## orderInfo
     ############################################################################
     def updateOrderInfo(self):
         """
@@ -990,7 +1095,7 @@ class CtaTemplate(object):
                     index     = False)
             except:
                 self.writeCtaLog(u'processOffsetOpen 开仓订单 写入 MySQL 数据库出错',
-                                logLevel = ERROR)
+                                 logLevel = ERROR)
         else:
             ## 如果在
             ## 则需要更新数据
@@ -1010,10 +1115,67 @@ class CtaTemplate(object):
                     index     =  False)
             except:
                 self.writeCtaLog(u'processOffsetOpen 开仓订单 写入 MySQL 数据库出错',
-                                logLevel = ERROR)
+                                 logLevel = ERROR)
             finally:
                 conn.close()
         ## -----------------------------------------------------------------
+
+
+    ############################################################################
+    ## 订单成交后
+    ## 处理 平仓的订单
+    ############################################################################
+    def processOffsetClose(self, stratTrade):
+        """处理开仓订单"""
+
+        ## ---------------------------------------------------------------------
+        if stratTrade['direction'] == 'long':
+            tempDirectionPos = 'short'
+        elif stratTrade['direction'] == 'short':
+            tempDirectionPos = 'long'
+        ## ---------------------------------------------------------------------
+
+        ## =====================================================================
+        ## mysqlPositionInfo: 存储在 mysql 数据库的持仓信息，需要更新
+        mysqlPositionInfo = vtFunction.dbMySQLQuery(
+            self.ctaEngine.mainEngine.dataBase,
+            """
+            SELECT *
+            FROM positionInfo
+            WHERE strategyID = '%s'
+            """ %(self.strategyID))
+        tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == stratTrade['InstrumentID']][\
+                                            mysqlPositionInfo.direction == tempDirectionPos].sort_values(by='TradingDay', ascending = True)
+        ## ---------------------------------------------------------------------------------
+        for i in range(len(tempPosInfo)):
+            tempResVolume = tempPosInfo.loc[tempPosInfo.index[i],'volume'] - stratTrade['volume']
+            mysqlPositionInfo.at[tempPosInfo.index[i], 'volume'] = tempResVolume
+            if tempResVolume >= 0:
+                break
+        ## ---------------------------------------------------------------------------------
+        mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume > 0]   
+        ## ---------------------------------------------------------------------
+        conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        ## ---------------------------------------------------------------------
+        try:
+            cursor.execute("""
+                            DELETE FROM positionInfo
+                            WHERE strategyID = '%s'
+                           """ %(self.strategyID))
+            conn.commit()                    
+            mysqlPositionInfo.to_sql(
+                con       = conn, 
+                name      = 'positionInfo', 
+                if_exists = 'append', 
+                flavor    = 'mysql', 
+                index     = False)
+        except:
+            self.writeCtaLog(u'processOffsetClose 平仓订单 写入 MySQL 数据库出错', 
+                               logLevel = ERROR)
+        finally:
+            conn.close()
+        ## =========================================================================
 
 
     ############################################################################
