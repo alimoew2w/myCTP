@@ -953,7 +953,7 @@ class CtaTemplate(object):
     ## 订单成交后
     ## 处理 开仓的订单
     ############################################################################
-    def processOffsetOpen(self, strateTrade):
+    def processOffsetOpen(self, stratTrade):
         """处理开仓订单"""
        
         ## =====================================================================
@@ -972,6 +972,10 @@ class CtaTemplate(object):
         tempPosInfo = mysqlPositionInfo.loc[mysqlPositionInfo.InstrumentID == stratTrade['InstrumentID']][\
                                             mysqlPositionInfo.TradingDay == stratTrade['TradingDay']][\
                                             mysqlPositionInfo.direction == stratTrade['direction']]
+        ## ---------------------------------------------------------------------
+        conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        cursor = conn.cursor()
+        ## ---------------------------------------------------------------------
         if len(tempPosInfo) == 0:
             ## 如果不在
             ## 则直接添加过去即可
@@ -992,8 +996,6 @@ class CtaTemplate(object):
             ## 则需要更新数据
             mysqlPositionInfo.at[tempPosInfo.index[0], 'volume'] += stratTrade['volume']
             mysqlPositionInfo = mysqlPositionInfo.loc[mysqlPositionInfo.volume != 0]
-            conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-            cursor = conn.cursor()
             try:
                 cursor.execute("""
                                 DELETE FROM positionInfo
@@ -1038,8 +1040,10 @@ class CtaTemplate(object):
 
         mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= stratTrade['volume']
         mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
+        ## ---------------------------------------------------------------------
         conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
         cursor = conn.cursor()
+        ## ---------------------------------------------------------------------
         try:
             cursor.execute("""
                             DELETE FROM failedInfo
