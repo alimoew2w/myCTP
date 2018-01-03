@@ -22,7 +22,8 @@ import json
 import os
 import traceback
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from time import sleep
+from datetime import datetime, time, timedelta
 from copy import copy
 
 from vnpy.event import Event
@@ -166,6 +167,14 @@ class CtaEngine(object):
                                     for k in ['vtSymbol','priceTick','size']}
             except:
                 None
+        ## =====================================================================
+
+        ## =====================================================================
+        self.DAY_START   = time(8, 30)       # 日盘启动和停止时间
+        self.DAY_END     = time(14, 05)
+        
+        self.NIGHT_START = time(20, 30)      # 夜盘启动和停止时间
+        self.NIGHT_END   = time(2, 45)
         ## =====================================================================
 
         # 引擎类型为实盘
@@ -480,12 +489,38 @@ class CtaEngine(object):
             # self.saveSyncData(strategy)              
             ## =================================================================
     
+
+    ############################################################################
+    ## william
+    ## 更新状态，需要订阅
+    ############################################################################
+    def processTradingStatus(self, event):
+        """控制交易开始与停止状态"""
+        if datetime.now().second % 30 != 0:
+            return 
+
+        currentTime = datetime.now().time()
+        if not ((self.DAY_START <= currentTime <= self.DAY_END) or
+            (currentTime >= self.NIGHT_START) or
+            (currentTime <= self.NIGHT_END)):
+            self.stopAll()
+            sleep(3)
+            self.writeCtaLog(u'启禀大王，赌场已经关闭!!!')
+            ## ----------
+            sys.exit()
+            ## ----------
+
+
     #----------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
         self.eventEngine.register(EVENT_TICK, self.processTickEvent)
         self.eventEngine.register(EVENT_ORDER, self.processOrderEvent)
         self.eventEngine.register(EVENT_TRADE, self.processTradeEvent)
+
+        self.eventEngine.register(EVENT_TIMER, self.processTradingStatus)
+
+
  
     #----------------------------------------------------------------------
     def insertMongoData(self, dbName, collectionName, data):
