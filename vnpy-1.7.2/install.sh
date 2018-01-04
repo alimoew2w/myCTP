@@ -27,3 +27,8 @@ pip install -r requirements.txt
 
 #Install vn.py
 # python setup.py install
+
+## =============================================================================
+rm -rf /home/william/anaconda2/lib/python2.7/site-packages/vnpy
+rm -rf /home/william/anaconda2/lib/python2.7/site-packages/vnpy-1.7.2*
+## =============================================================================
