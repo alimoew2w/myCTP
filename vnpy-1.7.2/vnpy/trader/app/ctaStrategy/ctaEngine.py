@@ -19,7 +19,7 @@
 from __future__ import division
 
 import json
-import os
+import sys,os
 import traceback
 from collections import OrderedDict
 from time import sleep
@@ -171,10 +171,10 @@ class CtaEngine(object):
 
         ## =====================================================================
         self.DAY_START   = time(8, 30)       # 日盘启动和停止时间
-        self.DAY_END     = time(14, 05)
+        self.DAY_END     = time(15, 05)
         
         self.NIGHT_START = time(20, 30)      # 夜盘启动和停止时间
-        self.NIGHT_END   = time(2, 45)
+        self.NIGHT_END   = time(2, 35)
         ## =====================================================================
 
         # 引擎类型为实盘
@@ -496,6 +496,7 @@ class CtaEngine(object):
     ############################################################################
     def processTradingStatus(self, event):
         """控制交易开始与停止状态"""
+        
         if datetime.now().second % 30 != 0:
             return 
 
@@ -503,12 +504,17 @@ class CtaEngine(object):
         if not ((self.DAY_START <= currentTime <= self.DAY_END) or
             (currentTime >= self.NIGHT_START) or
             (currentTime <= self.NIGHT_END)):
-            self.stopAll()
-            sleep(3)
-            self.writeCtaLog(u'启禀大王，赌场已经关闭!!!')
-            ## ----------
-            sys.exit()
-            ## ----------
+            # print 'hello'
+            # self.writeCtaLog('-'*44)
+            # self.writeCtaLog(u'启禀大王，赌场已经关闭!!!')
+            # self.writeCtaLog('-'*44)
+            # sleep(10)
+            # self.stopAll()
+            # sleep(3)
+            # print 'hello2'
+            # ## ----------
+            os._exit(0)
+            # ## ----------
 
 
     #----------------------------------------------------------------------
