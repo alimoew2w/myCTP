@@ -256,7 +256,7 @@ class MainEngine(object):
             if req.symbol not in self.CtaStrategy.subscribeContracts:
                 self.CtaStrategy.subscribeContracts.append(req.symbol)
         ## ---------------------------------------------------------------------
-
+        sleep(1)
         ## =====================================================================
         for i in CTPAccountPosInfo.keys():
             ## -----------------------------------------------------------------
@@ -695,7 +695,7 @@ class DataEngine(object):
         #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
         # print "\n"+'#'*100
         ## ---------------------------------------------------------------------
-        if globalSetting.LOGIN:
+        if globalSetting.LOGIN and globalSetting.PRINT_TRADE:
             # content = "\n %s %s %s" %(trade.vtOrderID, trade.vtSymbol, trade.status)
             content = u"成交的详细信息\n%s\n%s\n%s" %('-'*80,
                 temp[['vtOrderID','vtSymbol','offset','direction','price', 
@@ -767,13 +767,43 @@ class DataEngine(object):
     #----------------------------------------------------------------------
     def loadContracts(self):
         """从硬盘读取合约对象"""
-        f = shelve.open(self.contractFilePath)
-        if 'data' in f:
-            d = f['data']
-            for key, value in d.items():
-                self.contractDict[key] = value
-        f.close()
-        
+        ## ---------------------------------------------------------------------
+        # f = shelve.open(self.contractFilePath)
+        # if 'data' in f:
+        #     d = f['data']
+        #     for key, value in d.items():
+        #         self.contractDict[key] = value
+        # f.close()
+        ## ---------------------------------------------------------------------
+        try:
+            f = shelve.open(self.contractFileName)
+            if 'data' in f:
+                d = f['data']
+                for key, value in d.items():
+                    self.contractDict[key] = value
+            f.close()
+        except:
+            # pass
+            dfAll = pd.read_csv('contractAll.csv')
+            for i in range(len(dfAll)):
+                ## -------------------------------------------------------------
+                contract = VtContractData()
+                contract.symbol = dfAll.at[i,'symbol']
+                contract.exchange = dfAll.at[i,'exchange']
+                contract.vtSymbol = dfAll.at[i,'vtSymbol']
+                contract.name = dfAll.at[i,'name']
+                contract.productClass = dfAll.at[i,'productClass']
+                contract.size = dfAll.at[i,'size']
+                contract.priceTick = dfAll.at[i,'priceTick']
+                contract.volumeMultiple = dfAll.at[i,'size']
+                contract.longMarginRatio = round(dfAll.at[i,'longMarginRatio'],4)
+                contract.shortMarginRatio = round(dfAll.at[i,'shortMarginRatio'],4)
+                contract.strikePrice = dfAll.at[i,'strikePrice']
+                contract.underlyingSymbol = dfAll.at[i,'underlyingSymbol']
+                contract.optionType = dfAll.at[i,'optionType']
+                ## -------------------------------------------------------------
+                self.contractDict[dfAll.at[i,'vtSymbol']] = contract
+
     #----------------------------------------------------------------------
     def getOrder(self, vtOrderID):
         """查询委托"""
