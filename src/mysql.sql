@@ -91,7 +91,7 @@ create table workingInfo(
     TradingDay      DATE         NOT NULL,
     strategyID      CHAR(50)     NOT NULL,
     vtSymbol        CHAR(20)     NOT NULL,
-    vtOrderID       CHAR(50)     NOT NULL,   
+    vtOrderIDList   text         NOT NULL,   
     orderType       CHAR(50)     NOT NULL,
     volume          BIGINT       NOT NULL,
     stage           CHAR(20)     NOT NULL, 
@@ -157,7 +157,18 @@ create table UpperLowerInfo(
     TradingDay      DATE         NOT NULL,
     strategyID      CHAR(50)     NOT NULL,
     InstrumentID    VARCHAR(30)  NOT NULL,
-    vtOrderID       CHAR(50)     NOT NULL,
+    vtOrderIDList   CHAR(50)     NOT NULL,
     direction       CHAR(20)     ,
     volume          INT          
 );
+
+################################################################################
+## fee
+## 记录基金各项手续费
+################################################################################
+create table fee(
+    TradingDay      DATE          NOT NULL,
+    Amount          DECIMAL(10,5) NOT NULL,
+    Remarks         text(1000)
+);
+
