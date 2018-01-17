@@ -22,6 +22,7 @@ from tabulate import tabulate
 from pandas.io import sql
 from datetime import *
 import time
+import math
 
 import re,ast,json
 from copy import copy
@@ -402,7 +403,8 @@ class CtaTemplate(object):
                 'direction'     : tempOrders.at[i,'orderType'],
                 'volume'        : tempOrders.at[i,'volume'],
                 'TradingDay'    : tempOrders.at[i,'TradingDay'],
-                'vtOrderIDList' : []
+                'vtOrderIDList' : [],
+                'lastTimer'     : datetime.now()
                 }
             self.tickTimer[tempOrders.at[i,'InstrumentID']] = datetime.now()
         ## ---------------------------------------------------------------------
@@ -576,6 +578,49 @@ class CtaTemplate(object):
             #     self.cancelOrder(tradingOrders[i]['vtOrderID'])
             #     self.tickTimer[vtSymbol] = datetime.now()
 
+
+    def prepareTradingOrderSplit(self, vtSymbol, tradingOrders, orderIDList, 
+                                 priceType, price = None, addTick = 0, discount = 0):
+        """处理订单"""
+        ## 生成交易列表
+
+        tempTradingList = [k for k in tradingOrders.keys() 
+                             if tradingOrders[k]['vtSymbol'] == vtSymbol]
+        ## ---------------------------------------------------------------------
+        if not tempTradingList:
+            return
+        ## ---------------------------------------------------------------------
+        allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
+        if len(allOrders):
+            tempWorkingOrders  = allOrders.loc[allOrders.status.isin([u'未成交'])][\
+                                               allOrders.vtSymbol == vtSymbol][\
+                                               allOrders.vtOrderID.isin(orderIDList)]
+            tempWorkingVolume = sum(tempWorkingOrders.totalVolume)
+        else:
+            # tempWorkingOrders = []
+            tempWorkingVolume = 0
+
+        for i in tempTradingList:
+            ## -------------------------------------------------------------
+            ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
+            ## -------------------------------------------------------------
+            if (tradingOrders[i]['volume'] and
+                (datetime.now() - tradingOrders[i]['lastTimer']).seconds >= 55):
+                remainingMinute = 58 - datetime.now().minute
+                # remainingMinute = 5
+                tempVolume = int(math.ceil((tradingOrders[i]['volume'] - tempWorkingVolume) / remainingMinute))
+                if tempVolume == 0:
+                    return
+                self.sendTradingOrder(tradingOrders = tradingOrders,
+                                      orderDict     = tradingOrders[i],
+                                      orderIDList   = orderIDList,
+                                      priceType     = priceType,
+                                      volume        = tempVolume,
+                                      price         = price,
+                                      addTick       = addTick,
+                                      discount      = discount)
+                tradingOrders[i]['lastTimer'] = datetime.now()
+
     ############################################################################
     ## 根据订单的字典格式，发送订单给 CTP
     ## @param stratTrade: 交易事件数据
@@ -584,7 +629,8 @@ class CtaTemplate(object):
     ## @param addTick 控制增加的价格
     ############################################################################
     def sendTradingOrder(self, tradingOrders, orderDict, orderIDList, 
-                         priceType, price = None, addTick = 0, discount = 0):
+                         priceType, price = None, 
+                         volume = None, addTick = 0, discount = 0):
         """发送单个合约的订单"""
 
         ## =====================================================================
@@ -596,7 +642,10 @@ class CtaTemplate(object):
         tempBidPrice1    = self.ctaEngine.lastTickDict[tempInstrumentID]['bidPrice1']
         tempLastPrice    = self.ctaEngine.lastTickDict[tempInstrumentID]['lastPrice']
         tempDirection    = orderDict['direction']
-        tempVolume       = orderDict['volume']
+        if volume:
+            tempVolume   = volume
+        else:
+            tempVolume   = orderDict['volume']
 
         ## =====================================================================
         ## 定义最佳价格
