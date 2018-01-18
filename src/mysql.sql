@@ -65,8 +65,11 @@ create table orderInfo(
     offset          CHAR(50)     ,
     price           DECIMAL(15,5) ,
     totalVolume     BIGINT       ,
-    PRIMARY KEY(TradingDay, strategyID, vtOrderID, InstrumentID)
+    PRIMARY KEY(TradingDay, strategyID, vtOrderID, InstrumentID, status)
 );
+
+-- alter table orderInfo drop PRIMARY key;
+-- alter table orderInfo add primary key (TradingDay, strategyID, vtOrderID, InstrumentID, status)
 
 ################################################################################
 ## tradingOrders
