@@ -606,9 +606,12 @@ class CtaTemplate(object):
             ## -------------------------------------------------------------
             if (tradingOrders[i]['volume'] and
                 (datetime.now() - tradingOrders[i]['lastTimer']).seconds >= 55):
-                remainingMinute = 58 - datetime.now().minute
+                remainingMinute = self.tradingCloseMinute2-1 - datetime.now().minute
                 # remainingMinute = 5
-                tempVolume = int(math.ceil((tradingOrders[i]['volume'] - tempWorkingVolume) / remainingMinute))
+                if remainingMinute == 0:
+                    return
+                tempVolume = int(math.ceil(
+                    (tradingOrders[i]['volume'] - tempWorkingVolume) / float(remainingMinute)))
                 if tempVolume == 0:
                     return
                 self.sendTradingOrder(tradingOrders = tradingOrders,
