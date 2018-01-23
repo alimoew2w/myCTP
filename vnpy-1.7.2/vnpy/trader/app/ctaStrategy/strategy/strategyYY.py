@@ -347,13 +347,6 @@ class YYStrategy(CtaTemplate):
             self.stratTrade['TradingDay'] = self.ctaEngine.lastTradingDate
             self.processTradingOrdersFailedInfo(self.stratTrade)
 
-
-        ## =====================================================================
-        ## 连接 MySQL 设置
-        # conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-        # cursor = conn.cursor()
-        ## =====================================================================
-
         ## =====================================================================
         ## 2. 更新 positionInfo
         ## =====================================================================
@@ -373,7 +366,8 @@ class YYStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
             columns = self.tradingInfoFields)
-        self.updateTradingInfo(df = tempTradingInfo, tbName = 'tradingInfo')
+        # self.updateTradingInfo(df = tempTradingInfo, tbName = 'tradingInfo')
+        self.updateTradingInfo(df = tempTradingInfo)
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
         ## ---------------------------------------------------------------------
 
@@ -432,7 +426,7 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## 更新 workingInfo
         ## =====================================================================
-        if (self.tradingStart and (m % 5 == 0) and (s == 15)):
+        if (self.tradingStart and (m % 5 == 0) and (s == 35)):
             self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
             self.updateWorkingInfo(self.tradingOrdersClose, 'close')
             self.updateOrderInfo()
