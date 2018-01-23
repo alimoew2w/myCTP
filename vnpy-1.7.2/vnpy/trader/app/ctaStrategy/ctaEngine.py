@@ -171,7 +171,7 @@ class CtaEngine(object):
 
         ## =====================================================================
         self.DAY_START   = time(8, 30)       # 日盘启动和停止时间
-        self.DAY_END     = time(15, 05)
+        self.DAY_END     = time(15, 15)
         
         self.NIGHT_START = time(20, 30)      # 夜盘启动和停止时间
         self.NIGHT_END   = time(2, 35)
