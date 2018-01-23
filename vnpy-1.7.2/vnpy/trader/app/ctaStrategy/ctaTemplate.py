@@ -552,7 +552,8 @@ class CtaTemplate(object):
         allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
         if len(allOrders):
             tempFinishedOrders = allOrders.loc[allOrders.status.isin([u'已撤销',u'全部成交'])][\
-                                                   allOrders.vtOrderID.isin(orderIDList)].vtOrderID.values
+                                               allOrders.vtSymbol == vtSymbol][\
+                                               allOrders.vtOrderID.isin(orderIDList)].vtOrderID.values
         else:
             tempFinishedOrders = []
 
@@ -565,18 +566,24 @@ class CtaTemplate(object):
                 (all(vtOrderID in tempFinishedOrders for 
                                   vtOrderID in tradingOrders[i]['vtOrderIDList']) and 
                 tradingOrders[i]['volume'])):
-                self.sendTradingOrder(tradingOrders = tradingOrders,
-                                      orderDict     = tradingOrders[i],
-                                      orderIDList   = orderIDList,
-                                      priceType     = priceType,
-                                      price         = price,
-                                      addTick       = addTick,
-                                      discount      = discount)
-            # elif (self.tradingEnd and (datetime.now() - self.tickTimer[vtSymbol]).seconds > 3 and 
-            #       (tradingOrders[i]['vtOrderID'] in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])][\
-            #                                         allOrders.vtOrderID.isin(orderIDList)].vtOrderID.values)):
-            #     self.cancelOrder(tradingOrders[i]['vtOrderID'])
-            #     self.tickTimer[vtSymbol] = datetime.now()
+                if self.tradingEnd and ((datetime.now() - self.tickTimer[vtSymbol]).seconds > 3) and len(tradingOrders[i]['vtOrderIDList']):
+                    self.tickTimer[vtSymbol] = datetime.now()
+                    tempWorkingOrders = allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])][\
+                                                      allOrders.vtSymbol == vtSymbol][\
+                                                      allOrders.vtOrderID.isin(orderIDList)].vtOrderID.values
+                    if not tempWorkingOrders:
+                        return
+                    for vtOrderID in tradingOrders[i]['vtOrderIDList']:
+                        if vtOrderID in tempWorkingOrders:
+                            self.cancelOrder(vtOrderID)
+                else:
+                    self.sendTradingOrder(tradingOrders = tradingOrders,
+                                          orderDict     = tradingOrders[i],
+                                          orderIDList   = orderIDList,
+                                          priceType     = priceType,
+                                          price         = price,
+                                          addTick       = addTick,
+                                          discount      = discount)
 
 
     def prepareTradingOrderSplit(self, vtSymbol, tradingOrders, orderIDList, 
@@ -592,7 +599,7 @@ class CtaTemplate(object):
         ## ---------------------------------------------------------------------
         allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
         if len(allOrders):
-            tempWorkingOrders  = allOrders.loc[allOrders.status.isin([u'未成交'])][\
+            tempWorkingOrders  = allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])][\
                                                allOrders.vtSymbol == vtSymbol][\
                                                allOrders.vtOrderID.isin(orderIDList)]
             tempWorkingVolume = sum(tempWorkingOrders.totalVolume)
@@ -769,13 +776,15 @@ class CtaTemplate(object):
         ## 如果是开盘交易
         ## 则取消开盘交易的所有订单
         if (h == self.tradingCloseHour and 
-            self.tradingCloseMinute1 <= m <= self.tradingCloseMinute1 and 
+            (self.tradingCloseMinute1 <= m <= self.tradingCloseMinute1 or
+             self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
             s <= 20 and (s % 10 == 0)):
             ## -----------------------------------------------------------------
             if (len(self.vtOrderIDListOpen) != 0 or 
+                len(self.vtOrderIDListClose) != 0 or 
                 len(self.vtOrderIDListUpperLower) != 0):
                 allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
-                for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListUpperLower:
+                for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListClose + self.vtOrderIDListUpperLower:
                     if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
             ## -----------------------------------------------------------------
@@ -784,15 +793,16 @@ class CtaTemplate(object):
         ## =====================================================================
         ## 如果是收盘交易
         ## 则取消开盘交易的所有订单
-        if (h == self.tradingCloseHour and 
-            (self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
-            s <= 20 and (s % 10 == 0)):
-            ## -----------------------------------------------------------------
-            if len(self.vtOrderIDListClose) != 0:
-                allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
-                for vtOrderID in self.vtOrderIDListClose:
-                    if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
-                            self.cancelOrder(vtOrderID)
+        # if (h == self.tradingCloseHour and 
+        #     (self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
+        #     s <= 20 and (s % 10 == 0)):
+        #     ## -----------------------------------------------------------------
+        #     if (len(self.vtOrderIDListOpen) != 0 or 
+        #         len(self.vtOrderIDListClose) != 0):
+        #         allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
+        #         for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListClose:
+        #             if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
+        #                     self.cancelOrder(vtOrderID)
             ## -----------------------------------------------------------------
         ## =====================================================================
 
@@ -838,6 +848,9 @@ class CtaTemplate(object):
         """
         更新 workingInfo 表格
         """
+        if not tradingOrders:
+            return
+        
         tempWorkingInfo = vtFunction.dbMySQLQuery(self.ctaEngine.mainEngine.dataBase,
                                     """
                                     SELECT *
@@ -850,9 +863,6 @@ class CtaTemplate(object):
         dfHeader = ['TradingDay','strategyID','vtSymbol','vtOrderIDList',
                     'orderType','volume','stage']
         dfData   = []
-
-        if not tradingOrders:
-            return
 
         for k in tradingOrders.keys():
             temp = copy(tradingOrders[k])
@@ -887,14 +897,19 @@ class CtaTemplate(object):
     ############################################################################
     def updateTradingInfo(self, df, tbName = 'tradingInfo'):
         """更新交易记录"""
-        conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-        cursor = conn.cursor()
-        df.to_sql(con       = conn, 
-                  name      = tbName, 
-                  flavor    = 'mysql', 
-                  index     = False,
-                  if_exists = 'append')
-        conn.close()
+        # conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+        # cursor = conn.cursor()
+        # df.to_sql(con       = conn, 
+        #           name      = tbName, 
+        #           flavor    = 'mysql', 
+        #           index     = False,
+        #           if_exists = 'append')
+        # conn.close()
+        vtFunction(df = df, 
+                   db = self.ctaEngine.mainEngine.dataBase,
+                   tbl = 'tradingInfo',
+                   over = 'append')
+
 
     ############################################################################
     ## 更新订单表
@@ -1024,6 +1039,8 @@ class CtaTemplate(object):
                            """, (self.strategyID, self.ctaEngine.tradingDay))
             conn.commit()
             ## 写入记录
+            ## 去掉重复的行
+            df = df.drop_duplicates().reset_index(drop = True)
             df.to_sql(con=conn, name='orderInfo', if_exists='append', 
                       flavor='mysql', index = False)
             ## -----------------------------------------------------------------
