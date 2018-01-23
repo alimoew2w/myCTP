@@ -10,14 +10,17 @@ import json
 from datetime import datetime
 from shutil import copyfile
 
-import MySQLdb
 import numpy as np
 import pandas as pd
 pd.set_option('display.width', 200)
 pd.set_option('display.max_rows', 100)
 from pandas import DataFrame,Series
 from datetime import datetime
+
 import MySQLdb
+from pandas.io import sql
+import pymysql
+from sqlalchemy import create_engine
 
 MAX_NUMBER = 10000000000000
 MAX_DECIMAL = 4
@@ -163,12 +166,12 @@ def dbMySQLConnect(dbName):
         print e
     # finally:
     #     conn.close()
-## =========================================================================
+## =============================================================================
 
-## =========================================================================
+## =============================================================================
 ## william
 ## 从 MySQL 数据库查询数据
-## -------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 def dbMySQLQuery(dbName, query):
     """ 从 MySQL 中读取数据 """
     try:
@@ -185,7 +188,54 @@ def dbMySQLQuery(dbName, query):
         print e
     finally:
         conn.close()
-## =========================================================================
+## =============================================================================
+
+
+
+## =============================================================================
+## william
+## 从 MySQL 数据库查询数据
+## -----------------------------------------------------------------------------
+def fetchMySQL(db, query):
+    ## 用sqlalchemy构建数据库链接 engine
+    ## 记得使用 ?charset=utf8 解决中文乱码的问题
+    try:
+        mysqlInfo = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8'.format(
+                        globalSetting().vtSetting["mysqlUser"],
+                        globalSetting().vtSetting["mysqlPassword"],
+                        globalSetting().vtSetting["mysqlHost"],
+                        globalSetting().vtSetting["mysqlPort"],
+                        db)
+        engine = create_engine(mysqlInfo)
+        df = pd.read_sql(query, con = engine)
+        return df
+    except:
+        print u"读取 MySQL 数据库失败"
+        None
+
+
+## =============================================================================
+## william
+## 写入 MySQL
+## -----------------------------------------------------------------------------
+def saveMySQL(df, db, tbl, over):
+    ## 用sqlalchemy构建数据库链接 engine
+    ## 记得使用 ?charset=utf8 解决中文乱码的问题
+    try:
+        mysqlInfo = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8'.format(
+                        globalSetting().vtSetting["mysqlUser"],
+                        globalSetting().vtSetting["mysqlPassword"],
+                        globalSetting().vtSetting["mysqlHost"],
+                        globalSetting().vtSetting["mysqlPort"],
+                        db)
+        engine = create_engine(mysqlInfo)
+        df.to_sql(name      = tbl, 
+                  con       = engine, 
+                  if_exists = over, 
+                  index     = False)
+    except:
+        print u"写入 MySQL 数据库失败"
+        None
 
 ## =========================================================================
 ## 保存合约信息
