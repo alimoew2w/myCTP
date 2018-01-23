@@ -21,12 +21,14 @@ popd
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 conda config --set show_channel_urls yes
 conda install -c quantopian ta-lib=0.4.9
+conda install libgcc
+conda uninstall pyqt
+conda install pyqt=4
 
 #Install Python Modules
 pip install -r requirements.txt
 
-#Install vn.py
-# python setup.py install
+## sudo pypy -m pip install -r requirements.txt
 
 ## =============================================================================
 rm -rf /home/william/anaconda2/lib/python2.7/site-packages/vnpy
