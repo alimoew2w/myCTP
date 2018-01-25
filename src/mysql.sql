@@ -58,7 +58,7 @@ create table orderInfo(
     orderTime       TIME         NOT NULL,
     status          CHAR(50)     ,
     direction       CHAR(20)     ,
-    cancelTime      TIME         ,
+    cancelTime      CHAR(100)    ,
     tradedVolume    INT          ,
     frontID         SMALLINT     ,
     sessionID       BIGINT       ,
@@ -70,6 +70,7 @@ create table orderInfo(
 
 -- alter table orderInfo drop PRIMARY key;
 -- alter table orderInfo add primary key (TradingDay, strategyID, vtOrderID, InstrumentID, status)
+-- ALTER TABLE orderInfo MODIFY cancelTime      CHAR(100);
 
 ################################################################################
 ## tradingOrders
