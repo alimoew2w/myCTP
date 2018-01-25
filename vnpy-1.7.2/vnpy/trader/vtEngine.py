@@ -575,6 +575,9 @@ class DataEngine(object):
     """数据引擎"""
     contractFileName = 'ContractData.vt'
     contractFilePath = vtFunction.getTempPath(contractFileName)
+
+    contractAllFileName = 'contractAll.csv'
+    contractAllFilePath = vtFunction.getTempPath(contractAllFileName)
     
     FINISHED_STATUS = [STATUS_ALLTRADED, STATUS_REJECTED, STATUS_CANCELLED]
 
@@ -582,6 +585,8 @@ class DataEngine(object):
     def __init__(self, eventEngine):
         """Constructor"""
         self.eventEngine = eventEngine
+
+        self.dataBase = globalSetting.accountID
         
         self.tradingDay = vtFunction.tradingDay()
         self.tradingDate = vtFunction.tradingDate()
@@ -776,7 +781,7 @@ class DataEngine(object):
         # f.close()
         ## ---------------------------------------------------------------------
         try:
-            f = shelve.open(self.contractFileName)
+            f = shelve.open(self.contractFilePath)
             if 'data' in f:
                 d = f['data']
                 for key, value in d.items():
@@ -784,7 +789,7 @@ class DataEngine(object):
             f.close()
         except:
             # pass
-            dfAll = pd.read_csv('contractAll.csv')
+            dfAll = pd.read_csv(self.contractAllFilePath)
             for i in range(len(dfAll)):
                 ## -------------------------------------------------------------
                 contract = VtContractData()
@@ -859,7 +864,11 @@ class DataEngine(object):
             if contract:
                 detail.exchange = contract.exchange
                 
-                # 上期所合约
+                ## -------------------------------------------------------------
+                ## william
+                ## 对股票的平今、平昨模式进行确认
+                ## 上期所合约
+                ## -------------------------------------------------------------
                 if contract.exchange == EXCHANGE_SHFE:
                     detail.mode = detail.MODE_SHFE
                 
@@ -969,22 +978,18 @@ class DataEngine(object):
         cursor = conn.cursor()
         ## ---------------------------------------------------------------------
         if len(tempPosInfo) != 0:
-            self.accountPosition.to_sql(con       = conn, 
-                                        name      = 'report_position', 
-                                        if_exists = 'replace', 
-                                        flavor    = 'mysql', 
-                                        index     =  True)
+            self.saveMySQL(df   = self.accountPosition, 
+                           tbl  = 'report_position', 
+                           over = 'replace')
         else:
             cursor.execute('truncate table report_position')
             conn.commit()
         ## ---------------------------------------------------------------------
         ## 保证能够连 CTP 成功
         if len(tempAccountInfo.accountID) != 0:
-            self.accountBalance.to_sql(con       = conn, 
-                                       name      = 'report_account', 
-                                       if_exists = 'replace', 
-                                       flavor    = 'mysql', 
-                                       index     = False)
+            self.saveMySQL(df   = self.accountBalance, 
+                           tbl  = 'report_account', 
+                           over = 'replace')
         ## ---------------------------------------------------------------------
         # if (15 <= datetime.now().hour <= 16) and (datetime.now().minute >= 10):
         if (8 <= datetime.now().hour <= 17) and (len(tempAccountInfo.accountID) != 0):
@@ -1000,11 +1005,9 @@ class DataEngine(object):
                 except:
                     pass
                 ## -------------------------------------------------------------
-                self.accountPosition.to_sql(con       = conn, 
-                                            name      = 'report_position_history',
-                                            if_exists = 'append',
-                                            flavor    = 'mysql', 
-                                            index     = True)
+                self.saveMySQL(df   = self.accountPosition, 
+                               tbl  = 'report_position_history', 
+                               over = 'append')
             # ----------------------------------------------------------------------
             try:
                 cursor.execute("""
@@ -1015,11 +1018,9 @@ class DataEngine(object):
             except:
                 pass
             ## -----------------------------------------------------------------
-            self.accountBalance.to_sql(con       = conn, 
-                                       name      = 'report_account_history',
-                                       if_exists = 'append', 
-                                       flavor    = 'mysql', 
-                                       index     =  False)
+            self.saveMySQL(df   = self.accountBalance, 
+                           tbl  = 'report_account_history', 
+                           over = 'append')
         ## ---------------------------------------------------------------------
         conn.close()
 
@@ -1045,6 +1046,22 @@ class DataEngine(object):
         else:
             print "没有查询到订单!!!"
             return None
+
+    ############################################################################
+    ## 从 MySQL 数据库读取数据
+    ############################################################################
+    def fetchMySQL(self, query):
+        vtFunction.fetchMySQL(db    = self.dataBase, 
+                              query = query)
+
+    ############################################################################
+    ## 保存数据 DataFrame 格式到 MySQL
+    ############################################################################
+    def saveMySQL(self, df, tbl, over):
+        vtFunction.saveMySQL(df   = df, 
+                             db   = self.dataBase, 
+                             tbl  = tbl, 
+                             over = over)
 
     ## =========================================================================
     ## william
@@ -1391,6 +1408,7 @@ class PositionDetail(object):
         
         # 上期所模式拆分今昨，优先平今
         elif self.mode is self.MODE_SHFE:
+        # if self.mode is [self.MODE_NORMAL, self.MODE_SHFE]:
             ## -----------------------------------------------------------------
             ## william
             ## 开仓无需转换
