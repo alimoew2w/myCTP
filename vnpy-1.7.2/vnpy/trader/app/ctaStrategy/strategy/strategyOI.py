@@ -86,6 +86,13 @@ class OIStrategy(CtaTemplate):
     vtOrderIDListFailedInfo = []       # 失败的合约订单存储
     vtOrderIDListUpperLower = []       # 涨跌停价格成交的订单
     vtOrderIDListAll        = []       # 所有订单集合
+    
+    ## 子订单的拆单比例实现
+    subOrdersLevel = {'level0':{'weight': 0.30, 'deltaTick': 0},
+                      'level1':{'weight': 0.70, 'deltaTick': 1},
+                      'level2':{'weight': 0, 'deltaTick': 2}
+                     }
+    totalOrderLevel = 1 + (len(subOrdersLevel) - 1) * 2
     ## -------------------------------------------------------------------------
 
     #----------------------------------------------------------------------
@@ -233,13 +240,20 @@ class OIStrategy(CtaTemplate):
             tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] 
                              for k in self.tradingOrdersOpen.keys()]):
             ####################################################################
-            self.prepareTradingOrder(
+            # self.prepareTradingOrder(
+            #     vtSymbol      = tick.vtSymbol,
+            #     tradingOrders = self.tradingOrdersOpen,
+            #     orderIDList   = self.vtOrderIDListOpen,
+            #     priceType     = 'open',
+            #     discount      = self.ctaEngine.mainEngine.openDiscountOI,
+            #     addTick       = self.ctaEngine.mainEngine.openAddTickOI)
+            ## -----------------------------------------------------------------
+            self.prepareTradingOrderSplit(
                 vtSymbol      = tick.vtSymbol,
                 tradingOrders = self.tradingOrdersOpen,
                 orderIDList   = self.vtOrderIDListOpen,
-                priceType     = 'open',
-                discount      = self.ctaEngine.mainEngine.openDiscountOI,
-                addTick       = self.ctaEngine.mainEngine.openAddTickOI)
+                priceType     = 'limit',
+                discount      = self.ctaEngine.mainEngine.openDiscountOI)
         ## =====================================================================
 
         ## =====================================================================
@@ -406,13 +420,10 @@ class OIStrategy(CtaTemplate):
                 cursor = conn.cursor()
                 ## -------------------------------------------------------------
                 try:
-                    # tempRes.to_sql(con=conn, name='UpperLowerInfo', 
-                    #                if_exists='append', flavor='mysql', index = False)
                     self.saveMySQL(df = tempRes, tbl = 'UpperLowerInfo', over = 'append')
                 except:
                     self.writeCtaLog(u'UpperLower 涨跌停平仓订单 写入 MySQL 数据库出错',
                                      logLevel = ERROR)
-                    # pass
                 finally:
                     conn.close()
             ## =================================================================
@@ -429,7 +440,6 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         tempTradingInfo = pd.DataFrame([[self.stratTrade[k] for k in self.tradingInfoFields]], 
             columns = self.tradingInfoFields)
-        # self.updateTradingInfo(df = tempTradingInfo, tbName = 'tradingInfo')
         self.updateTradingInfo(df = tempTradingInfo)
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
         ## ---------------------------------------------------------------------
@@ -485,15 +495,15 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
         ## 更新 workingInfo
         ## =====================================================================
-        if (self.tradingStart and (m % 5 == 0) and (s == 15)):
-            self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
-            self.updateWorkingInfo(self.tradingOrdersClose, 'close')
+        if ((m % 5 == 0) and (s == 15)):
             self.updateOrderInfo()
+            if self.tradingStart:
+                self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
+                self.updateWorkingInfo(self.tradingOrdersClose, 'close')
             if (h == 15 and self.trading):
                 self.updateFailedInfo(
                     tradingOrders = self.tradingOrdersClose, 
                     tradedOrders  = self.tradedOrdersClose)
-
 
     ## =========================================================================
     ## william
