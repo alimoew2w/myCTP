@@ -312,12 +312,6 @@ class CtpMdApi(MdApi):
     #----------------------------------------------------------------------   
     def onRspError(self, error, n, last):
         """错误回报"""
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## ---------------------------------------------------------------------
         self.writeError(error['ErrorID'], error['ErrorMsg'])
         
     #----------------------------------------------------------------------
@@ -329,7 +323,7 @@ class CtpMdApi(MdApi):
             self.gateway.mdConnected = True
             
             self.writeLog(text.DATA_SERVER_LOGIN)
-            
+
             # 重新订阅之前订阅的合约
             for subscribeReq in self.subscribedSymbols:
                 self.subscribe(subscribeReq)
@@ -344,13 +338,6 @@ class CtpMdApi(MdApi):
                 
         # 否则，推送错误信息
         else:
-            # err = VtErrorData()
-            # err.gatewayName = self.gatewayName
-            # err.errorID = error['ErrorID']
-            # err.errorMsg = error['ErrorMsg'].decode('gbk')
-            # self.gateway.onError(err)
-            ## -----------------------------------------------------------------
-            # print error
             self.writeError(error['ErrorID'], error['ErrorMsg'])
             
 
@@ -366,12 +353,6 @@ class CtpMdApi(MdApi):
                 
         # 否则，推送错误信息
         else:
-            # err = VtErrorData()
-            # err.gatewayName = self.gatewayName
-            # err.errorID = error['ErrorID']
-            # err.errorMsg = error['ErrorMsg'].decode('gbk')
-            # self.gateway.onError(err)
-            ## -----------------------------------------------------------------
             self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------  
@@ -397,7 +378,6 @@ class CtpMdApi(MdApi):
         symbol = data['InstrumentID']
         if symbol not in symbolExchangeDict:
             return
-        # print symbolExchangeDict
         ## ---------------------------------------------------------------------
 
         # 创建对象
@@ -490,7 +470,6 @@ class CtpMdApi(MdApi):
         ## william
         ## tick 数据返回到 /vn.trader/vtEngine.onTick()
         self.gateway.lastTickDict[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
-        # print self.gateway.lastTickDict[tick.vtSymbol]
         ## ---------------------------------------------------------------------
         self.gateway.onTick(tick)
         ## ---------------------------------------------------------------------
@@ -579,7 +558,7 @@ class CtpMdApi(MdApi):
         err.errorMsg = errorMsg.decode('gbk')
         self.gateway.onError(err) 
         ## ---------------------------------------------------------------------
-        if globalSetting.CONTRACT_DATA_RECEIVED:
+        if globalSetting.LOGIN:
             self.writeLog(u"[错误代码]:%s [提示信息] %s" %(err.errorID, err.errorMsg),
                      logLevel = ERROR)
 
@@ -622,6 +601,7 @@ class CtpTdApi(TdApi):
         self.orderDict     = {}
         self.tradeDict     = {}
         self.posInfoFields = ['vtSymbol', 'PosiDirection', 'position']
+        self.dfAll         = pd.DataFrame()
         ## ---------------------------------------------------------------------
         try:
             self.preBalance = vtFunction.dbMySQLQuery(
@@ -632,7 +612,7 @@ class CtpTdApi(TdApi):
                 where TradingDay = '%s'
                 """ % vtFunction.lastTradingDate().strftime('%Y-%m-%d')).totalMoney.iat[0]
         except:
-            self.preBalance = None
+            self.preBalance = 0
         ## ---------------------------------------------------------------------
 
         
@@ -673,12 +653,6 @@ class CtpTdApi(TdApi):
             
             self.login()
         else:
-            # err = VtErrorData()
-            # err.gatewayName = self.gatewayName
-            # err.errorID = error['ErrorID']
-            # err.errorMsg = error['ErrorMsg'].decode('gbk')
-            # self.gateway.onError(err)
-            ## -----------------------------------------------------------------
             self.writeError(error['ErrorID'], error['ErrorMsg'])
         
     #----------------------------------------------------------------------
@@ -702,14 +676,6 @@ class CtpTdApi(TdApi):
                 
         # 否则，推送错误信息
         else:
-            # err = VtErrorData()
-            # err.gatewayName = self.gatewayName
-            # err.errorID = error['ErrorID']
-            # err.errorMsg = error['ErrorMsg'].decode('gbk')
-            # self.gateway.onError(err)
-            ## -----------------------------------------------------------------
-            # print 'hello'
-            # print error
             self.writeError(error['ErrorID'], error['ErrorMsg'])
             ## -----------------------------------------------------------------
             # 标识登录失败，防止用错误信息连续重复登录
@@ -727,12 +693,6 @@ class CtpTdApi(TdApi):
                 
         # 否则，推送错误信息
         else:
-            # err = VtErrorData()
-            # err.gatewayName = self.gatewayName
-            # err.errorID = error['ErrorID']
-            # err.errorMsg = error['ErrorMsg'].decode('gbk')
-            # self.gateway.onError(err)
-            ## -----------------------------------------------------------------
             self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
@@ -747,30 +707,48 @@ class CtpTdApi(TdApi):
         
     #----------------------------------------------------------------------
     def onRspOrderInsert(self, data, error, n, last):
-        """发单错误（柜台）"""
-        # 推送委托信息
-        order = VtOrderData()
-        order.gatewayName = self.gatewayName
-        order.symbol = data['InstrumentID']
-        order.exchange = exchangeMapReverse[data['ExchangeID']]
-        order.vtSymbol = order.symbol
-        order.orderID = data['OrderRef']
-        order.vtOrderID = '.'.join([self.gatewayName, order.orderID])        
-        order.direction = directionMapReverse.get(data['Direction'], DIRECTION_UNKNOWN)
-        order.offset = offsetMapReverse.get(data['CombOffsetFlag'], OFFSET_UNKNOWN)
-        order.status = STATUS_REJECTED
-        order.price = data['LimitPrice']
-        order.totalVolume = data['VolumeTotalOriginal']
-        self.gateway.onOrder(order)
+        pass
+        # """发单错误（柜台）"""
+        # # 推送委托信息
+        # ## =====================================================================
+        # ## william
+        # ## 拒单的返回信息
+        # ## =====================================================================
+        # order = VtOrderData()
+        # order.gatewayName = self.gatewayName
+        # order.symbol = data['InstrumentID']
+        # order.exchange = exchangeMapReverse[data['ExchangeID']]
+        # order.vtSymbol = order.symbol
+        # order.orderID = data['OrderRef']
+        # order.vtOrderID = '.'.join([self.gatewayName, order.orderID])        
+        # order.direction = directionMapReverse.get(data['Direction'], DIRECTION_UNKNOWN)
+        # order.offset = offsetMapReverse.get(data['CombOffsetFlag'], OFFSET_UNKNOWN)
+        # order.status = STATUS_REJECTED
+        # order.price = data['LimitPrice']
+        # order.totalVolume = data['VolumeTotalOriginal']
+        # # print order.__dict__
+        # self.gateway.onOrder(order)
 
-        # 推送错误信息
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## -----------------------------------------------------------------
+        # # 推送错误信息
+        # # err = VtErrorData()
+        # # err.gatewayName = self.gatewayName
+        # # err.errorID = error['ErrorID']
+        # # err.errorMsg = error['ErrorMsg'].decode('gbk')
+        # # self.gateway.onError(err)
+        # ## -----------------------------------------------------------------
         
+        # ## =====================================================================
+        # ## william
+        # ## 打印拒单的信息信息
+        # tempFields = ['orderID','vtSymbol','price','direction','offset',
+        #               'tradedVolume','orderTime','status']
+        # content = u"拒单的信息信息\n%s\n%s\n%s" %('-'*80,
+        #     pd.DataFrame([[order.__dict__[k] for k in tempFields]], columns = tempFields),
+        #     '-'*80)
+        # self.writeLog(content, logLevel = ERROR)
+        # self.writeError(error['ErrorID'], error['ErrorMsg'])
+
+
     #----------------------------------------------------------------------
     def onRspParkedOrderInsert(self, data, error, n, last):
         """"""
@@ -784,12 +762,6 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspOrderAction(self, data, error, n, last):
         """撤单错误（柜台）"""
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## -----------------------------------------------------------------
         self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
@@ -887,7 +859,14 @@ class CtpTdApi(TdApi):
             pos.ydPosition = data['Position']
             
         # 计算成本
-        pos.size = self.symbolSizeDict[pos.symbol]
+        try:
+            pos.size = self.symbolSizeDict[pos.symbol]
+        except:
+            if len(self.dfAll):
+                pos.size = self.dfAll.loc[self.dfAll.symbol == data['InstrumentID'],'size'].values[0]
+            else:
+                pos.size = 1
+            
         cost = pos.price * pos.position * pos.size
         
         # 汇总总仓
@@ -958,9 +937,13 @@ class CtpTdApi(TdApi):
                            data['Commission'])
         ## 基金净值
         if self.gateway.initialCapital:
-            account.nav = round(account.balance / self.gateway.initialCapital,4)
+            account.nav = round((account.balance + self.gateway.flowCapitalPre) / self.gateway.initialCapital,4)
         ## 收益波动
-        account.volitility = round(account.balance / account.preBalance - 1, 4) * 100
+        account.volitility = round((account.balance + self.gateway.flowCapitalPre) / 
+                                   (account.preBalance + self.gateway.flowCapitalPre) - 1, 4) * 100
+        account.preBalance = round(account.preBalance, 0)
+        account.balance = round(account.balance, 0)
+        account.available = round(account.available, 0)
         # 推送
         self.gateway.onAccount(account)
         
@@ -983,7 +966,7 @@ class CtpTdApi(TdApi):
     def onRspQryInstrumentCommissionRate(self, data, error, n, last):
         """"""
         pass
-        
+
     #----------------------------------------------------------------------
     def onRspQryExchange(self, data, error, n, last):
         """"""
@@ -1020,16 +1003,11 @@ class CtpTdApi(TdApi):
             elif data['OptionsType'] == '2':
                 contract.optionType = OPTION_PUT
 
-        # print "\n#######################################################################"
-        # print 'contract.__dict__'
-        # print contract.__dict__
-        # print "#######################################################################\n"
-
-        contract.volumeMultiple         = data['VolumeMultiple']
+        contract.volumeMultiple = data['VolumeMultiple']
 
         if data['LongMarginRatio'] < 1e+99 and data['ShortMarginRatio'] < 1e+99:
-            contract.longMarginRatio        = round(data['LongMarginRatio'],5)
-            contract.shortMarginRatio       = round(data['ShortMarginRatio'],5)
+            contract.longMarginRatio  = round(data['LongMarginRatio'],5)
+            contract.shortMarginRatio = round(data['ShortMarginRatio'],5)
         # 缓存代码和交易所的印射关系
         self.symbolExchangeDict[contract.symbol] = contract.exchange
         self.symbolSizeDict[contract.symbol] = contract.size
@@ -1068,11 +1046,11 @@ class CtpTdApi(TdApi):
 
             ## =================================================================
             try:
-                dfAll = pd.read_csv('./temp/contractAll.csv')
+                self.dfAll = pd.read_csv('./temp/contractAll.csv')
                 for i in range(df.shape[0]):
-                    if df.at[i,'symbol'] not in dfAll.symbol.values:
-                        dfAll = dfAll.append(df.loc[i], ignore_index = True)
-                dfAll.to_csv('./temp/contractAll.csv', index = False)
+                    if df.at[i,'symbol'] not in self.dfAll.symbol.values:
+                        self.dfAll = self.dfAll.append(df.loc[i], ignore_index = True)
+                self.dfAll.to_csv('./temp/contractAll.csv', index = False)
             except:
                 None
             ## =================================================================
@@ -1083,7 +1061,8 @@ class CtpTdApi(TdApi):
             ## =================================================================
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
             ## 交易合约信息获取是否成功
-            globalSetting.CONTRACT_DATA_RECEIVED = True
+            globalSetting.LOGIN = True
+            self.writeLog(u'账户登录成功')
             
         
     #----------------------------------------------------------------------
@@ -1234,12 +1213,6 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspError(self, error, n, last):
         """错误回报"""
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## -----------------------------------------------------------------
         self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
@@ -1281,6 +1254,15 @@ class CtpTdApi(TdApi):
         # 推送
         self.gateway.onOrder(order)
 
+        # if order.status == u'未成交' and globalSetting.LOGIN:
+        #     print data
+        #     tempFields = ['orderID','vtSymbol','price','direction','offset',
+        #                   'totalVolume','orderTime','status']
+        #     content = u'下单的详细信息\n%s\n%s\n%s' %('-'*80,
+        #         pd.DataFrame([[order.__dict__[k] for k in tempFields]], 
+        #                       columns = tempFields),
+        #         '-'*80)
+        #     self.writeLog(content)
         ## ---------------------------------------------------------------------
         # print order.__dict__
         # temp = pd.DataFrame([order.__dict__.values()], columns = order.__dict__.keys())
@@ -1321,17 +1303,19 @@ class CtpTdApi(TdApi):
         trade.volume = data['Volume']
         trade.tradeTime = data['TradeTime']
         
-        # self.tradeDict[trade.vtOrderID] = trade
-        # print self.tradeDict[trade.vtOrderID]
-        
         # 推送
         self.gateway.onTrade(trade)
 
-        # print trade.__d__
-        
+
     #----------------------------------------------------------------------
     def onErrRtnOrderInsert(self, data, error):
         """发单错误回报（交易所）"""
+        ## =====================================================================
+        ## william
+        ## 拒单的返回信息
+        ## =====================================================================
+        if not globalSetting.LOGIN:
+            return
         # 推送委托信息
         order = VtOrderData()
         order.gatewayName = self.gatewayName
@@ -1346,26 +1330,21 @@ class CtpTdApi(TdApi):
         order.price = data['LimitPrice']
         order.totalVolume = data['VolumeTotalOriginal']
         self.gateway.onOrder(order)
-        # print data
-    
-        # 推送错误信息        
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## -----------------------------------------------------------------
+        
+        ## =====================================================================
+        ## william
+        ## 打印拒单的信息信息
+        tempFields = ['orderID','vtSymbol','price','direction','offset',
+                      'tradedVolume','orderTime','status']
+        content = u"拒单的信息信息\n%s\n%s\n%s" %('-'*80,
+            pd.DataFrame([[order.__dict__[k] for k in tempFields]], columns = tempFields),
+            '-'*80)
+        self.writeLog(content, logLevel = ERROR)
         self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
     def onErrRtnOrderAction(self, data, error):
         """撤单错误回报（交易所）"""
-        # err = VtErrorData()
-        # err.gatewayName = self.gatewayName
-        # err.errorID = error['ErrorID']
-        # err.errorMsg = error['ErrorMsg'].decode('gbk')
-        # self.gateway.onError(err)
-        ## -----------------------------------------------------------------
         self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
@@ -1707,28 +1686,22 @@ class CtpTdApi(TdApi):
         if orderReq.priceType == PRICETYPE_FOK:
             req['OrderPriceType'] = defineDict["THOST_FTDC_OPT_LimitPrice"]
             req['TimeCondition'] = defineDict['THOST_FTDC_TC_IOC']
-            req['VolumeCondition'] = defineDict['THOST_FTDC_VC_CV']        
-
-        orderReq.orderTime   = datetime.now().strftime('%H:%M:%S')
-        orderReq.orderID     = self.orderRef
-        orderReq.tradeStatus = u'未成交'        
+            req['VolumeCondition'] = defineDict['THOST_FTDC_VC_CV']             
 
         ########################################################################
         ## william
         ## orderReq
-        '''
-        temp = ['InstrumentID','LimitPrice','VolumeTotalOriginal','OrderPriceType','Direction','OrderRef','InvestorID','UserID','BrokerID']
-        temp = {k: req[k] for k in req.keys()}
-        '''
-        # print "\n"+'#'*80
-        # print "打印下单的详细信息"
-        # print '-'*80
-        tempFields = ['orderID','vtSymbol','price','direction','offset',
+        orderReq.orderTime   = datetime.now().strftime('%H:%M:%S')
+        orderReq.orderID     = self.orderRef
+        orderReq.vtOrderID   = self.gatewayName + '.' + str(self.orderRef)
+        orderReq.tradeStatus = u'未成交'   
+
+        tempFields = ['vtOrderID','vtSymbol','price','direction','offset',
                       'volume','orderTime','tradeStatus']
-        # print pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields]
-        # print '#'*80
         ## ---------------------------------------------------------------------
-        content = u'下单的详细信息\n%s%s\n%s' %('-'*80+'\n',pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields],'-'*80)
+        content = u'下单的详细信息\n%s\n%s\n%s' %('-'*80,
+            pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields],
+            '-'*80)
         self.writeLog(content)
         ########################################################################
 
@@ -1756,13 +1729,11 @@ class CtpTdApi(TdApi):
         req['InvestorID']   = self.userID
         # ## ---------------------------------------------------------------------
         # ## william
-        # ## 打印撤单的纤详细信息
-        # print "\n"+'#'*80
-        # print "撤单的详细信息:"
-        # print pd.DataFrame([req.values()], columns = req.keys())
-        # print '#'*80
+        # ## 打印撤单的详细信息
         ## ---------------------------------------------------------------------
-        content = u'撤单的纤详细信息\n%s%s\n%s' %('-'*80+'\n',pd.DataFrame([req.values()], columns = req.keys()),'-'*80)
+        content = u'撤单的详细信息\n%s%s\n%s' %('-'*80+'\n',
+            pd.DataFrame([req.values()], columns = req.keys()),
+            '-'*80)
         self.writeLog(content)
         ## ---------------------------------------------------------------------       
         self.reqOrderAction(req, self.reqID)
@@ -1790,8 +1761,6 @@ class CtpTdApi(TdApi):
         err.errorMsg = errorMsg.decode('gbk')
         self.gateway.onError(err) 
         ## ---------------------------------------------------------------------
-        if globalSetting.CONTRACT_DATA_RECEIVED:
+        if globalSetting.LOGIN:
             self.writeLog(u"[错误代码]:%s [提示信息] %s" %(err.errorID, err.errorMsg),
                      logLevel = ERROR)
-            
-
