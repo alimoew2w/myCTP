@@ -1,8 +1,13 @@
 pymongo 
+pyqtgraph
 websocket-client
 msgpack-python
 qdarkstyle
 SortedContainers
 snappy
-futuquant
+ConfigParser
+MySQL-python
+pymysql
+tabulate
+#futuquant
 wmi
