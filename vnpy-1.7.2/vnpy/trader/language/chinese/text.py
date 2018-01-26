@@ -42,12 +42,14 @@ POSITION_PROFIT   = u'持仓盈亏'
 ACCOUNT_ID        = u'账户编号'
 ACCOUNT_NAME      = u'账户名称'
 ACCOUNT_NAV       = u'单位净值'
-PRE_BALANCE       = u'昨净值'
+PRE_BALANCE       = u'昨值'
 BALANCE           = u'资产'
 AVAILABLE         = u'可用'
+LEVERAGE          = u'杆杠率'
 COMMISSION        = u'手续费'
 MARGIN            = u'保证金'
 CLOSE_PROFIT      = u'平仓盈亏'
+RETURN_VOLATILITY = u'收益波动(%)'
 
 TRADING           = u'交易'
 PRICE_TYPE        = u'价格类型'
@@ -57,9 +59,10 @@ PRODUCT_CLASS     = u'产品类型'
 LAST              = u'最新'
 SEND_ORDER        = u'发单'
 ## --------------------------------
-CANCEL_ALL        = u'全撤'
-CLOSE_ALL         = u'全平'
-CONFIRM_CLOSE_ALL = u'确认全平？'
+CANCEL_ALL         = u'全撤'
+CONFIRM_CANCEL_ALL = u'确认全撤？'
+CLOSE_ALL          = u'全平'
+CONFIRM_CLOSE_ALL  = u'确认全平？'
 
 START_ALL         = u'启动'
 CONFIRM_START_ALL = u'确定启动？'
@@ -146,7 +149,7 @@ SAVE          = u'保存'
 ## -----------------------------------------------------------------------------
 CPU_MEMORY_INFO = u'TIME: {currTime}  CPU: {cpu}%   MEM: {memory}%'
 CONFIRM_EXIT    = u'确认退出？'
-SYSTEM_INFO     = u'TIME: {currTime}  CPU: {cpu}%   MEM: {memory}% ||> Account: {accountID} <||'
+SYSTEM_INFO     = u'TIME: {currTime}  CPU: {cpu}%   MEM: {memory}% ||> {accountID} <||'
 ## -----------------------------------------------------------------------------
 
 ################################################################################
@@ -188,4 +191,3 @@ DATA_MySQL_QUERY_COMPLETED          = u'MySQL 查询成功, 返回数据结果!!
 DATA_MySQL_QUERY_FAILED             = u'MySQL 查询失败，没有数据返回!!!'
 
 DATA_MySQL_NOT_CONNECTED            = u'MySQL 查询失败，数据库没有连接!!!'
-
