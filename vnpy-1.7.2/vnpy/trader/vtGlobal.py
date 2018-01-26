@@ -5,52 +5,61 @@
 """
 
 ## =============================================================================
-import sys,os,subprocess
-os.putenv('DISPLAY', ':0.0')
-reload(sys)
-sys.setdefaultencoding('utf8')
+import sys,os
 ## =============================================================================
 
 import traceback
-import json
-from .vtFunction import getJsonPath
-
+import json,csv
+import datetime
 ## =============================================================================
-# 判断操作系统
-import re,datetime,time,csv
-from datetime import datetime,time
-## =============================================================================
-
-## =============================================================================
-## william
-##　判断当天是否有交易
-## -----------------------------------------------------------------------------
-TradingDay = []
-with open('./trading/ChinaFuturesCalendar.csv') as f:
-    ChinaFuturesCalendar = csv.reader(f)
-    for row in ChinaFuturesCalendar:
-        if row[1] >= '20170101':
-            TradingDay.append(row[1])
-TradingDay.pop(0)
-
-if datetime.now().strftime("%Y%m%d") not in TradingDay:
-    print '#'*80
-    sys.exit("启禀圣上，今日赌场不开张!!!")
-    print '#'*80
-## =============================================================================
-
-
-settingFileName = "setting/VT_setting.json"
-settingFilePath = getJsonPath(settingFileName, __file__)
-
-globalSetting = {}      # 全局配置字典
-
-try:
-    with open(settingFilePath, 'rb') as f:
-        setting = f.read()
-        if type(setting) is not str:
-            setting = str(setting, encoding='utf8')
-        globalSetting = json.loads(setting)
-except:
-    traceback.print_exc()
     
+class globalSetting(object):
+    def __init__(self):
+        self.accountID   = ''
+        self.accountName = ''
+        self.path = os.path.dirname(__file__)
+
+        ## ---------------------------------------------------------------------
+        ## vtSetting
+        self.vtSettingFile = "VT_setting.json"
+        self.vtSettingPath = os.path.join(self.path, 'setting', self.vtSettingFile)
+
+        try:
+            with open(self.vtSettingPath, 'rb') as f:
+                setting = f.read()
+                if type(setting) is not str:
+                    setting = str(setting, encoding='utf8')
+                self.vtSetting = json.loads(setting)
+        except:
+            traceback.print_exc()
+        ## ---------------------------------------------------------------------
+
+        ## ---------------------------------------------------------------------
+        ## CTPAccount
+        self.CTPFile = 'CTP_connect.json'
+        tempPath     = os.path.normpath(os.path.join(
+                       self.path, '..', '..'))
+        self.CTPPath = os.path.join(tempPath, 'trading/account', self.CTPFile)
+
+        try:
+            with open(self.CTPPath, 'rb') as f:
+                account = f.read()
+                if type(account) is not str:
+                    account = str(account, encoding='utf8')
+                self.CTPAccount = json.loads(account)
+        except:
+            traceback.print_exc()
+        ## ---------------------------------------------------------------------   
+
+        ## ---------------------------------------------------------------------   
+        ## allTradingDay
+        self.allTradingDay = []
+        self.calendarFile = 'ChinaFuturesCalendar.csv'
+        self.calendarPath = os.path.join(self.path, self.calendarFile)
+        with open(self.calendarPath) as f:
+            ChinaFuturesCalendar = csv.reader(f)
+            for row in ChinaFuturesCalendar:
+                if row[1] >= '20170101':
+                    self.allTradingDay.append(row[1])
+        self.allTradingDay.pop(0)
+        ## ---------------------------------------------------------------------   
