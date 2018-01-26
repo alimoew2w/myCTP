@@ -686,40 +686,31 @@ class CtaTemplate(object):
                     if tradingOrders[i]['subOrders'][l]['volume'] == 0:
                         continue
                     ## ---------------------------------------------------------
+                    deltaTick = tradingOrders[i]['subOrders'][l]['deltaTick']
+                    deltaTick_quick = deltaTick
+                    deltaTick_slow  = -deltaTick
 
                     if tradingOrders[i]['direction'] == u'buy':
-                        status_quick = 'status_u'
-                        status_slow = 'status_d'
+                        status_quick    = 'status_u'
+                        status_slow     = 'status_d'
                     elif tradingOrders[i]['direction'] == u'short':
-                        status_quick = 'status_d'
-                        status_slow = 'status_u'
+                        status_quick    = 'status_d'
+                        status_slow     = 'status_u'
 
                     ## ---------------------------------------------------------
                     if not tradingOrders[i]['subOrders'][l][status_quick]:
-                        ## -----------------------------------------------------
-                        if tradingOrders[i]['direction'] == u'buy':
-                            if status_quick == u'status_u':
-                                deltaTick = tradingOrders[i]['subOrders'][l]['deltaTick']
-                            elif status_quick == u'status_d':
-                                deltaTick = -tradingOrders[i]['subOrders'][l]['deltaTick']
-                        elif tradingOrders[i]['direction'] == u'short':
-                            if status_quick == u'status_u':
-                                deltaTick = -tradingOrders[i]['subOrders'][l]['deltaTick']
-                            elif status_quick == u'status_d':
-                                deltaTick = tradingOrders[i]['subOrders'][l]['deltaTick']
-                        ## -----------------------------------------------------
                         self.sendTradingOrder(tradingOrders = tradingOrders,
                                               orderDict     = tradingOrders[i],
                                               orderIDList   = orderIDList,
                                               priceType     = 'limit',
                                               volume        = tradingOrders[i]['subOrders'][l]['volume'],
                                               price         = price_0,
-                                              addTick       = deltaTick)
+                                              addTick       = deltaTick_quick)
                         tradingOrders[i]['subOrders'][l][status_quick] = 'sended'
                         return
                         ## -----------------------------------------------------
-                    elif tradingOrders[i]['subOrders'][l][status_quick] == 'sended':
-                        ## ---------------------------------------------------------------------------------
+                    else:
+                        ## -------------------------------------------------------------------------
                         if not tradingOrders[i]['subOrders']['level0']['status']:
                             self.sendTradingOrder(tradingOrders = tradingOrders,
                                                   orderDict     = tradingOrders[i],
@@ -729,27 +720,15 @@ class CtaTemplate(object):
                                                   price         = price_0)
                             tradingOrders[i]['subOrders']['level0']['status'] = 'sended'
                             return
-                        ## ---------------------------------------------------------------------------------
+                        ## -------------------------------------------------------------------------
                         elif not tradingOrders[i]['subOrders'][l][status_slow]:
-                            ## -----------------------------------------------------
-                            if tradingOrders[i]['direction'] == u'buy':
-                                if status_quick == u'status_u':
-                                    deltaTick = -tradingOrders[i]['subOrders'][l]['deltaTick']
-                                elif status_quick == u'status_d':
-                                    deltaTick = tradingOrders[i]['subOrders'][l]['deltaTick']
-                            elif tradingOrders[i]['direction'] == u'short':
-                                if status_quick == u'status_u':
-                                    deltaTick = tradingOrders[i]['subOrders'][l]['deltaTick']
-                                elif status_quick == u'status_d':
-                                    deltaTick = -tradingOrders[i]['subOrders'][l]['deltaTick']
-                            ## -----------------------------------------------------
                             self.sendTradingOrder(tradingOrders = tradingOrders,
                                                   orderDict     = tradingOrders[i],
                                                   orderIDList   = orderIDList,
                                                   priceType     = 'limit',
                                                   volume        = tradingOrders[i]['subOrders'][l]['volume'],
                                                   price         = price_0,
-                                                  addTick       = deltaTick)
+                                                  addTick       = deltaTick_slow)
                             tradingOrders[i]['subOrders'][l][status_slow] = 'sended'
                             return
                             ## -----------------------------------------------------
