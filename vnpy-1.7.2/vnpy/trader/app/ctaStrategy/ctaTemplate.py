@@ -81,16 +81,6 @@ class CtaTemplate(object):
     ## =========================================================================
 
     ## -------------------------------------------------------------------------
-    ## 从 TickData 提取的字段
-    ## -------------------------------------------------------------------------
-    # lastTickFileds = ['vtSymbol', 'datetime', 'lastPrice',
-    #                   'volume', 'turnover',
-    #                   'openPrice', 'highestPrice', 'lowestPrice',
-    #                   'bidPrice1', 'askPrice1',
-    #                   'bidVolume1', 'askVolume1',
-    #                   'upperLimit','lowerLimit'
-    #                   ]
-    # lastTickDict = {}                  # 保留最新的价格数据
     tickTimer    = {}                  # 计时器, 用于记录单个合约发单的间隔时间
     vtSymbolList = []                  # 策略的所有合约存放在这里
     ## -------------------------------------------------------------------------
@@ -439,11 +429,13 @@ class CtaTemplate(object):
                                                         'level1':{
                                                                  'volume': int(volume_1),
                                                                  'deltaTick': 1,
+                                                                 # 'status': None,
                                                                  'status_u': None,
                                                                  'status_d': None},
                                                         'level2':{
                                                                  'volume': int(volume_2),
                                                                  'deltaTick': 2,
+                                                                 # 'status': None,
                                                                  'status_u': None,
                                                                  'status_d': None}}
             ## -----------------------------------------------------------------
@@ -607,7 +599,9 @@ class CtaTemplate(object):
                 (not tradingOrders[i]['vtOrderIDList']) or 
                 (all(vtOrderID in tempFinishedOrders for 
                                   vtOrderID in tradingOrders[i]['vtOrderIDList']))):
-                if self.tradingEnd and ((datetime.now() - self.tickTimer[vtSymbol]).seconds > 3) and len(tradingOrders[i]['vtOrderIDList']):
+                if (self.tradingEnd and 
+                    ((datetime.now() - self.tickTimer[vtSymbol]).seconds > 3) and 
+                    len(tradingOrders[i]['vtOrderIDList'])):
                     self.tickTimer[vtSymbol] = datetime.now()
                     tempWorkingOrders = allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])][\
                                                       allOrders.vtSymbol == vtSymbol][\
@@ -657,6 +651,13 @@ class CtaTemplate(object):
             ## 如果交易量依然是大于 0 ，则需要继续发送订单命令
             ## -------------------------------------------------------------
             if self.tradingStart:
+                ## =============================================================
+                ## 保证只有一次下单的在外面
+                ## 如果不想要等待成交之后再下单,
+                ## 可以把这个条件注释掉
+                if tempWorkingVolume != 0:
+                    return
+                ## =============================================================
                 totalVolume = tradingOrders[i]['subOrders']['level0']['volume'] + \
                               sum([tradingOrders[i]['subOrders'][l]['volume'] for l in ['level1','level2']]) * 2
                 ## ---------------------------------------------------------------------------------
@@ -707,6 +708,10 @@ class CtaTemplate(object):
                                               price         = price_0,
                                               addTick       = deltaTick_quick)
                         tradingOrders[i]['subOrders'][l][status_quick] = 'sended'
+                        ## -------------------------------------------------
+                        ## 已经触发了一个发送的状态
+                        # tradingOrders[i]['subOrders'][l]['status'] = 'sended'
+                        ## -------------------------------------------------
                         return
                         ## -----------------------------------------------------
                     else:
@@ -928,21 +933,6 @@ class CtaTemplate(object):
             ## -----------------------------------------------------------------
         ## =====================================================================
 
-        ## =====================================================================
-        ## 如果是收盘交易
-        ## 则取消开盘交易的所有订单
-        # if (h == self.tradingCloseHour and 
-        #     (self.tradingCloseMinute2-1) <= m <= (self.tradingCloseMinute2-1) and 
-        #     s <= 20 and (s % 10 == 0)):
-        #     ## -----------------------------------------------------------------
-        #     if (len(self.vtOrderIDListOpen) != 0 or 
-        #         len(self.vtOrderIDListClose) != 0):
-        #         allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
-        #         for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListClose:
-        #             if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
-        #                     self.cancelOrder(vtOrderID)
-            ## -----------------------------------------------------------------
-        ## =====================================================================
 
         ## =====================================================================
         ## 生成收盘交易的订单
