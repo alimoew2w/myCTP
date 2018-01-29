@@ -16,6 +16,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     #----------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
+        global globalSetting
         """Constructor"""          
         super(MainWindow, self).__init__()
         
@@ -36,7 +37,8 @@ class MainWindow(QtWidgets.QMainWindow):
     #----------------------------------------------------------------------
     def initUi(self):
         """初始化界面"""
-        self.setWindowTitle('VnTrader')
+        # self.setWindowTitle('VnTrader')
+        self.setWindowTitle(globalSetting.accountID)
         self.initCentral()
         self.initMenu()
         self.initStatusBar()
@@ -104,7 +106,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.addConnectAction(sysMenu, d['gatewayName'], d['gatewayDisplayName'])
         
         sysMenu.addSeparator()
-        sysMenu.addAction(self.createAction(vtText.CONNECT_DATABASE, self.mainEngine.dbConnect, loadIconPath('database.ico')))
+        sysMenu.addAction(self.createAction(vtText.CONNECT_DATABASE, self.mainEngine.dbMongoConnect, loadIconPath('database.ico')))
         sysMenu.addSeparator()
         sysMenu.addAction(self.createAction(vtText.EXIT, self.close, loadIconPath('exit.ico')))
         
@@ -136,7 +138,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusLabel.setText(self.getCpuMemory())
         
         self.sbCount = 0
-        self.sbTrigger = 10     # 10秒刷新一次
+        self.sbTrigger = 5   # 10秒刷新一次
         self.signalStatusBar.connect(self.updateStatusBar)
         self.eventEngine.register(EVENT_TIMER, self.signalStatusBar.emit)
         
@@ -158,7 +160,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return vtText.SYSTEM_INFO.format(currTime  = datetime.now().strftime("%H:%M:%S"), 
                                          cpu       = cpuPercent, 
                                          memory    = memoryPercent, 
-                                         accountID = self.mainEngine.accountID)        
+                                         accountID = globalSetting.accountID)     
         
     #----------------------------------------------------------------------
     def addConnectAction(self, menu, gatewayName, displayName=''):
@@ -307,6 +309,7 @@ class AboutWidget(QtWidgets.QDialog):
 
     #----------------------------------------------------------------------
     def __init__(self, parent=None):
+        global globalSetting
         """Constructor"""
         super(AboutWidget, self).__init__(parent)
 
