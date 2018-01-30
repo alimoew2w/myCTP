@@ -18,8 +18,8 @@
 
 from __future__ import division
 
-import json
 import sys,os
+import json
 import traceback
 from collections import OrderedDict
 from time import sleep
@@ -84,7 +84,7 @@ class CtaEngine(object):
         
         ## 持仓信息
         ## ------
-        self.positionInfo     = {}
+        self.positionInfo = {}
         ## 持仓合约
         ## -------
         self.accountContracts = []
@@ -95,8 +95,8 @@ class CtaEngine(object):
         # 保存vtSymbol和策略实例映射的字典（用于推送tick数据）
         # 由于可能多个strategy交易同一个vtSymbol，因此key为vtSymbol
         # value为包含所有相关strategy对象的list
-        self.tickStrategyDict = {}
-        self.lastTickDict     = {}
+        self.tickStrategyDict  = {}
+        self.lastTickDict      = {}
         self.lastTickFileds    = ['vtSymbol', 'datetime', 'lastPrice',
                                   'volume', 'turnover',
                                   'openPrice', 'highestPrice', 'lowestPrice',
@@ -143,7 +143,6 @@ class CtaEngine(object):
         ## william
         ## 需要订阅的合约
         self.subscribeContracts = []
-        # for dbName in ['FL_SimNow','TianMi1','TianMi2','TianMi3','YunYang1']:
         for dbName in [globalSetting.accountID]:
             for tbName in ['positionInfo','failedInfo','tradingSignal']:
                 try:
@@ -170,10 +169,10 @@ class CtaEngine(object):
         ## =====================================================================
 
         ## =====================================================================
-        self.DAY_START   = time(8, 30)       # 日盘启动和停止时间
+        self.DAY_START   = time(8, 00)       # 日盘启动和停止时间
         self.DAY_END     = time(15, 15)
         
-        self.NIGHT_START = time(20, 30)      # 夜盘启动和停止时间
+        self.NIGHT_START = time(20, 00)      # 夜盘启动和停止时间
         self.NIGHT_END   = time(2, 35)
         ## =====================================================================
 
@@ -442,7 +441,6 @@ class CtaEngine(object):
                 ## -------------------------------------------------------------
                 # 如果委托已经完成（拒单、撤销、全成），则从活动委托集合中移除
                 if order.status in self.STATUS_FINISHED:
-                    # print order.__dict__
                     s = self.strategyOrderDict[strategy.name]
                     if vtOrderID in s:
                         s.remove(vtOrderID)
@@ -504,15 +502,10 @@ class CtaEngine(object):
         if not ((self.DAY_START <= currentTime <= self.DAY_END) or
             (currentTime >= self.NIGHT_START) or
             (currentTime <= self.NIGHT_END)):
-            # print 'hello'
-            # self.writeCtaLog('-'*44)
-            # self.writeCtaLog(u'启禀大王，赌场已经关闭!!!')
-            # self.writeCtaLog('-'*44)
-            # sleep(10)
-            # self.stopAll()
-            # sleep(3)
-            # print 'hello2'
             # ## ----------
+            # self.writeCtaLog(u'即将退出系统：%s' %datetime.now())
+            self.writeCtaLog(u'即将退出系统')
+            sleep(5)
             os._exit(0)
             # ## ----------
 
