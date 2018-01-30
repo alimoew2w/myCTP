@@ -174,6 +174,7 @@ class CtaEngine(object):
         
         self.NIGHT_START = time(20, 00)      # 夜盘启动和停止时间
         self.NIGHT_END   = time(2, 35)
+        self.exitCounter = 0
         ## =====================================================================
 
         # 引擎类型为实盘
@@ -502,12 +503,13 @@ class CtaEngine(object):
         if not ((self.DAY_START <= currentTime <= self.DAY_END) or
             (currentTime >= self.NIGHT_START) or
             (currentTime <= self.NIGHT_END)):
-            # ## ----------
-            # self.writeCtaLog(u'即将退出系统：%s' %datetime.now())
-            self.writeCtaLog(u'即将退出系统')
+            ## -----------------------------------------------------------------
+            self.exitCounter += 1
+            self.writeCtaLog(u'即将退出系统，计数器：%s' %self.exitCounter)
             sleep(5)
-            os._exit(0)
-            # ## ----------
+            if self.exitCounter > 5:
+                os._exit(0)
+            ## -----------------------------------------------------------------
 
 
     #----------------------------------------------------------------------
