@@ -476,9 +476,6 @@ class CtaEngine(object):
             else:
                 pass
 
-            ## 成交事件的处理
-            # self.callStrategyFunc(strategy, strategy.stratTradeEvent, trade)
-            # self.callStrategyFunc(strategy, strategy.closePositionTradeEvent, trade)
             ## =================================================================
             
             ## =================================================================
@@ -506,7 +503,7 @@ class CtaEngine(object):
             ## -----------------------------------------------------------------
             self.exitCounter += 1
             self.writeCtaLog(u'即将退出系统，计数器：%s' %self.exitCounter)
-            sleep(5)
+            # sleep(5)
             if self.exitCounter > 5:
                 os._exit(0)
             ## -----------------------------------------------------------------
