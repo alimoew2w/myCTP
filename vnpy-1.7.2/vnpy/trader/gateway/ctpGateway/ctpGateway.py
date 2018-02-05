@@ -95,6 +95,7 @@ class CtpGateway(VtGateway):
     ## 仓位信息
     posInfoDict  = {}
     initialCapital = 0
+    flowCapitalPre = 0
 
     #----------------------------------------------------------------------
     def __init__(self, eventEngine, gatewayName='CTP'):
