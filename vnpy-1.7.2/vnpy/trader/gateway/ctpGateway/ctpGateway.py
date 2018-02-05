@@ -16,7 +16,6 @@ from logging import *
 
 from vnpy.api.ctp import MdApi, TdApi, defineDict
 from vnpy.trader.vtGateway import *
-# from vnpy.trader.vtFunction import getJsonPath, getTempPath,tradingDay
 from vnpy.trader import vtFunction 
 from vnpy.trader.vtConstant import GATEWAYTYPE_FUTURES
 from .language import text
@@ -100,7 +99,6 @@ class CtpGateway(VtGateway):
     #----------------------------------------------------------------------
     def __init__(self, eventEngine, gatewayName='CTP'):
         """Constructor"""
-        # print globalSetting()
         super(CtpGateway, self).__init__(eventEngine, gatewayName)
         
         self.mdApi = CtpMdApi(self)     # 行情API
@@ -112,11 +110,11 @@ class CtpGateway(VtGateway):
         self.qryEnabled = False         # 循环查询
         
         self.CTPConnectFile = self.gatewayName + '_connect.json'
-        path     = os.path.normpath(
-                          os.path.join(
-                            os.path.dirname(__file__),
-                            '..', '..', '..', '..')
-                        )
+        path = os.path.normpath(
+            os.path.join(
+                os.path.dirname(__file__),
+                '..', '..', '..', '..')
+            )
         self.CTPConnectPath = os.path.join(path, 'trading', 'account', self.CTPConnectFile)       
         
     #----------------------------------------------------------------------
@@ -258,24 +256,23 @@ class CtpMdApi(MdApi):
         self.gateway = gateway                  # gateway对象
         self.gatewayName = gateway.gatewayName  # gateway对象名称
         
-        self.reqID = EMPTY_INT              # 操作请求编号
+        self.reqID = EMPTY_INT                  # 操作请求编号
         
-        self.connectionStatus = False       # 连接状态
-        self.loginStatus = False            # 登录状态
+        self.connectionStatus = False           # 连接状态
+        self.loginStatus = False                # 登录状态
         
-        self.subscribedSymbols = set()      # 已订阅合约代码        
+        self.subscribedSymbols = set()          # 已订阅合约代码        
         
-        self.userID = EMPTY_STRING          # 账号
-        self.password = EMPTY_STRING        # 密码
-        self.brokerID = EMPTY_STRING        # 经纪商代码
-        self.address = EMPTY_STRING         # 服务器地址
+        self.userID   = EMPTY_STRING            # 账号
+        self.password = EMPTY_STRING            # 密码
+        self.brokerID = EMPTY_STRING            # 经纪商代码
+        self.address  = EMPTY_STRING            # 服务器地址
         # self.lastTickDict     = {}
         self.lastTickFileds    = ['vtSymbol', 'lastPrice',
                                   'openPrice', 'highestPrice', 'lowestPrice',
                                   'bidPrice1', 'askPrice1',
                                   'bidVolume1', 'askVolume1',
-                                  'upperLimit','lowerLimit'
-                                  ]
+                                  'upperLimit','lowerLimit']
         self.tradingDt = None               # 交易日datetime对象
         self.tradingDate = EMPTY_STRING     # 交易日期字符串
         self.tradingDay = vtFunction.tradingDay()      # 交易日期
@@ -290,9 +287,7 @@ class CtpMdApi(MdApi):
     def onFrontConnected(self):
         """服务器连接"""
         self.connectionStatus = True
-        
         self.writeLog(text.DATA_SERVER_CONNECTED)
-        
         self.login()
     
     #----------------------------------------------------------------------  
@@ -301,7 +296,6 @@ class CtpMdApi(MdApi):
         self.connectionStatus = False
         self.loginStatus = False
         self.gateway.mdConnected = False
-        
         self.writeLog(text.DATA_SERVER_DISCONNECTED)
         
     #---------------------------------------------------------------------- 
@@ -328,10 +322,6 @@ class CtpMdApi(MdApi):
             # 重新订阅之前订阅的合约
             for subscribeReq in self.subscribedSymbols:
                 self.subscribe(subscribeReq)
-                
-            # 获取交易日
-            #self.tradingDate = data['TradingDay']
-            #self.tradingDt = datetime.strptime(self.tradingDate, '%Y%m%d')
             
             # 登录时通过本地时间来获取当前的日期
             self.tradingDt = datetime.now()
@@ -464,7 +454,7 @@ class CtpMdApi(MdApi):
             self.tickTime = newTime         # 更新上一个tick时间
         ## -------------------------------
         for i in self.tempFields:
-            if tick.__dict__[i] > 1.7e+300:
+            if tick.__dict__[i] > 1.7e+100:
                 tick.__dict__[i] = 0
         ## -------------------------------
         ########################################################################
@@ -493,10 +483,10 @@ class CtpMdApi(MdApi):
     #----------------------------------------------------------------------
     def connect(self, userID, password, brokerID, address):
         """初始化连接"""
-        self.userID = userID                # 账号
-        self.password = password            # 密码
-        self.brokerID = brokerID            # 经纪商代码
-        self.address = address              # 服务器地址
+        self.userID   = userID                # 账号
+        self.password = password              # 密码
+        self.brokerID = brokerID              # 经纪商代码
+        self.address  = address               # 服务器地址
         
         # 如果尚未建立服务器连接，则进行连接
         if not self.connectionStatus:
@@ -530,7 +520,7 @@ class CtpMdApi(MdApi):
         # 如果填入了用户名密码等，则登录
         if self.userID and self.password and self.brokerID:
             req = {}
-            req['UserID'] = self.userID
+            req['UserID']   = self.userID
             req['Password'] = self.password
             req['BrokerID'] = self.brokerID
             self.reqID += 1
@@ -546,8 +536,8 @@ class CtpMdApi(MdApi):
         """发出日志"""
         log = VtLogData()
         log.gatewayName = self.gatewayName
-        log.logContent = content
-        log.logLevel = logLevel
+        log.logContent  = content
+        log.logLevel    = logLevel
         self.gateway.onLog(log)     
 
     #---------------------------------------------------------------------------
@@ -555,8 +545,8 @@ class CtpMdApi(MdApi):
         """发出错误"""
         err = VtErrorData()
         err.gatewayName = self.gatewayName
-        err.errorID = errorID
-        err.errorMsg = errorMsg.decode('gbk')
+        err.errorID     = errorID
+        err.errorMsg    = errorMsg.decode('gbk')
         self.gateway.onError(err) 
         ## ---------------------------------------------------------------------
         if globalSetting.LOGIN:
@@ -573,7 +563,7 @@ class CtpTdApi(TdApi):
         """API对象的初始化函数"""
         super(CtpTdApi, self).__init__()
         
-        self.gateway = gateway                  # gateway对象
+        self.gateway     = gateway              # gateway对象
         self.gatewayName = gateway.gatewayName  # gateway对象名称
         
         self.reqID = EMPTY_INT              # 操作请求编号
@@ -622,7 +612,6 @@ class CtpTdApi(TdApi):
     def onFrontConnected(self):
         """服务器连接"""
         self.connectionStatus = True
-    
         self.writeLog(text.TRADING_SERVER_CONNECTED)
         
         if self.requireAuthentication:
@@ -636,7 +625,6 @@ class CtpTdApi(TdApi):
         self.connectionStatus = False
         self.loginStatus = False
         self.gateway.tdConnected = False
-    
         self.writeLog(text.TRADING_SERVER_DISCONNECTED)
         
     #----------------------------------------------------------------------
@@ -649,9 +637,7 @@ class CtpTdApi(TdApi):
         """验证客户端回报"""
         if error['ErrorID'] == 0:
             self.authStatus = True
-            
             self.writeLog(text.TRADING_SERVER_AUTHENTICATED)
-            
             self.login()
         else:
             self.writeError(error['ErrorID'], error['ErrorMsg'])
@@ -689,9 +675,7 @@ class CtpTdApi(TdApi):
         if error['ErrorID'] == 0:
             self.loginStatus = False
             self.gateway.tdConnected = False
-            
             self.writeLog(text.TRADING_SERVER_LOGOUT)
-                
         # 否则，推送错误信息
         else:
             self.writeError(error['ErrorID'], error['ErrorMsg'])
@@ -899,7 +883,6 @@ class CtpTdApi(TdApi):
             # 遍历推送
             for pos in self.posDict.values():
                 self.gateway.onPosition(pos)
-            
             # 清空缓存
             self.posDict.clear()
         
@@ -1031,11 +1014,9 @@ class CtpTdApi(TdApi):
                         'priceTick','size','shortMarginRatio','longMarginRatio',
                         'optionType','underlyingSymbol','strikePrice']
             dfData   = []
-            # print len(self.contractDict)
             for k in self.contractDict.keys():
                 temp = self.contractDict[k].__dict__
                 dfData.append([temp[kk] for kk in dfHeader])
-                # print dfData
             df = pd.DataFrame(dfData, columns = dfHeader)
 
             reload(sys) # reload 才能调用 setdefaultencoding 方法
@@ -1254,26 +1235,6 @@ class CtpTdApi(TdApi):
         
         # 推送
         self.gateway.onOrder(order)
-
-        # if order.status == u'未成交' and globalSetting.LOGIN:
-        #     print data
-        #     tempFields = ['orderID','vtSymbol','price','direction','offset',
-        #                   'totalVolume','orderTime','status']
-        #     content = u'下单的详细信息\n%s\n%s\n%s' %('-'*80,
-        #         pd.DataFrame([[order.__dict__[k] for k in tempFields]], 
-        #                       columns = tempFields),
-        #         '-'*80)
-        #     self.writeLog(content)
-        ## ---------------------------------------------------------------------
-        # print order.__dict__
-        # temp = pd.DataFrame([order.__dict__.values()], columns = order.__dict__.keys())
-        # print "\n"+'#'*100
-        # print "-"*100
-        # print temp[['vtOrderID','vtSymbol','offset','direction','price', 
-        #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
-        # print "\n"+'#'*100
-        ## ---------------------------------------------------------------------
-        ## ---------------------------------------------------------------------
         
     #----------------------------------------------------------------------
     def onRtnTrade(self, data):
@@ -1295,7 +1256,6 @@ class CtpTdApi(TdApi):
         
         # 方向
         trade.direction = directionMapReverse.get(data['Direction'], '')
-            
         # 开平
         trade.offset = offsetMapReverse.get(data['OffsetFlag'], '')
             
@@ -1595,7 +1555,6 @@ class CtpTdApi(TdApi):
             
             # 注册服务器地址
             self.registerFront(self.address)
-            
             # 初始化连接，成功会调用onFrontConnected
             self.init()
             
@@ -1724,7 +1683,6 @@ class CtpTdApi(TdApi):
         req['OrderRef']     = cancelOrderReq.orderID
         req['FrontID']      = cancelOrderReq.frontID
         req['SessionID']    = cancelOrderReq.sessionID
-        
         req['ActionFlag']   = defineDict['THOST_FTDC_AF_Delete']
         req['BrokerID']     = self.brokerID
         req['InvestorID']   = self.userID
