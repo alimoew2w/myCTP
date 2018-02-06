@@ -108,9 +108,7 @@ class DrEngine(object):
                 if contract['symbol']:
                     self.mainEngine.subscribe(req, contract['gatewayName'])
             ## -----------------------------------------------------------------
-
         ## =====================================================================
-
 
     #----------------------------------------------------------------------
     def procecssTickEvent(self, event):
