@@ -69,7 +69,6 @@ class CtaEngine(object):
         ## days:   日盘日期,
         self.ChinaFuturesCalendar = self.mainEngine.dbMySQLQuery('dev', 
             """select * from ChinaFuturesCalendar where days >= 20170101;""")
-        # print self.ChinaFuturesCalendar
         ## =====================================================================
 
         # 当前日期
@@ -398,14 +397,6 @@ class CtaEngine(object):
         ## ---------------------------------------------------------------------
         # 推送tick到对应的策略实例进行处理
         if tick.vtSymbol in self.tickStrategyDict:
-            # # tick时间可能出现异常数据，使用try...except实现捕捉和过滤
-            # try:
-            #     # 添加datetime字段
-            #     if not tick.datetime:
-            #         tick.datetime = datetime.strptime(' '.join([tick.date, tick.time]), '%Y%m%d %H:%M:%S.%f')
-            # except ValueError:
-            #     self.writeCtaLog(traceback.format_exc())
-            #     return
             ## -----------------------------------------------------------------
             # 逐个推送到策略实例中
             l = self.tickStrategyDict[tick.vtSymbol]
@@ -492,21 +483,23 @@ class CtaEngine(object):
     ############################################################################
     def processTradingStatus(self, event):
         """控制交易开始与停止状态"""
-        
-        if datetime.now().second % 30 != 0:
-            return 
 
-        currentTime = datetime.now().time()
-        if not ((self.DAY_START <= currentTime <= self.DAY_END) or
-            (currentTime >= self.NIGHT_START) or
-            (currentTime <= self.NIGHT_END)):
-            ## -----------------------------------------------------------------
+        if (datetime.now().minute % 5 != 0 or
+            datetime.now().second % 20 != 0):
+            return 
+        ## ------------------------
+        h = datetime.now().hour
+        m = datetime.now().minute
+        ## ------------------------
+
+        ## ---------------------------------------------------------------------
+        if ((h == self.NIGHT_END.hour and m >= self.NIGHT_END.minute) or 
+            (h == self.DAY_END.hour and m >= self.DAY_END.minute)):
             self.exitCounter += 1
             self.writeCtaLog(u'即将退出系统，计数器：%s' %self.exitCounter)
-            # sleep(5)
-            if self.exitCounter > 5:
+            if self.exitCounter >= 3:
                 os._exit(0)
-            ## -----------------------------------------------------------------
+        ## ---------------------------------------------------------------------
 
 
     #----------------------------------------------------------------------
@@ -515,11 +508,8 @@ class CtaEngine(object):
         self.eventEngine.register(EVENT_TICK, self.processTickEvent)
         self.eventEngine.register(EVENT_ORDER, self.processOrderEvent)
         self.eventEngine.register(EVENT_TRADE, self.processTradeEvent)
-
         self.eventEngine.register(EVENT_TIMER, self.processTradingStatus)
 
-
- 
     #----------------------------------------------------------------------
     def insertMongoData(self, dbName, collectionName, data):
         """插入数据到数据库（这里的data可以是VtTickData或者VtBarData）"""
@@ -605,7 +595,6 @@ class CtaEngine(object):
                 vtSymbolList  = self.subscribeContracts
 
             for vtSymbol in vtSymbolList:
-            #by hw 单个策略订阅多个合约，配置文件中"vtSymbol": "IF1602,IF1603"
                 if vtSymbol in self.tickStrategyDict:
                     ############################################################
                     ## william
@@ -625,8 +614,6 @@ class CtaEngine(object):
                     req          = VtSubscribeReq()
                     req.symbol   = contract.symbol
                     req.exchange = contract.exchange
-                    # req.symbol = contract['symbol']
-                    # req.exchange = contract['exchange']
                     # 对于IB接口订阅行情时所需的货币和产品类型，从策略属性中获取
                     # req.currency = strategy.currency
                     # req.productClass = strategy.productClass
