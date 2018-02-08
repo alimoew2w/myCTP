@@ -274,10 +274,14 @@ class CtpMdApi(MdApi):
                                   'bidVolume1', 'askVolume1',
                                   'upperLimit','lowerLimit']
         self.tradingDt = None               # 交易日datetime对象
-        self.tradingDate = EMPTY_STRING     # 交易日期字符串
+        self.tradingDate = vtFunction.tradingDay()
         self.tradingDay = vtFunction.tradingDay()      # 交易日期
         self.tickTime = None                # 最新行情time对象
         self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',
+                          'upperLimit','lowerLimit','openInterest',
+                          'bidPrice1','bidVolume1',
+                          'askPrice1','askVolume1']
+        self.recorderFields = ['openPrice','highestPrice','lowestPrice','closePrice',
                           'upperLimit','lowerLimit','openInterest','preDelta','currDelta',
                           'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',
                           'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',
@@ -363,7 +367,7 @@ class CtpMdApi(MdApi):
         """行情推送"""
         ## ---------------------------------------------------------------------
         # 忽略无效的报价单
-        if data['LastPrice'] > 1.70e+300:
+        if data['LastPrice'] > 1.70e+100:
             return
         # 过滤尚未获取合约交易所时的行情推送
         symbol = data['InstrumentID']
@@ -375,19 +379,21 @@ class CtpMdApi(MdApi):
         tick = VtTickData()
         tick.gatewayName = self.gatewayName
         tick.symbol = symbol
-        tick.symbol = data['InstrumentID']
         tick.exchange = symbolExchangeDict[tick.symbol]
         tick.vtSymbol = tick.symbol      #'.'.join([tick.symbol, tick.exchange])
         
-        tick.timeStamp  = str(datetime.now().strftime('%Y%m%d %H:%M:%S.%f'))
+        # tick.timeStamp  = datetime.now().strftime('%Y%m%d %H:%M:%S.%f')
         # 上期所和郑商所可以直接使用，大商所需要转换
-        tick.date = data['ActionDay']
+        ##################################### tick.date = data['ActionDay']
+        tick.date = self.tradingDate
         tick.time = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
+        # tick.datetime = datetime.strptime(' '.join([tick.date, tick.time]),
+        #                                       '%Y%m%d %H:%M:%S.%f')  
 
         ## 价格信息
         tick.lastPrice          = round(data['LastPrice'],5)
         # tick.preSettlementPrice = data['PreSettlementPrice']
-        tick.preClosePrice      = round(data['PreClosePrice'],5)
+        # tick.preClosePrice      = round(data['PreClosePrice'],5)
         tick.openPrice          = round(data['OpenPrice'],5)
         tick.highestPrice       = round(data['HighestPrice'],5)
         tick.lowestPrice        = round(data['LowestPrice'],5)
@@ -401,12 +407,12 @@ class CtpMdApi(MdApi):
         tick.turnover = round(data['Turnover'],5)
 
         ## 持仓数据
-        tick.preOpenInterest    = data['PreOpenInterest']
+        # tick.preOpenInterest    = data['PreOpenInterest']
         tick.openInterest       = data['OpenInterest']
 
         # ## 期权数据
-        tick.preDelta           = data['PreDelta']
-        tick.currDelta          = data['CurrDelta']
+        # tick.preDelta           = data['PreDelta']
+        # tick.currDelta          = data['CurrDelta']
 
         #! CTP只有一档行情
         tick.bidPrice1  = round(data['BidPrice1'],5)
@@ -414,57 +420,64 @@ class CtpMdApi(MdApi):
         tick.askPrice1  = round(data['AskPrice1'],5)
         tick.askVolume1 = data['AskVolume1']
 
-        tick.bidPrice2  = data['BidPrice2']
-        tick.bidVolume2 = data['BidVolume2']
-        tick.askPrice2  = data['AskPrice2']
-        tick.askVolume2 = data['AskVolume2']
+        ## ---------------------------------------------------------------------
+        ## 不要删除，先注释掉
+        ## ---------------------------------------------------------------------
+        # tick.bidPrice2  = data['BidPrice2']
+        # tick.bidVolume2 = data['BidVolume2']
+        # tick.askPrice2  = data['AskPrice2']
+        # tick.askVolume2 = data['AskVolume2']
 
-        tick.bidPrice3  = data['BidPrice3']
-        tick.bidVolume3 = data['BidVolume3']
-        tick.askPrice3  = data['AskPrice3']
-        tick.askVolume3 = data['AskVolume3']
+        # tick.bidPrice3  = data['BidPrice3']
+        # tick.bidVolume3 = data['BidVolume3']
+        # tick.askPrice3  = data['AskPrice3']
+        # tick.askVolume3 = data['AskVolume3']
 
-        tick.bidPrice4  = data['BidPrice4']
-        tick.bidVolume4 = data['BidVolume4']
-        tick.AskPrice4  = data['AskPrice4']
-        tick.askVolume4 = data['AskVolume4']
+        # tick.bidPrice4  = data['BidPrice4']
+        # tick.bidVolume4 = data['BidVolume4']
+        # tick.AskPrice4  = data['AskPrice4']
+        # tick.askVolume4 = data['AskVolume4']
 
-        tick.bidPrice5  = data['BidPrice5']
-        tick.bidVolume5 = data['BidVolume5']
-        tick.askPrice5  = data['AskPrice5']
-        tick.askVolume5 = data['AskVolume5']
+        # tick.bidPrice5  = data['BidPrice5']
+        # tick.bidVolume5 = data['BidVolume5']
+        # tick.askPrice5  = data['AskPrice5']
+        # tick.askVolume5 = data['AskVolume5']
 
         ########################################################################
-        tick.settlementPrice    = round(data['SettlementPrice'],5)
-        tick.averagePrice       = round(data['AveragePrice'],5)
+        # tick.settlementPrice    = round(data['SettlementPrice'],5)
+        # tick.averagePrice       = round(data['AveragePrice'],5)
         ########################################################################
         
-        # 大商所日期转换
-        if tick.exchange is EXCHANGE_DCE:
-            newTime = datetime.strptime(tick.time, '%H:%M:%S.%f').time()    # 最新tick时间戳
+        # # 大商所日期转换
+        # if tick.exchange is EXCHANGE_DCE:
+        #     newTime = datetime.strptime(tick.time, '%H:%M:%S.%f').time()    # 最新tick时间戳
             
-            # 如果新tick的时间小于夜盘分隔，且上一个tick的时间大于夜盘分隔，则意味着越过了12点
-            if (self.tickTime and 
-                newTime < NIGHT_TRADING and
-                self.tickTime > NIGHT_TRADING):
-                self.tradingDt += timedelta(1)                          # 日期加1
-                self.tradingDate = self.tradingDt.strftime('%Y%m%d')    # 生成新的日期字符串
+        #     # 如果新tick的时间小于夜盘分隔，且上一个tick的时间大于夜盘分隔，则意味着越过了12点
+        #     if (self.tickTime and 
+        #         newTime < NIGHT_TRADING and
+        #         self.tickTime > NIGHT_TRADING):
+        #         self.tradingDt += timedelta(1)                          # 日期加1
+        #         self.tradingDate = self.tradingDt.strftime('%Y%m%d')    # 生成新的日期字符串
                 
-            tick.date = self.tradingDate    # 使用本地维护的日期
-            self.tickTime = newTime         # 更新上一个tick时间
+        #     tick.date = self.tradingDate    # 使用本地维护的日期
+        #     self.tickTime = newTime         # 更新上一个tick时间
         ## -------------------------------
-        for i in self.tempFields:
-            if tick.__dict__[i] > 1.7e+100:
-                tick.__dict__[i] = 0
+        # for i in self.tempFields:
+        #     if tick.__dict__[i] > 1.7e+100:
+        #         tick.__dict__[i] = 0
         ## -------------------------------
+        # for i in self.recorderFields:
+        #     if tick.__dict__[i] > 1.7e+100:
+        #         tick.__dict__[i] = 0
+        # ## -------------------------------
+        ## ---------------------------------------------------------------------
+        self.gateway.onTick(tick)
+        ## ---------------------------------------------------------------------
         ########################################################################
         ## william
         ## tick 数据返回到 /vn.trader/vtEngine.onTick()
         self.gateway.lastTickDict[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
-        ## ---------------------------------------------------------------------
-        self.gateway.onTick(tick)
-        ## ---------------------------------------------------------------------
-        
+
     #---------------------------------------------------------------------- 
     def onRspSubForQuoteRsp(self, data, error, n, last):
         """订阅期权询价"""
@@ -605,8 +618,6 @@ class CtpTdApi(TdApi):
         except:
             self.preBalance = 0
         ## ---------------------------------------------------------------------
-
-        
 
     #----------------------------------------------------------------------
     def onFrontConnected(self):
