@@ -18,7 +18,6 @@ from vnpy.trader import vtFunction
 from logging import INFO, ERROR
 import pandas as pd
 from pandas.io import sql
-import math
 
 from datetime import *
 import time
@@ -106,9 +105,6 @@ class OIStrategy(CtaTemplate):
         self.tradingCloseHour    = 14
         self.tradingCloseMinute1 = 50
         self.tradingCloseMinute2 = 59
-        # self.tradingCloseHour    = 11
-        # self.tradingCloseMinute1 = 20
-        # self.tradingCloseMinute2 = 29
         ## =====================================================================
 
         ## ===================================================================== 
@@ -203,6 +199,7 @@ class OIStrategy(CtaTemplate):
             if symbol not in self.tickTimer.keys():
                 self.tickTimer[symbol] = datetime.now()
         ## =====================================================================
+        self.updateTradingStatus()
         self.putEvent()
         ## =====================================================================
 
@@ -211,7 +208,6 @@ class OIStrategy(CtaTemplate):
         """收到行情TICK推送（必须由用户继承实现）"""
 
         ## =====================================================================
-        # print tick.__dict__
         if not self.trading:
             return 
         elif tick.datetime <= (datetime.now() - timedelta(seconds=30)):
@@ -220,8 +216,8 @@ class OIStrategy(CtaTemplate):
         [self.tradingOrdersClose[k]['vtSymbol'] for k in self.tradingOrdersClose.keys()] + \
         [self.tradingOrdersFailedInfo[k]['vtSymbol'] for k in self.tradingOrdersFailedInfo.keys()]:
             return 
-        elif ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds <= 1):
-            return
+        # elif ((datetime.now() - self.tickTimer[tick.vtSymbol]).seconds <= 1):
+        #     return
         # =====================================================================
 
         ########################################################################
@@ -236,7 +232,7 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
 
         ## =====================================================================
-        if ( (self.tradingStart and not self.tradingEnd) and 
+        if ((self.tradingStart and not self.tradingEnd) and 
             tick.vtSymbol in [self.tradingOrdersOpen[k]['vtSymbol'] 
                              for k in self.tradingOrdersOpen.keys()]):
             ####################################################################
@@ -257,7 +253,7 @@ class OIStrategy(CtaTemplate):
         ## =====================================================================
 
         ## =====================================================================
-        if ( (self.tradingBetween or self.tradingEnd) and 
+        if ((self.tradingBetween or self.tradingEnd) and 
             tick.vtSymbol in [self.tradingOrdersClose[k]['vtSymbol'] 
                              for k in self.tradingOrdersClose.keys()]):
             if self.tradingBetween:
@@ -288,7 +284,6 @@ class OIStrategy(CtaTemplate):
     #----------------------------------------------------------------------
     def onTrade(self, trade):
         """处理成交订单"""
-        # print trade.__dict__
         self.tickTimer[trade.vtSymbol] = datetime.now()
         ## ---------------------------------------------------------------------
 
@@ -323,7 +318,6 @@ class OIStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
         ## ---------------------------------------------------------------------
-
 
         ########################################################################
         ## william
@@ -388,24 +382,13 @@ class OIStrategy(CtaTemplate):
                         'vtOrderIDList' : []
                 }
                 ## -------------------------------------------------------------
-                time.sleep(1)
-                ## -------------------------------------------------------------
-                # if re.sub('[0-9]', '', self.stratTrade['vtSymbol']) in ['i','jm','j']:
-                #     tempAddTick = -2
-                # elif re.sub('[0-9]', '', self.stratTrade['vtSymbol']) in ['rb']:
-                #     tempAddTick = -10
-                # else:
-                #     tempAddTick = -8
-                ## -------------------------------------------------------------
-                tempAddTick = 1
-                ## -------------------------------------------------------------
 
                 ## -------------------------------------------------------------
                 self.prepareTradingOrder(vtSymbol      = self.stratTrade['vtSymbol'], 
                                          tradingOrders = self.tradingOrdersUpperLower, 
                                          orderIDList   = self.vtOrderIDListUpperLower,
                                          priceType     = tempPriceType,
-                                         addTick       = tempAddTick)
+                                         addTick       = 1)
                 # --------------------------------------------------------------
                 # 获得 vtOrderID
                 tempFields = ['TradingDay','vtSymbol','vtOrderIDList','direction','volume']
@@ -415,17 +398,13 @@ class OIStrategy(CtaTemplate):
                 tempRes.insert(1,'strategyID', self.strategyID)
                 tempRes.rename(columns={'vtSymbol':'InstrumentID'}, inplace = True)
                 ## -------------------------------------------------------------
-                ## 连接 MySQL 设置
-                conn   = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-                cursor = conn.cursor()
+                
                 ## -------------------------------------------------------------
                 try:
                     self.saveMySQL(df = tempRes, tbl = 'UpperLowerInfo', over = 'append')
                 except:
                     self.writeCtaLog(u'UpperLower 涨跌停平仓订单 写入 MySQL 数据库出错',
                                      logLevel = ERROR)
-                finally:
-                    conn.close()
             ## =================================================================
 
         elif self.stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
@@ -443,7 +422,6 @@ class OIStrategy(CtaTemplate):
         self.updateTradingInfo(df = tempTradingInfo)
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
         ## ---------------------------------------------------------------------
-
 
         ########################################################################
         ## 处理 MySQL 数据库的 tradingOrders
