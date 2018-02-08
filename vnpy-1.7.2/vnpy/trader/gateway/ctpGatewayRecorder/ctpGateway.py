@@ -18,7 +18,6 @@ from vnpy.trader.vtConstant import GATEWAYTYPE_FUTURES
 from .language import text
 from vnpy.trader.vtGlobal import globalSetting
 
-
 # 以下为一些VT类型和CTP类型的映射字典
 # 价格类型映射
 priceTypeMap = {}
@@ -211,7 +210,7 @@ class CtpMdApi(MdApi):
         self.tradingDt = None               # 交易日datetime对象
         self.tradingDate = vtFunction.tradingDay()
         self.tradingDay = vtFunction.tradingDay()      # 交易日期
-        self.tempFields = ['openPrice','highestPrice','lowestPrice','closePrice',
+        self.recorderFields = ['openPrice','highestPrice','lowestPrice','closePrice',
                           'upperLimit','lowerLimit','openInterest','preDelta','currDelta',
                           'bidPrice1','bidPrice2','bidPrice3','bidPrice4','bidPrice5',
                           'askPrice1','askPrice2','askPrice3','askPrice4','askPrice5',
@@ -297,7 +296,7 @@ class CtpMdApi(MdApi):
         """行情推送"""
         ## ---------------------------------------------------------------------
         # 忽略无效的报价单
-        if data['LastPrice'] > 1.70e+100:
+        if data['LastPrice'] > 1.70e+100 or data['BidPrice1'] > 1.70e+100:
             return
         # 过滤尚未获取合约交易所时的行情推送
         symbol = data['InstrumentID']
@@ -312,7 +311,6 @@ class CtpMdApi(MdApi):
         tick.exchange = symbolExchangeDict[tick.symbol]
         tick.vtSymbol = tick.symbol      #'.'.join([tick.symbol, tick.exchange])
         
-        # tick.timeStamp  = str(datetime.now().strftime('%Y%m%d %H:%M:%S.%f'))
         tick.timeStamp  = datetime.now().strftime('%Y%m%d %H:%M:%S.%f')
         # 上期所和郑商所可以直接使用，大商所需要转换
         ##################################### tick.date = data['ActionDay']
@@ -375,9 +373,9 @@ class CtpMdApi(MdApi):
         tick.settlementPrice    = round(data['SettlementPrice'],5)
         tick.averagePrice       = round(data['AveragePrice'],5)
         ########################################################################
-        # for i in self.tempFields:
-        #     if tick.__dict__[i] > 1.7e+100:
-        #         tick.__dict__[i] = 0
+        for i in self.recorderFields:
+            if tick.__dict__[i] > 1.7e+100:
+                tick.__dict__[i] = 0
         ## -------------------------------
         self.gateway.onTick(tick)
         ## ---------------------------------------------------------------------
@@ -663,47 +661,24 @@ class CtpTdApi(TdApi):
         pass
         
     #----------------------------------------------------------------------
+    def onRspQrySettlementInfo(self, data, error, n, last):
+        """"""
+        pass
+        
+    #----------------------------------------------------------------------
     def onRspError(self, error, n, last):
         """错误回报"""
         self.writeError(error['ErrorID'], error['ErrorMsg'])
 
     #----------------------------------------------------------------------
+    def onErrRtnOrderAction(self, data, error):
+        """撤单错误回报（交易所）"""
+        self.writeError(error['ErrorID'], error['ErrorMsg'])
+
+    ## =========================================================================
+    ## 这个函数不能删除
+    #----------------------------------------------------------------------
     def onRtnInstrumentStatus(self, data):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onRtnTradingNotice(self, data):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onRtnErrorConditionalOrder(self, data):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onErrRtnForQuoteInsert(self, data, error):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onRtnQuote(self, data):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onErrRtnQuoteInsert(self, data, error):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onErrRtnQuoteAction(self, data, error):
-        """"""
-        pass
-        
-    #----------------------------------------------------------------------
-    def onRtnForQuoteRsp(self, data):
         """"""
         pass
         
