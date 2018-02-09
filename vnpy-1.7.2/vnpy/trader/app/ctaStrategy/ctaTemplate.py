@@ -22,7 +22,7 @@ from tabulate import tabulate
 from pandas.io import sql
 from datetime import *
 import time
-import math
+import math, random
 
 import re,ast,json
 from copy import copy
@@ -31,6 +31,7 @@ pd.set_option('display.max_rows', 1000)
 ## -----------------------------------------------------------------------------
 reload(sys) # Python2.5 初始化后会删除 sys.setdefaultencoding 这个方法，我们需要重新载入   
 sys.setdefaultencoding('utf-8')   
+from vnpy.trader.vtGlobal import globalSetting
 
 ########################################################################
 class CtaTemplate(object):
@@ -153,6 +154,8 @@ class CtaTemplate(object):
         self.tradingCloseHour    = 14
         self.tradingCloseMinute1 = 50
         self.tradingCloseMinute2 = 59
+        self.accountID = globalSetting.accountID
+        self.randomNo = 50 + random.randint(-5,5)    ## 随机间隔多少秒再下单
         ## =====================================================================
 
         ## =====================================================================
@@ -655,7 +658,8 @@ class CtaTemplate(object):
                 ## 保证只有一次下单的在外面
                 ## 如果不想要等待成交之后再下单,
                 ## 可以把这个条件注释掉
-                if tempWorkingVolume != 0:
+                # if tempWorkingVolume != 0:
+                if tempWorkingVolume != 0 and self.accountID in ['HanFeng','YunYang1']:    ## 只有在订单比较大的时候才等待
                     return
                 ## =============================================================
                 totalVolume = tradingOrders[i]['subOrders']['level0']['volume'] + \
@@ -754,7 +758,8 @@ class CtaTemplate(object):
                 # ---------------------------------------------------------------------------------
 
             elif (self.tradingBetween and 
-                 (datetime.now() - tradingOrders[i]['lastTimer']).seconds >= 55):
+                 # (datetime.now() - tradingOrders[i]['lastTimer']).seconds >= 55):
+                 (datetime.now() - tradingOrders[i]['lastTimer']).seconds >= self.randomNo):
                 ## -------------------------------------------------------------
                 remainingMinute = self.tradingCloseMinute2-1 - datetime.now().minute
                 if remainingMinute == 0:
@@ -1284,12 +1289,13 @@ class CtaTemplate(object):
                                 WHERE strategyID = '%s'
                                """ %(self.strategyID))
                 conn.commit()
+                conn.close()
                 self.saveMySQL(df = mysqlPositionInfo, tbl = 'positionInfo', over = 'append')
             except:
                 self.writeCtaLog(u'processOffsetOpen 开仓订单 写入 MySQL 数据库出错',
                                  logLevel = ERROR)
-            finally:
-                conn.close()
+            # finally:
+            #     conn.close()
         ## -----------------------------------------------------------------
 
 
@@ -1336,12 +1342,13 @@ class CtaTemplate(object):
                             WHERE strategyID = '%s'
                            """ %(self.strategyID))
             conn.commit()
+            conn.close()
             self.saveMySQL(df = mysqlPositionInfo, tbl = 'positionInfo', over = 'append')
         except:
             self.writeCtaLog(u'processOffsetClose 平仓订单 写入 MySQL 数据库出错', 
                                logLevel = ERROR)
-        finally:
-            conn.close()
+        # finally:
+        #     conn.close()
         ## =========================================================================
 
 
@@ -1379,12 +1386,13 @@ class CtaTemplate(object):
                             WHERE strategyID = '%s'
                            """ %(self.strategyID))
             conn.commit()
+            conn.close()
             self.saveMySQL(df = mysqlFailedInfo, tbl = 'failedInfo', over = 'append')
         except:
             self.writeCtaLog(u'processTradingOrdersFailedInfo 昨日未成交订单 写入 MySQL 数据库出错',
                              logLevel = ERROR)
-        finally:
-            conn.close()
+        # finally:
+        #     conn.close()
         ## ---------------------------------------------------------------------
 
     ############################################################################
