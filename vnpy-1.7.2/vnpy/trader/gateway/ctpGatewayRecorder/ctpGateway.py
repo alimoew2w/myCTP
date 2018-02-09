@@ -24,24 +24,24 @@ from vnpy.trader.vtGlobal import globalSetting
 
 # 以下为一些VT类型和CTP类型的映射字典
 # 价格类型映射
-priceTypeMap = {}
-priceTypeMap[PRICETYPE_LIMITPRICE] = defineDict["THOST_FTDC_OPT_LimitPrice"]
-priceTypeMap[PRICETYPE_MARKETPRICE] = defineDict["THOST_FTDC_OPT_AnyPrice"]
-priceTypeMapReverse = {v: k for k, v in priceTypeMap.items()} 
+# priceTypeMap = {}
+# priceTypeMap[PRICETYPE_LIMITPRICE] = defineDict["THOST_FTDC_OPT_LimitPrice"]
+# priceTypeMap[PRICETYPE_MARKETPRICE] = defineDict["THOST_FTDC_OPT_AnyPrice"]
+# priceTypeMapReverse = {v: k for k, v in priceTypeMap.items()} 
 
 # 方向类型映射
-directionMap = {}
-directionMap[DIRECTION_LONG] = defineDict['THOST_FTDC_D_Buy']
-directionMap[DIRECTION_SHORT] = defineDict['THOST_FTDC_D_Sell']
-directionMapReverse = {v: k for k, v in directionMap.items()}
+# directionMap = {}
+# directionMap[DIRECTION_LONG] = defineDict['THOST_FTDC_D_Buy']
+# directionMap[DIRECTION_SHORT] = defineDict['THOST_FTDC_D_Sell']
+# directionMapReverse = {v: k for k, v in directionMap.items()}
 
 # 开平类型映射
-offsetMap = {}
-offsetMap[OFFSET_OPEN] = defineDict['THOST_FTDC_OF_Open']
-offsetMap[OFFSET_CLOSE] = defineDict['THOST_FTDC_OF_Close']
-offsetMap[OFFSET_CLOSETODAY] = defineDict['THOST_FTDC_OF_CloseToday']
-offsetMap[OFFSET_CLOSEYESTERDAY] = defineDict['THOST_FTDC_OF_CloseYesterday']
-offsetMapReverse = {v:k for k,v in offsetMap.items()}
+# offsetMap = {}
+# offsetMap[OFFSET_OPEN] = defineDict['THOST_FTDC_OF_Open']
+# offsetMap[OFFSET_CLOSE] = defineDict['THOST_FTDC_OF_Close']
+# offsetMap[OFFSET_CLOSETODAY] = defineDict['THOST_FTDC_OF_CloseToday']
+# offsetMap[OFFSET_CLOSEYESTERDAY] = defineDict['THOST_FTDC_OF_CloseYesterday']
+# offsetMapReverse = {v:k for k,v in offsetMap.items()}
 
 # 交易所类型映射
 exchangeMap = {}
@@ -56,11 +56,11 @@ exchangeMap[EXCHANGE_UNKNOWN] = ''
 exchangeMapReverse = {v:k for k,v in exchangeMap.items()}
 
 # 持仓类型映射
-posiDirectionMap = {}
-posiDirectionMap[DIRECTION_NET] = defineDict["THOST_FTDC_PD_Net"]
-posiDirectionMap[DIRECTION_LONG] = defineDict["THOST_FTDC_PD_Long"]
-posiDirectionMap[DIRECTION_SHORT] = defineDict["THOST_FTDC_PD_Short"]
-posiDirectionMapReverse = {v:k for k,v in posiDirectionMap.items()}
+# posiDirectionMap = {}
+# posiDirectionMap[DIRECTION_NET] = defineDict["THOST_FTDC_PD_Net"]
+# posiDirectionMap[DIRECTION_LONG] = defineDict["THOST_FTDC_PD_Long"]
+# posiDirectionMap[DIRECTION_SHORT] = defineDict["THOST_FTDC_PD_Short"]
+# posiDirectionMapReverse = {v:k for k,v in posiDirectionMap.items()}
 
 # 产品类型映射
 productClassMap = {}
@@ -72,12 +72,12 @@ productClassMapReverse[defineDict["THOST_FTDC_PC_ETFOption"]] = PRODUCT_OPTION
 productClassMapReverse[defineDict["THOST_FTDC_PC_Stock"]] = PRODUCT_EQUITY
 
 # 委托状态映射
-statusMap = {}
-statusMap[STATUS_ALLTRADED] = defineDict["THOST_FTDC_OST_AllTraded"]
-statusMap[STATUS_PARTTRADED] = defineDict["THOST_FTDC_OST_PartTradedQueueing"]
-statusMap[STATUS_NOTTRADED] = defineDict["THOST_FTDC_OST_NoTradeQueueing"]
-statusMap[STATUS_CANCELLED] = defineDict["THOST_FTDC_OST_Canceled"]
-statusMapReverse = {v:k for k,v in statusMap.items()}
+# statusMap = {}
+# statusMap[STATUS_ALLTRADED] = defineDict["THOST_FTDC_OST_AllTraded"]
+# statusMap[STATUS_PARTTRADED] = defineDict["THOST_FTDC_OST_PartTradedQueueing"]
+# statusMap[STATUS_NOTTRADED] = defineDict["THOST_FTDC_OST_NoTradeQueueing"]
+# statusMap[STATUS_CANCELLED] = defineDict["THOST_FTDC_OST_Canceled"]
+# statusMapReverse = {v:k for k,v in statusMap.items()}
 
 # 全局字典, key:symbol, value:exchange
 symbolExchangeDict = {}
@@ -90,11 +90,11 @@ class CtpGateway(VtGateway):
     """CTP接口"""
 
     ## 最后一个数据
-    lastTickDict = {}
+    # lastTickDict = {}
     ## 仓位信息
-    posInfoDict  = {}
-    initialCapital = 0
-    flowCapitalPre = 0
+    # posInfoDict  = {}
+    # initialCapital = 0
+    # flowCapitalPre = 0
 
     #----------------------------------------------------------------------
     def __init__(self, eventEngine, gatewayName='CTP'):
@@ -268,11 +268,11 @@ class CtpMdApi(MdApi):
         self.brokerID = EMPTY_STRING            # 经纪商代码
         self.address  = EMPTY_STRING            # 服务器地址
         # self.lastTickDict     = {}
-        self.lastTickFileds    = ['vtSymbol', 'lastPrice',
-                                  'openPrice', 'highestPrice', 'lowestPrice',
-                                  'bidPrice1', 'askPrice1',
-                                  'bidVolume1', 'askVolume1',
-                                  'upperLimit','lowerLimit']
+        # self.lastTickFileds    = ['vtSymbol', 'lastPrice',
+        #                           'openPrice', 'highestPrice', 'lowestPrice',
+        #                           'bidPrice1', 'askPrice1',
+        #                           'bidVolume1', 'askVolume1',
+        #                           'upperLimit','lowerLimit']
         self.tradingDt = None               # 交易日datetime对象
         self.tradingDate = vtFunction.tradingDay()
         self.tradingDay = vtFunction.tradingDay()      # 交易日期
@@ -595,16 +595,16 @@ class CtpTdApi(TdApi):
         self.frontID = EMPTY_INT            # 前置机编号
         self.sessionID = EMPTY_INT          # 会话编号
         
-        self.posDict = {}
+        # self.posDict = {}
         self.symbolExchangeDict = {}        # 保存合约代码和交易所的印射关系
         self.symbolSizeDict = {}            # 保存合约代码和合约大小的印射关系
 
         self.requireAuthentication = False
         
         self.contractDict  = {}
-        self.orderDict     = {}
-        self.tradeDict     = {}
-        self.posInfoFields = ['vtSymbol', 'PosiDirection', 'position']
+        # self.orderDict     = {}
+        # self.tradeDict     = {}
+        # self.posInfoFields = ['vtSymbol', 'PosiDirection', 'position']
         self.dfAll         = pd.DataFrame()
         ## ---------------------------------------------------------------------
         # try:
@@ -1049,10 +1049,13 @@ class CtpTdApi(TdApi):
             except:
                 None
             ## =================================================================
-            self.contractFileName = './temp/ContractData.vt'
-            f = shelve.open(self.contractFileName)
-            f['data'] = self.contractDict
-            f.close()
+            try:
+                self.contractFileName = './temp/ContractData.vt'
+                f = shelve.open(self.contractFileName)
+                f['data'] = self.contractDict
+                f.close()
+            except:
+                None
             ## =================================================================
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
             ## 交易合约信息获取是否成功
