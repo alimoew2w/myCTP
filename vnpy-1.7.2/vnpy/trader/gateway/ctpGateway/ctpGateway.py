@@ -1047,10 +1047,13 @@ class CtpTdApi(TdApi):
             except:
                 None
             ## =================================================================
-            self.contractFileName = './temp/ContractData.vt'
-            f = shelve.open(self.contractFileName)
-            f['data'] = self.contractDict
-            f.close()
+            try:
+                self.contractFileName = './temp/ContractData.vt'
+                f = shelve.open(self.contractFileName)
+                f['data'] = self.contractDict
+                f.close()
+            except:
+                None
             ## =================================================================
             self.writeLog(text.CONTRACT_DATA_RECEIVED)
             ## 交易合约信息获取是否成功
