@@ -659,7 +659,7 @@ class CtaTemplate(object):
                 ## 如果不想要等待成交之后再下单,
                 ## 可以把这个条件注释掉
                 # if tempWorkingVolume != 0:
-                if tempWorkingVolume != 0 and self.accountID in ['HanFeng','YunYang1']:    ## 只有在订单比较大的时候才等待
+                if tempWorkingVolume != 0 and self.accountID in ['HanFeng','TianMi1']:    ## 只有在订单比较大的时候才等待
                     return
                 ## =============================================================
                 totalVolume = tradingOrders[i]['subOrders']['level0']['volume'] + \
