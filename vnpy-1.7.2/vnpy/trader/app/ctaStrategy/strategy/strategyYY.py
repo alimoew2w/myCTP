@@ -188,6 +188,7 @@ class YYStrategy(CtaTemplate):
             if symbol not in self.tickTimer.keys():
                 self.tickTimer[symbol] = datetime.now()
         ## =====================================================================
+        self.updateTradingStatus()
         self.putEvent()
         ## =====================================================================
 
@@ -229,7 +230,7 @@ class YYStrategy(CtaTemplate):
             elif self.tradingBetween:
                 tempPriceType = 'last'
                 tempDiscount  = 0
-                tempAddTick   = self.ctaEngine.mainEngine.closeAddTickYY
+                tempAddTick   = 0
             elif self.tradingEnd:
                 tempPriceType = 'chasing'
                 tempDiscount  = 0
@@ -242,7 +243,7 @@ class YYStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListOpen,
                                      priceType     = tempPriceType,
                                      discount      = tempDiscount,
-                                     addTick       =tempAddTick)
+                                     addTick       = tempAddTick)
         ## =====================================================================
 
 
@@ -256,7 +257,7 @@ class YYStrategy(CtaTemplate):
             elif self.tradingBetween:
                 tempPriceType = 'last'
                 tempDiscount  = 0
-                tempAddTick   = self.ctaEngine.mainEngine.closeAddTickYY
+                tempAddTick   = 0
             elif self.tradingEnd:
                 tempPriceType = 'chasing'
                 tempDiscount  = 0
@@ -269,7 +270,7 @@ class YYStrategy(CtaTemplate):
                                      orderIDList   = self.vtOrderIDListClose,
                                      priceType     = tempPriceType,
                                      discount      = tempDiscount,
-                                     addTick       =tempAddTick)
+                                     addTick       = tempAddTick)
         ## =====================================================================
 
 
@@ -282,7 +283,6 @@ class YYStrategy(CtaTemplate):
     #----------------------------------------------------------------------
     def onTrade(self, trade):
         """处理成交订单"""
-        # print trade.__dict__
         self.tickTimer[trade.vtSymbol] = datetime.now()
         ## ---------------------------------------------------------------------
 
@@ -317,7 +317,6 @@ class YYStrategy(CtaTemplate):
         ## ---------------------------------------------------------------------
         tempKey = self.stratTrade['vtSymbol'] + '-' + tempDirection
         ## ---------------------------------------------------------------------
-
 
         ########################################################################
         ## william
@@ -370,8 +369,6 @@ class YYStrategy(CtaTemplate):
         self.updateTradingInfo(df = tempTradingInfo)
         self.tradingInfo = self.tradingInfo.append(tempTradingInfo, ignore_index=True)
         ## ---------------------------------------------------------------------
-
-        # conn.close()
 
         ########################################################################
         ## 处理 MySQL 数据库的 tradingOrders
@@ -426,15 +423,15 @@ class YYStrategy(CtaTemplate):
         ## =====================================================================
         ## 更新 workingInfo
         ## =====================================================================
-        if (self.tradingStart and (m % 5 == 0) and (s == 35)):
-            self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
-            self.updateWorkingInfo(self.tradingOrdersClose, 'close')
+        if ((m % 5 == 0) and (s == 35)):
             self.updateOrderInfo()
+            if self.tradingStart:
+                self.updateWorkingInfo(self.tradingOrdersOpen, 'open')
+                self.updateWorkingInfo(self.tradingOrdersClose, 'close')
             if (h == 15 and self.trading):
                 self.updateFailedInfo(
                     tradingOrders = self.tradingOrdersClose, 
                     tradedOrders  = self.tradedOrdersClose)
-
 
     ## =========================================================================
     ## william
