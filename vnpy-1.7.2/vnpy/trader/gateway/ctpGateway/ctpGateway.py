@@ -393,7 +393,7 @@ class CtpMdApi(MdApi):
         ## 价格信息
         tick.lastPrice          = round(data['LastPrice'],5)
         # tick.preSettlementPrice = data['PreSettlementPrice']
-        # tick.preClosePrice      = round(data['PreClosePrice'],5)
+        tick.preClosePrice      = round(data['PreClosePrice'],5)
         tick.openPrice          = round(data['OpenPrice'],5)
         tick.highestPrice       = round(data['HighestPrice'],5)
         tick.lowestPrice        = round(data['LowestPrice'],5)
@@ -1311,8 +1311,8 @@ class CtpTdApi(TdApi):
         ## 打印拒单的信息信息
         tempFields = ['orderID','vtSymbol','price','direction','offset',
                       'tradedVolume','orderTime','status']
-        content = u"拒单的信息信息\n%s\n%s\n%s" %('-'*80,
-            pd.DataFrame([[order.__dict__[k] for k in tempFields]], columns = tempFields),
+        content = u"拒单的详细信息\n%s\n%s\n%s" %('-'*80,
+            pd.DataFrame([[order.__dict__[k] for k in tempFields]], columns = tempFields).to_string(index=False),
             '-'*80)
         self.writeLog(content, logLevel = ERROR)
         self.writeError(error['ErrorID'], error['ErrorMsg'])
@@ -1674,7 +1674,7 @@ class CtpTdApi(TdApi):
                       'volume','orderTime','tradeStatus']
         ## ---------------------------------------------------------------------
         content = u'下单的详细信息\n%s\n%s\n%s' %('-'*80,
-            pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields],
+            pd.DataFrame([orderReq.__dict__.values()], columns = orderReq.__dict__.keys())[tempFields].to_string(index=False),
             '-'*80)
         self.writeLog(content)
         ########################################################################
@@ -1705,7 +1705,7 @@ class CtpTdApi(TdApi):
         # ## 打印撤单的详细信息
         ## ---------------------------------------------------------------------
         content = u'撤单的详细信息\n%s%s\n%s' %('-'*80+'\n',
-            pd.DataFrame([req.values()], columns = req.keys()),
+            pd.DataFrame([req.values()], columns = req.keys()).to_string(index=False),
             '-'*80)
         self.writeLog(content)
         ## ---------------------------------------------------------------------       
