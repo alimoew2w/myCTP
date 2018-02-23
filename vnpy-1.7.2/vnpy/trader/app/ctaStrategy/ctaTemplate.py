@@ -1009,16 +1009,20 @@ class CtaTemplate(object):
         df = pd.DataFrame(dfData, columns = dfHeader)
 
         ## ---------------------------------------------------------------------
-        conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-        cursor = conn.cursor()
-        cursor.execute("""
-                        DELETE FROM workingInfo
-                        WHERE strategyID = '%s'
-                        AND stage = '%s'
-                       """ %(self.strategyID, stage))
-        conn.commit()
-        conn.close()
-        self.saveMySQL(df = df, tbl = 'workingInfo', over = 'append')
+        try:
+            conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+            cursor = conn.cursor()
+            cursor.execute("""
+                            DELETE FROM workingInfo
+                            WHERE strategyID = '%s'
+                            AND stage = '%s'
+                           """ %(self.strategyID, stage))
+            conn.commit()
+            conn.close()
+            self.saveMySQL(df = df, tbl = 'workingInfo', over = 'append')
+        except:
+            self.writeCtaLog(u'workingInfo 活跃订单 写入 MySQL 数据库出错',
+                                 logLevel = ERROR)
         ## ---------------------------------------------------------------------
 
 
@@ -1148,20 +1152,24 @@ class CtaTemplate(object):
             df = df.append(mysqlOrderInfo, ignore_index=True)
         if len(df) != 0:
             ## -----------------------------------------------------------------
-            conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-            cursor = conn.cursor()
-            ## 清空记录
-            cursor.execute("""
-                            DELETE FROM orderInfo
-                            WHERE strategyID = %s
-                            AND TradingDay = %s
-                           """, (self.strategyID, self.ctaEngine.tradingDay))
-            conn.commit()
-            conn.close()
-            ## 写入记录
-            ## 去掉重复的行
-            df = df.drop_duplicates().reset_index(drop = True)
-            self.saveMySQL(df = df, tbl = 'orderInfo', over = 'append')
+            try:
+                conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                ## 清空记录
+                cursor.execute("""
+                                DELETE FROM orderInfo
+                                WHERE strategyID = %s
+                                AND TradingDay = %s
+                               """, (self.strategyID, self.ctaEngine.tradingDay))
+                conn.commit()
+                conn.close()
+                ## 写入记录
+                ## 去掉重复的行
+                df = df.drop_duplicates().reset_index(drop = True)
+                self.saveMySQL(df = df, tbl = 'orderInfo', over = 'append')
+            except:
+                self.writeCtaLog(u'orderInfo 委托订单 写入 MySQL 数据库出错',
+                                     logLevel = ERROR)
         ## =====================================================================
 
 
@@ -1221,22 +1229,22 @@ class CtaTemplate(object):
                 except:
                     None
             ## -------------------------------------------------------------------------
-
-        df = pd.DataFrame(dfData, columns = self.failedInfoFields)
-        ## -------------------------------------------------------------
-        conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-        cursor = conn.cursor()
-        cursor.execute("""
-                        DELETE FROM failedInfo
-                        WHERE strategyID = %s
-                        AND TradingDay = %s
-                       """,(self.strategyID, self.ctaEngine.tradingDay))
-        conn.commit()
-        conn.close()
-        ## =============================================================================
-        self.saveMySQL(df = df, tbl = 'failedInfo', over = 'append')
-        ## =====================================================================
-        
+        try:
+            df = pd.DataFrame(dfData, columns = self.failedInfoFields)
+            ## -------------------------------------------------------------
+            conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+            cursor = conn.cursor()
+            cursor.execute("""
+                            DELETE FROM failedInfo
+                            WHERE strategyID = %s
+                            AND TradingDay = %s
+                           """,(self.strategyID, self.ctaEngine.tradingDay))
+            conn.commit()
+            conn.close()
+            self.saveMySQL(df = df, tbl = 'failedInfo', over = 'append')
+        except:
+            self.writeCtaLog(u'failedInfo 失败订单 写入 MySQL 数据库出错',
+                                 logLevel = ERROR)
         ## =====================================================================
 
 
