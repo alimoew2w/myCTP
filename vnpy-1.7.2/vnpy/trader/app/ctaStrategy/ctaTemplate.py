@@ -659,7 +659,8 @@ class CtaTemplate(object):
                 ## 如果不想要等待成交之后再下单,
                 ## 可以把这个条件注释掉
                 # if tempWorkingVolume != 0:
-                if tempWorkingVolume != 0 and self.accountID in ['HanFeng','TianMi1']:    ## 只有在订单比较大的时候才等待
+                # if tempWorkingVolume != 0 and self.accountID in ['HanFeng','TianMi1']:    ## 只有在订单比较大的时候才等待
+                if tempWorkingVolume != 0 and self.ctaEngine.mainEngine.initialCapital >= 5000000:     ## 只有在订单比较大的时候才等待
                     return
                 ## =============================================================
                 totalVolume = tradingOrders[i]['subOrders']['level0']['volume'] + \
@@ -963,13 +964,17 @@ class CtaTemplate(object):
             m in [self.tradingCloseMinute1, (self.tradingCloseMinute2-1)] and 
             30 <= s <= 59 and (s % 10 == 0 or len(self.tradingOrdersClose) == 0)):
             ## -----------------------------------------------------------------
-            conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
-            cursor = conn.cursor()
-            cursor.execute("""
-                            TRUNCATE TABLE workingInfo
-                           """)
-            conn.commit()
-            conn.close()
+            try:
+                conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                cursor.execute("""
+                                TRUNCATE TABLE workingInfo
+                               """)
+                conn.commit()
+                conn.close()
+            except:
+                self.writeCtaLog(u'workingInfo 清理数据 出错',
+                                 logLevel = ERROR) 
             ## -----------------------------------------------------------------  
 
 
@@ -1302,8 +1307,6 @@ class CtaTemplate(object):
             except:
                 self.writeCtaLog(u'processOffsetOpen 开仓订单 写入 MySQL 数据库出错',
                                  logLevel = ERROR)
-            # finally:
-            #     conn.close()
         ## -----------------------------------------------------------------
 
 
@@ -1355,8 +1358,6 @@ class CtaTemplate(object):
         except:
             self.writeCtaLog(u'processOffsetClose 平仓订单 写入 MySQL 数据库出错', 
                                logLevel = ERROR)
-        # finally:
-        #     conn.close()
         ## =========================================================================
 
 
@@ -1399,8 +1400,6 @@ class CtaTemplate(object):
         except:
             self.writeCtaLog(u'processTradingOrdersFailedInfo 昨日未成交订单 写入 MySQL 数据库出错',
                              logLevel = ERROR)
-        # finally:
-        #     conn.close()
         ## ---------------------------------------------------------------------
 
     ############################################################################
