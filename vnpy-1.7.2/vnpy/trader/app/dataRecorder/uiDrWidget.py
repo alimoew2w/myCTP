@@ -136,12 +136,3 @@ class DrEngineManager(QtWidgets.QWidget):
         self.tickTable.resizeColumnsToContents()
         self.barTable.resizeColumnsToContents()
         self.activeTable.resizeColumnsToContents()
-    
-    
-    
-    
-
-
-
-    
-    
