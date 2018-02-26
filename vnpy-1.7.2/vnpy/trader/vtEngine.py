@@ -55,8 +55,6 @@ class MainEngine(object):
         self.printData = False
         ## -----------------------------------------
 
-        # MongoDB数据库相关
-        # self.dbClient = None    # MongoDB客户端对象
         ## -------------------------------------------
         ## william
         ## 设置数据库连接初始状态
@@ -656,18 +654,6 @@ class DataEngine(object):
         else:
             self.workingOrderDict[order.vtOrderID] = order
 
-        ## ---------------------------------------------------------------------
-        ## 成交订单
-        # print trade.__dict__
-        # if order.status == u'未成交':
-        #     temp = pd.DataFrame([order.__dict__.values()], columns = order.__dict__.keys())
-        #     print "\n"+'#'*100
-        #     print "-"*100
-        #     print temp[['vtOrderID','vtSymbol','offset','direction','price', 
-        #                 'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
-        #     print "\n"+'#'*100
-        ## ---------------------------------------------------------------------
-
         # 更新到持仓细节中
         detail = self.getPositionDetail(order.vtSymbol)
         detail.updateOrder(order)
@@ -692,19 +678,12 @@ class DataEngine(object):
 
         ## ---------------------------------------------------------------------
         ## 成交订单
-        # print trade.__dict__
         temp = pd.DataFrame([trade.__dict__.values()], columns = trade.__dict__.keys())
-        # print "\n"+'#'*100
-        # print "-"*100
-        # print temp[['vtOrderID','vtSymbol','offset','direction','price', 
-        #             'totalVolume', 'tradedVolume', 'orderTime', 'tradeTime', 'status']]
-        # print "\n"+'#'*100
         ## ---------------------------------------------------------------------
         if globalSetting.LOGIN and globalSetting.PRINT_TRADE:
-            # content = "\n %s %s %s" %(trade.vtOrderID, trade.vtSymbol, trade.status)
             content = u"成交的详细信息\n%s\n%s\n%s" %('-'*80,
                 temp[['vtOrderID','vtSymbol','offset','direction','price', 
-                      'tradedVolume','tradeTime','status']],
+                      'tradedVolume','tradeTime','status']].to_string(index=False),
                 '-'*80)
             self.writeLog(content, gatewayName = 'CTP')
         ## ---------------------------------------------------------------------
@@ -730,7 +709,6 @@ class DataEngine(object):
         detail.updatePosition(position)            
 
         ## ---------------------------------------------------------------------
-        # print position.__dict__
         self.positionInfo[position.vtSymbol] = position.__dict__
         ## ---------------------------------------------------------------------
         
@@ -747,7 +725,6 @@ class DataEngine(object):
         # 转化 VtAccount 格式
         self.accountInfo.datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # ----------------------------------------------------------------------
-        # print self.accountInfo.__dict__
 
     #----------------------------------------------------------------------
     def getContract(self, vtSymbol):
@@ -772,14 +749,6 @@ class DataEngine(object):
     #----------------------------------------------------------------------
     def loadContracts(self):
         """从硬盘读取合约对象"""
-        ## ---------------------------------------------------------------------
-        # f = shelve.open(self.contractFilePath)
-        # if 'data' in f:
-        #     d = f['data']
-        #     for key, value in d.items():
-        #         self.contractDict[key] = value
-        # f.close()
-        ## ---------------------------------------------------------------------
         try:
             f = shelve.open(self.contractFilePath)
             if 'data' in f:
@@ -830,7 +799,6 @@ class DataEngine(object):
     #----------------------------------------------------------------------
     def getAllOrdersDataFrame(self):
         """获取所有委托"""
-        # return self.orderDict.values()
         ########################################################################
         ## william
         ########################################################################
@@ -846,7 +814,6 @@ class DataEngine(object):
             return df
         else:
             self.writeLog("没有查询到订单!!!", logLevel = ERROR)
-            # return None
             return pd.DataFrame()
 
     #----------------------------------------------------------------------
