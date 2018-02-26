@@ -116,6 +116,9 @@ class CtaTemplate(object):
     vtOrderIDListClose      = []        # 收盘的订单
     vtOrderIDListFailedInfo = []        # 失败的合约订单存储
     vtOrderIDListUpperLower = []        # 涨跌停价格成交的订单
+    vtOrderIDListUpperLowerCum = []    # 涨跌停价格成交的订单
+    vtOrderIDListUpperLowerTempCum = []    # 涨跌停价格成交的订单
+    vtOrderIDListAll        = []       # 所有订单集合
     ## -------------------------------------------------------------------------
     
     ## -------------------------------------------------------------------------
@@ -791,7 +794,6 @@ class CtaTemplate(object):
                          priceType, price = None, 
                          volume = None, addTick = 0, discount = 0):
         """发送单个合约的订单"""
-
         ## =====================================================================
         ## 基本信息
         ## ---------------------------------------------------------------------
@@ -834,7 +836,6 @@ class CtaTemplate(object):
                 print "错误的价格"
                 return None
         ## =====================================================================
-
 
         ## =====================================================================
         ## 限定价格在 UpperLimit 和 LowerLimit 之间
@@ -933,12 +934,15 @@ class CtaTemplate(object):
                 len(self.vtOrderIDListClose) != 0 or 
                 len(self.vtOrderIDListUpperLower) != 0):
                 allOrders = self.ctaEngine.mainEngine.getAllOrdersDataFrame()
-                for vtOrderID in self.vtOrderIDListOpen + self.vtOrderIDListClose + self.vtOrderIDListUpperLower:
+                for vtOrderID in self.vtOrderIDListOpen + \
+                                 self.vtOrderIDListClose + \
+                                 self.vtOrderIDListUpperLower + \
+                                 self.vtOrderIDListUpperLowerCum + \
+                                 self.vtOrderIDListUpperLowerTempCum :
                     if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
             ## -----------------------------------------------------------------
         ## =====================================================================
-
 
         ## =====================================================================
         ## 生成收盘交易的订单
@@ -976,7 +980,6 @@ class CtaTemplate(object):
                 self.writeCtaLog(u'workingInfo 清理数据 出错',
                                  logLevel = ERROR) 
             ## -----------------------------------------------------------------  
-
 
 
     ############################################################################
