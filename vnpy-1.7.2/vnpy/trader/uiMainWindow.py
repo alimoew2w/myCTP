@@ -138,7 +138,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusLabel.setText(self.getCpuMemory())
         
         self.sbCount = 0
-        self.sbTrigger = 5   # 10秒刷新一次
+        self.sbTrigger = 10   # 10秒刷新一次
         self.signalStatusBar.connect(self.updateStatusBar)
         self.eventEngine.register(EVENT_TIMER, self.signalStatusBar.emit)
         
@@ -219,7 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except KeyError:
             self.widgetDict['aboutW'] = AboutWidget(self)
             self.widgetDict['aboutW'].show()
-    
+
     #----------------------------------------------------------------------
     def openContract(self):
         """打开合约查询"""
@@ -339,4 +339,3 @@ class AboutWidget(QtWidgets.QDialog):
         vbox.addWidget(label)
 
         self.setLayout(vbox)
-    
