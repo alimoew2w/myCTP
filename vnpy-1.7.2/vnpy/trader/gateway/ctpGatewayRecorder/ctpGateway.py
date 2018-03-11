@@ -367,8 +367,9 @@ class CtpMdApi(MdApi):
         """行情推送"""
         ## ---------------------------------------------------------------------
         # 忽略无效的报价单
-        if data['LastPrice'] > 1.70e+100:
-            return
+        # if data['LastPrice'] > 1.70e+100:
+        #     return
+        # ------------------------------------
         # 过滤尚未获取合约交易所时的行情推送
         symbol = data['InstrumentID']
         if symbol not in symbolExchangeDict:
