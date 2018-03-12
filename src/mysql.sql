@@ -178,10 +178,10 @@ create table fee(
 );
 
 ################################################################################
-## tickInfo
+## lastInfo
 ## 保存最新的 tick 级别的数据
 ################################################################################
-create table tickInfo(
+create table lastInfo(
     TradingDay      DATE            NOT NULL,
     updateTime      DATETIME        NOT NULL,
     ## -------------------------------------------------------------------------
@@ -192,6 +192,11 @@ create table tickInfo(
     openPrice       DECIMAL(10,3),
     highestPrice    DECIMAL(10,3),
     lowestPrice     DECIMAL(10,3),
+    bidPrice1       DECIMAL(10,3),
+    askPrice1       DECIMAL(10,3),
+    bidVolume1      BIGINT,
+    askVolume1      BIGINT,
+    ## ---------------------------
     upperLimit      DECIMAL(10,3),
     lowerLimit      DECIMAL(10,3),
     PRIMARY KEY(TradingDay, vtSymbol)
