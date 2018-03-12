@@ -42,6 +42,12 @@ from logging import INFO, ERROR
 import MySQLdb
 import pandas as pd
 
+## 发送邮件通知
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
+import codecs
+
 ########################################################################
 class CtaEngine(object):
     """CTA策略引擎"""
@@ -53,8 +59,10 @@ class CtaEngine(object):
     #----------------------------------------------------------------------
     def __init__(self, mainEngine, eventEngine):
         """Constructor"""
-        self.mainEngine = mainEngine
+        self.mainEngine  = mainEngine
         self.eventEngine = eventEngine
+        self.accountID   = globalSetting.accountID
+        self.accountName = globalSetting.accountName
 
         ## =====================================================================
         ## william
@@ -151,8 +159,9 @@ class CtaEngine(object):
                 except:
                     None
         ## ---------------------------------------------------------------------
-        self.allContracts = list(set(self.subscribeContracts) | 
-                                 set(self.mainContracts))
+        # self.allContracts = list(set(self.subscribeContracts) | 
+        #                          set(self.mainContracts))
+        self.allContracts = self.subscribeContracts
         self.tickInfo = {}
         ## =====================================================================
         ## 记录合约相关的 
@@ -412,6 +421,13 @@ class CtaEngine(object):
 
         ## ---------------------------------------------------------------------
         if tick.vtSymbol in self.allContracts:
+            ## -------------------------------------------------------------------------------------
+            if tick.vtSymbol in self.lastTickDict.keys():
+                tick.highestPrice = max(tick.highestPrice, 
+                                        self.lastTickDict[tick.vtSymbol]['highestPrice'])
+                tick.lowestPrice = max(tick.lowestPrice, 
+                                       self.lastTickDict[tick.vtSymbol]['lowestPrice'])
+            ## -------------------------------------------------------------------------------------
             self.lastTickDict[tick.vtSymbol] = {k:tick.__dict__[k] for k in self.lastTickFileds}
         ## ---------------------------------------------------------------------
 
@@ -789,6 +805,9 @@ class CtaEngine(object):
             # 发出日志
             content = '\n'.join([u'策略%s触发异常已停止' %strategy.name,
                                 traceback.format_exc()])
+            ## -----------------------------
+            self.sendMail(content = content)
+            ## -----------------------------
             self.writeCtaLog(content)
             
     ## =========================================================================
@@ -865,3 +884,35 @@ class CtaEngine(object):
             select * from %s
             """ %(tbName))
         return(temp.InstrumentID.values)
+
+
+    ############################################################################
+    ## 发送邮件通知
+    ############################################################################
+    def sendMail(self, content):
+        """发送邮件通知给：汉云交易员"""
+        # receiversMain = ['fl@hicloud-investment.com',
+        #                  'lhg@hicloud-investment.com']
+        # receiversOthers = ['jy@hicloud-investment.com']
+        receiversMain = ['fl@hicloud-investment.com']
+        receiversOthers = ['lhg@hicloud-investment.com']
+        sender = "trader" + '@hicloud.com'
+
+        # content = "testing from fl"
+        message = MIMEText(content.decode('string-escape').decode("utf-8"), 'plain', 'utf-8')
+        ## 显示:发件人
+        message['From'] = Header(sender, 'utf-8')
+        ## 显示:收件人
+        message['To']   =  Header('汉云交易员', 'utf-8')
+        ## 主题
+        subject = self.tradingDay + '：' + self.accountName + '!!! 启禀大王，你家后院着火了!!!'
+        message['Subject'] = Header(subject, 'utf-8')
+
+        ## ---------------------------------------------------------------------
+        try:
+            smtpObj = smtplib.SMTP('localhost')
+            smtpObj.sendmail(sender, receiversMain + receiversOthers, message.as_string())
+            self.writeCtaLog(u'预警邮件发送成功')
+        except smtplib.SMTPException:
+            self.writeCtaLog(u'预警邮件发送失败')
+        ## ---------------------------------------------------------------------
