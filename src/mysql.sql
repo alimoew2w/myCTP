@@ -125,6 +125,7 @@ create table tradingSignal(
     InstrumentID    CHAR(30)     NOT NULL,
     volume          BIGINT       NOT NULL,
     direction       CHAR(20)     NOT NULL,
+    param           SMALLINT     NOT NULL,
     PRIMARY KEY(TradingDay, strategyID, InstrumentID, direction)
 );
 
@@ -174,5 +175,25 @@ create table fee(
     TradingDay      DATE          NOT NULL,
     Amount          DECIMAL(10,5) NOT NULL,
     Remarks         text(1000)
+);
+
+################################################################################
+## tickInfo
+## 保存最新的 tick 级别的数据
+################################################################################
+create table tickInfo(
+    TradingDay      DATE            NOT NULL,
+    updateTime      DATETIME        NOT NULL,
+    ## -------------------------------------------------------------------------
+    vtSymbol        VARCHAR(30)     NOT NULL,
+    lastPrice       DECIMAL(10,3)   NOT NULL,
+    volume          BIGINT,
+    turnover        DECIMAL(30,3),
+    openPrice       DECIMAL(10,3),
+    highestPrice    DECIMAL(10,3),
+    lowestPrice     DECIMAL(10,3),
+    upperLimit      DECIMAL(10,3),
+    lowerLimit      DECIMAL(10,3),
+    PRIMARY KEY(TradingDay, vtSymbol)
 );
 
