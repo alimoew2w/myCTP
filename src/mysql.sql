@@ -3,11 +3,11 @@
 ## 策略持仓情况
 ################################################################################
 create table positionInfo(
-    strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(30)     NOT NULL,
-    TradingDay      DATE         NOT NULL,
-    direction       CHAR(20)     NOT NULL,
-    volume          INT          NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)     NOT NULL,
+    TradingDay      DATE            NOT NULL,
+    direction       VARCHAR(20)     NOT NULL,
+    volume          INT             NULL,
     PRIMARY KEY(strategyID, InstrumentID, TradingDay, direction)
 );
 
@@ -16,14 +16,14 @@ create table positionInfo(
 ## 策略交易历史情况
 ################################################################################
 create table tradingInfo(
-    strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    VARCHAR(30)  NOT NULL,
-    TradingDay      DATE         NOT NULL,
-    tradeTime       DATETIME     NOT NULL,
-    direction       CHAR(20)     NOT NULL,
-    offset          CHAR(20)     NOT NULL,
-    volume          INT           NOT NULL,
-    price           DECIMAL(15,5) NOT NULL
+    strategyID      VARCHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)     NOT NULL,
+    TradingDay      DATE            NOT NULL,
+    tradeTime       DATETIME        NOT NULL,
+    direction       VARCHAR(20)     NOT NULL,
+    offset          VARCHAR(20)     NOT NULL,
+    volume          INT             NOT NULL,
+    price           DECIMAL(15,5)   NOT NULL
     -- PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)
     -- PRIMARY KEY(strategyID, InstrumentID, TradingDay, tradeTime, direction, offset)
 );
@@ -37,12 +37,12 @@ create table tradingInfo(
 ## 策略交易失败情况
 ################################################################################
 create table failedInfo(
-    strategyID      CHAR(50)      NOT NULL,
-    InstrumentID    CHAR(30)      NOT NULL,
-    TradingDay      DATE          NOT NULL,
-    direction       CHAR(20)      NOT NULL,
-    offset          CHAR(20)      NOT NULL,
-    volume          INT           NOT NULL,
+    strategyID      VARCHAR(50)      NOT NULL,
+    InstrumentID    VARCHAR(30)      NOT NULL,
+    TradingDay      DATE             NOT NULL,
+    direction       VARCHAR(20)      NOT NULL,
+    offset          VARCHAR(20)      NOT NULL,
+    volume          INT              NOT NULL,
     PRIMARY KEY(strategyID, InstrumentID, TradingDay, direction, offset)
 );
 
@@ -51,18 +51,18 @@ create table failedInfo(
 ## 记录所有发出去的订单情况
 ################################################################################
 create table orderInfo(
-    TradingDay      DATE         NOT NULL,
-    strategyID      CHAR(50)     NOT NULL,
-    vtOrderID       CHAR(50)     NOT NULL,    
-    InstrumentID    CHAR(30)     NOT NULL,
-    orderTime       TIME         NOT NULL,
-    status          CHAR(50)     ,
-    direction       CHAR(20)     ,
-    cancelTime      CHAR(100)    ,
+    TradingDay      DATE            NOT NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    vtOrderID       VARCHAR(50)     NOT NULL,    
+    InstrumentID    VARCHAR(30)     NOT NULL,
+    orderTime       TIME            NOT NULL,
+    status          VARCHAR(50)     ,
+    direction       VARCHAR(20)     ,
+    cancelTime      VARCHAR(100)    ,
     tradedVolume    INT          ,
     frontID         SMALLINT     ,
     sessionID       BIGINT       ,
-    offset          CHAR(50)     ,
+    offset          VARCHAR(50)     ,
     price           DECIMAL(15,5) ,
     totalVolume     BIGINT       ,
     PRIMARY KEY(TradingDay, strategyID, vtOrderID, InstrumentID, status)
@@ -77,12 +77,12 @@ create table orderInfo(
 ## 记录所有发出去的订单情况
 ################################################################################
 create table tradingOrders(
-    TradingDay      DATE         NOT NULL,
-    strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(30)     NOT NULL,
-    orderType       CHAR(50)     NOT NULL,
-    volume          BIGINT       NOT NULL,
-    stage           CHAR(20)     NOT NULL,
+    TradingDay      DATE            NOT NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)     NOT NULL,
+    orderType       VARCHAR(50)     NOT NULL,
+    volume          BIGINT          NOT NULL,
+    stage           VARCHAR(20)     NOT NULL,
     PRIMARY KEY(TradingDay, strategyID, InstrumentID, orderType, stage)
 );
 
@@ -92,13 +92,13 @@ create table tradingOrders(
 ## 记录正在进行的订单
 ################################################################################
 create table workingInfo(
-    TradingDay      DATE         NOT NULL,
-    strategyID      CHAR(50)     NOT NULL,
-    vtSymbol        CHAR(20)     NOT NULL,
-    vtOrderIDList   text         NOT NULL,   
-    orderType       CHAR(50)     NOT NULL,
-    volume          BIGINT       NOT NULL,
-    stage           CHAR(20)     NOT NULL, 
+    TradingDay      DATE            NOT NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    vtSymbol        VARCHAR(20)     NOT NULL,
+    vtOrderIDList   text            NOT NULL,   
+    orderType       VARCHAR(50)     NOT NULL,
+    volume          BIGINT          NOT NULL,
+    stage           VARCHAR(20)     NOT NULL, 
     PRIMARY KEY(TradingDay, strategyID, vtSymbol, orderType, stage)
 );
 
@@ -107,9 +107,9 @@ create table workingInfo(
 ## 记录正在进行的订单
 ################################################################################
 create table pnl(
-    TradingDay      DATE         NOT NULL,
-    strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(30)     NOT NULL,
+    TradingDay      DATE            NOT NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)     NOT NULL,
     pnl             DECIMAL(15,3),
     PRIMARY KEY(TradingDay, strategyID, InstrumentID)
 );
@@ -120,12 +120,12 @@ create table pnl(
 ## 记录策略信号
 ################################################################################
 create table tradingSignal(
-    TradingDay      DATE         NOT NULL,
-    strategyID      CHAR(50)     NOT NULL,
-    InstrumentID    CHAR(30)     NOT NULL,
-    volume          BIGINT       NOT NULL,
-    direction       CHAR(20)     NOT NULL,
-    param           SMALLINT     NOT NULL,
+    TradingDay      DATE            NOT NULL,
+    strategyID      VARCHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)     NOT NULL,
+    volume          BIGINT          NOT NULL,
+    direction       VARCHAR(20)     NOT NULL,
+    param           SMALLINT        NOT NULL,
     PRIMARY KEY(TradingDay, strategyID, InstrumentID, direction)
 );
 
@@ -162,10 +162,25 @@ create table UpperLowerInfo(
     TradingDay      DATE         NOT NULL,
     strategyID      CHAR(50)     NOT NULL,
     InstrumentID    VARCHAR(30)  NOT NULL,
-    vtOrderIDList   CHAR(50)     NOT NULL,
-    direction       CHAR(20)     ,
+    vtOrderIDList   VARCHAR(100)     NOT NULL,
+    direction       VARCHAR(20),
     volume          INT          
 );
+
+
+################################################################################
+## winner
+## 记录 止盈平仓单 的信息
+################################################################################
+create table winnerInfo(
+    TradingDay      DATE         NOT NULL,
+    strategyID      CHAR(50)     NOT NULL,
+    InstrumentID    VARCHAR(30)  NOT NULL,
+    vtOrderIDList   VARCHAR(100)     NOT NULL,
+    direction       VARCHAR(20),
+    volume          INT          
+);
+
 
 ################################################################################
 ## fee
