@@ -1234,8 +1234,10 @@ class CtaTemplate(object):
             ## -----------------------------------------------------------------------------
             ## 只有需要平仓的，才需要从 positionInfo 数据表剔除
             ## -----------------------------------------------------------------------------
-            if self.failedOrders[k]['direction'] in ['sell', 'cover']:
+            if tempOffset == u'平仓':
                 try:
+                    conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                    cursor = conn.cursor()
                     cursor.execute("""
                                     DELETE FROM positionInfo
                                     WHERE strategyID = %s
@@ -1244,6 +1246,7 @@ class CtaTemplate(object):
                                     AND direction  = %s
                                    """, (self.strategyID, self.failedOrders[k]['vtSymbol'], self.failedOrders[k]['TradingDay'], tempDirectionPos))
                     conn.commit()
+                    conn.close()
                 except:
                     None
             ## -------------------------------------------------------------------------
