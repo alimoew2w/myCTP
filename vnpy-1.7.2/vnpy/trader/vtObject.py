@@ -100,10 +100,10 @@ class VtTickData(VtBaseData):
 
         ## 成交量, 成交额
         self.volume             = EMPTY_INT         # 最新成交量
-        self.turnover           = EMPTY_INT         # 成交额
+        self.turnover           = EMPTY_FLOAT       # 成交额
 
         ## 持仓数据
-        self.preOpenInterest    = EMPTY_FLOAT 
+        self.preOpenInterest    = EMPTY_INT
         self.openInterest       = EMPTY_INT         # 持仓量
 
         ## 期权数据
@@ -149,21 +149,22 @@ class VtBarData(VtBaseData):
         """Constructor"""
         super(VtBarData, self).__init__()
         
-        self.vtSymbol = EMPTY_STRING        # vt系统代码
-        self.symbol = EMPTY_STRING          # 代码
-        self.exchange = EMPTY_STRING        # 交易所
+        self.vtSymbol     = EMPTY_STRING      # vt系统代码
+        self.symbol       = EMPTY_STRING      # 代码
+        self.exchange     = EMPTY_STRING      # 交易所
     
-        self.open = EMPTY_FLOAT             # OHLC
-        self.high = EMPTY_FLOAT
-        self.low = EMPTY_FLOAT
-        self.close = EMPTY_FLOAT
+        self.open         = EMPTY_FLOAT       # OHLC
+        self.high         = EMPTY_FLOAT
+        self.low          = EMPTY_FLOAT
+        self.close        = EMPTY_FLOAT
         
-        self.date = EMPTY_STRING            # bar开始的时间，日期
-        self.time = EMPTY_STRING            # 时间
-        self.datetime = None                # python的datetime时间对象
+        self.date         = EMPTY_STRING      # bar开始的时间，日期
+        self.time         = EMPTY_STRING      # 时间
+        self.datetime     = None              # python的datetime时间对象
         
-        self.volume = EMPTY_INT             # 成交量
-        self.openInterest = EMPTY_INT       # 持仓量    
+        self.volume       = EMPTY_INT         # 成交量
+        self.turnover     = EMPTY_FLOAT       # 成交额
+        self.openInterest = EMPTY_INT         # 持仓量    
     
 
 ########################################################################
