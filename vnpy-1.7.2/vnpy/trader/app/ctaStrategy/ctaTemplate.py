@@ -916,7 +916,7 @@ class CtaTemplate(object):
 
         ## ---------------------------------------------------------------------
         if (h == self.tradingCloseHour and m == self.tradingCloseMinute2 and 
-           (s >= (59 - max(15, len(self.tradingOrdersClose)*1.0)))):
+           (s >= (59 - max(10, len(self.tradingOrdersClose)*1.0)))):
             self.tradingEnd = True
         else:
             self.tradingEnd = False
@@ -1255,6 +1255,41 @@ class CtaTemplate(object):
                                  logLevel = ERROR)
         ## =====================================================================
 
+    ############################################################################
+    ## 更新最新价格字典
+    ## lastInfo
+    ############################################################################
+    def updateLastInfo(self,):
+        """处理最新价格的数据表"""
+        ## ---------------------------------------------------------------------
+        ## 保存 lastTick
+        if not self.ctaEngine.lastTickDict:
+            return
+        ## ---------------------------------------------------------------------
+        if 15 <= datetime.now().hour < 20:
+            v = [self.ctaEngine.lastTickDict[k].values() 
+                    for k in self.ctaEngine.lastTickDict.keys()]
+            k = [self.ctaEngine.lastTickDict[k].keys() 
+                    for k in self.ctaEngine.lastTickDict.keys()]
+            df = pd.DataFrame(v, columns = k[0])
+            df.rename(columns={'datetime': 'updateTime'}, inplace=True)
+            df['TradingDay'] = self.ctaEngine.tradingDay
+
+            print 'hello'
+            self.saveMySQL(df = df, tbl = 'lastInfo', over = 'replace')
+        else:
+            try:
+                conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                cursor.execute("""
+                                TRUNCATE TABLE lastInfo
+                               """)
+                conn.commit()
+                conn.close()
+            except:
+                self.writeCtaLog(u'updateLastInfo 清空 MySQL 数据库出错',
+                                 logLevel = ERROR)
+        ## ---------------------------------------------------------------------
 
 
     ############################################################################
@@ -1409,86 +1444,129 @@ class CtaTemplate(object):
     ## 从 MySQL 数据库读取数据
     ############################################################################
     def fetchMySQL(self, query):
-        vtFunction.fetchMySQL(db    = self.ctaEngine.mainEngine.dataBase, 
-                              query = query)
+        df = vtFunction.fetchMySQL(db    = self.ctaEngine.mainEngine.dataBase, 
+                                   query = query)
+        return(df)
 
     ############################################################################
     ## 保存数据 DataFrame 格式到 MySQL
     ############################################################################
     def saveMySQL(self, df, tbl, over):
+        """
+            保存 DataFrame 格式数据到 MySQL,
+            @param
+                df  : 数据
+                tbl : 表格
+                over: 写入方式
+                    : 1. 'append'： 添加
+                    : 2. 'replace': 替代
+        """
+        if over == 'replace':
+            over = 'append'
+            try:
+                conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
+                cursor = conn.cursor()
+                cursor.execute("""
+                                TRUNCATE TABLE %s
+                               """ %tbl)
+                conn.commit()
+                conn.close()
+            except:
+                print 'saveMySQL 写入数据库失败'
+        ## -------------------------------------------------------------
         vtFunction.saveMySQL(df   = df, 
                              db   = self.ctaEngine.mainEngine.dataBase, 
                              tbl  = tbl, 
                              over = over)
+        ## -------------------------------------------------------------
 
-    
-########################################################################
-class BarManager(object):
+
+## =============================================================================
+## william
+## 生成 Bar 数据
+## =============================================================================
+class BarGenerator(object):
     """
     K线合成器，支持：
     1. 基于Tick合成1分钟K线
-    2. 基于1分钟K线合成X分钟K线（X可以是2、3、5、10、15、30、60）
+    2. 默认生成 1 分钟的数据，即 xmin = 0
+    3. 基于1分钟K线合成X分钟K线（X可以是2、3、5、10、15、30    ）
     """
 
     #----------------------------------------------------------------------
     def __init__(self, onBar, xmin=0, onXminBar=None):
         """Constructor"""
-        self.bar = None             # 1分钟K线对象
+        ## ---------------------
+        self.bar = {}           ## Bar 数据字典 
+                                ## key: tick.vtSymbol 
+                                ## value: VtBarData()
+        self.tick = {}          ## Tick 数据字典,
+                                ## key: tick.vtSymbol 
+                                ## value: tick
+        self.newMinute = {}     ## 是否是新的分钟数据
+                                ## key: tick.vtSymbol
+                                ## value: True, False
+        ## ---------------------
+
         self.onBar = onBar          # 1分钟K线回调函数
         
         self.xminBar = None         # X分钟K线对象
         self.xmin = xmin            # X的值
         self.onXminBar = onXminBar  # X分钟K线的回调函数
         
-        self.lastTick = None        # 上一TICK缓存对象
+
         
     #----------------------------------------------------------------------
     def updateTick(self, tick):
         """TICK更新"""
         newMinute = False   # 默认不是新的一分钟
         
+        id = tick.vtSymbol
+
         # 尚未创建对象
-        if not self.bar:
-            self.bar = VtBarData()
-            newMinute = True
+        if id not in self.bar.keys():
+            self.bar[id] = VtBarData()
+            self.newMinute[id] = True
         # 新的一分钟
-        elif self.bar.datetime.minute != tick.datetime.minute:
+        elif self.bar[id].datetime.minute != tick.datetime.minute:
             # 生成上一分钟K线的时间戳
-            self.bar.datetime = self.bar.datetime.replace(second=0, microsecond=0)  # 将秒和微秒设为0
-            self.bar.date = self.bar.datetime.strftime('%Y%m%d')
-            self.bar.time = self.bar.datetime.strftime('%H:%M:%S.%f')
+            # 将秒和微秒设为0
+            self.bar[id].datetime = self.bar[id].datetime.replace(second=0, microsecond=0)  
+            self.bar[id].date = self.bar[id].datetime.strftime('%Y%m%d')
+            self.bar[id].time = self.bar[id].datetime.strftime('%H:%M:%S.%f')
             
             # 推送已经结束的上一分钟K线
-            self.onBar(self.bar)
+            self.onBar(self.bar[id])
             
             # 创建新的K线对象
-            self.bar = VtBarData()
-            newMinute = True
+            self.bar[id] = VtBarData()
+            self.newMinute[id] = True
             
         # 初始化新一分钟的K线数据
-        if newMinute:
-            self.bar.vtSymbol = tick.vtSymbol
-            self.bar.symbol = tick.symbol
-            self.bar.exchange = tick.exchange
+        if self.newMinute[id]:
+            self.bar[id].vtSymbol = tick.vtSymbol
+            self.bar[id].symbol = tick.symbol
+            self.bar[id].exchange = tick.exchange
 
-            self.bar.open = tick.lastPrice
-            self.bar.high = tick.lastPrice
-            self.bar.low = tick.lastPrice
+            self.bar[id].open = tick.lastPrice
+            self.bar[id].high = tick.lastPrice
+            self.bar[id].low = tick.lastPrice
         # 累加更新老一分钟的K线数据
         else:                                   
-            self.bar.high = max(self.bar.high, tick.lastPrice)
-            self.bar.low = min(self.bar.low, tick.lastPrice)
+            self.bar[id].high = max(self.bar[id].high, tick.lastPrice)
+            self.bar[id].low = min(self.bar[id].low, tick.lastPrice)
 
         # 通用更新部分
-        self.bar.close = tick.lastPrice        
-        self.bar.datetime = tick.datetime  
-        self.bar.openInterest = tick.openInterest
-   
-        if self.lastTick:
-            self.bar.volume += (tick.volume - self.lastTick.volume) # 当前K线内的成交量
-            
+        self.bar[id].close = tick.lastPrice        
+        self.bar[id].datetime = tick.datetime  
+        self.bar[id].openInterest = tick.openInterest
+        
+        if id in self.tick.keys():
+            self.bar[id].volume += (tick.volume - self.tick[id].volume) 
+            self.bar[id].turnover += (tick.turnover - self.tick[id].turnover) 
+
         # 缓存Tick
-        self.lastTick = tick
+        self.tick[id] = tick
 
     #----------------------------------------------------------------------
     def updateBar(self, bar):
@@ -1505,9 +1583,10 @@ class BarManager(object):
             self.xminBar.high = bar.high
             self.xminBar.low = bar.low            
             
-            self.xminBar.datetime = bar.datetime    # 以第一根分钟K线的开始时间戳作为X分钟线的时间戳
-        # 累加老K线
+            # 以第一根分钟K线的开始时间戳作为X分钟线的时间戳
+            self.xminBar.datetime = bar.datetime    
         else:
+            # 累加老K线
             self.xminBar.high = max(self.xminBar.high, bar.high)
             self.xminBar.low = min(self.xminBar.low, bar.low)
     
