@@ -14,9 +14,9 @@ rm(list = ls())
 args <- commandArgs(trailingOnly = TRUE)
 ROOT_PATH <- args[1]
 accountDB <- args[2]
+# ROOT_PATH = "/home/william/Documents/myCTP/vnpy-1.7.2"
 # accountDB <- 'SimNow_FL'
 ## =============================================================================
-# ROOT_PATH = "/home/william/Documents/myCTP/vnpy-1.7.2"
 setwd(ROOT_PATH)
 
 # print(ROOT_PATH)
