@@ -75,7 +75,7 @@ class CtaTemplate(object):
     varList = ['inited',
                'trading',
                'pos']
-    
+
     ## =========================================================================
     # 同步列表，保存了需要保存到数据库的变量名称
     syncList = ['pos']
@@ -118,6 +118,8 @@ class CtaTemplate(object):
     vtOrderIDListUpperLower = []        # 涨跌停价格成交的订单
     vtOrderIDListUpperLowerCum = []    # 涨跌停价格成交的订单
     vtOrderIDListUpperLowerTempCum = []    # 涨跌停价格成交的订单
+    vtOrderIDListWinner     = []       # 止盈平仓单
+    vtOrderIDListTempWinner = []       # 止盈平仓单
     vtOrderIDListAll        = []       # 所有订单集合
     ## -------------------------------------------------------------------------
     
@@ -146,6 +148,10 @@ class CtaTemplate(object):
     failedInfoFields  = ['strategyID','InstrumentID','TradingDay',
                          'direction','offset','volume']
 
+    barHeader = ['date','time','symbol','exchange',
+                 'open','high','low','close',
+                 'volume','turnover']    
+
     ## --------------------------------------------------------------------------
     def __init__(self, ctaEngine, setting):
         """Constructor"""
@@ -154,11 +160,13 @@ class CtaTemplate(object):
 
         ## =====================================================================
         ## 交易时点
+        self.tradingDay          = self.ctaEngine.tradingDay
+        self.lastTradingDay      = self.ctaEngine.lastTradingDay
         self.tradingCloseHour    = 14
         self.tradingCloseMinute1 = 50
         self.tradingCloseMinute2 = 59
-        self.accountID = globalSetting.accountID
-        self.randomNo = 50 + random.randint(-5,5)    ## 随机间隔多少秒再下单
+        self.accountID           = globalSetting.accountID
+        self.randomNo            = 50 + random.randint(-5,5)    ## 随机间隔多少秒再下单
         ## =====================================================================
 
         ## =====================================================================
@@ -829,7 +837,7 @@ class CtaTemplate(object):
             tempBestPrice = self.ctaEngine.lastTickDict[tempInstrumentID]['upperLimit']
         elif priceType == 'lower':
             tempBestPrice = self.ctaEngine.lastTickDict[tempInstrumentID]['lowerLimit']
-        elif priceType == 'limit':
+        elif priceType == 'limit':  ## 指定价格下单
             if price:
                 tempBestPrice = price
             else:
@@ -938,7 +946,9 @@ class CtaTemplate(object):
                                  self.vtOrderIDListClose + \
                                  self.vtOrderIDListUpperLower + \
                                  self.vtOrderIDListUpperLowerCum + \
-                                 self.vtOrderIDListUpperLowerTempCum :
+                                 self.vtOrderIDListUpperLowerTempCum + \
+                                 self.vtOrderIDListWinner + \
+                                 self.vtOrderIDListTempWinner:
                     if vtOrderID in allOrders.loc[allOrders.status.isin([u'未成交',u'部分成交'])].vtOrderID.values:
                             self.cancelOrder(vtOrderID)
             ## -----------------------------------------------------------------
@@ -1259,14 +1269,14 @@ class CtaTemplate(object):
     ## 更新最新价格字典
     ## lastInfo
     ############################################################################
-    def updateLastInfo(self,):
+    def updateLastTickInfo(self,):
         """处理最新价格的数据表"""
         ## ---------------------------------------------------------------------
         ## 保存 lastTick
         if not self.ctaEngine.lastTickDict:
             return
         ## ---------------------------------------------------------------------
-        if 15 <= datetime.now().hour < 20:
+        if not (15 < datetime.now().hour < 20):
             v = [self.ctaEngine.lastTickDict[k].values() 
                     for k in self.ctaEngine.lastTickDict.keys()]
             k = [self.ctaEngine.lastTickDict[k].keys() 
@@ -1275,19 +1285,18 @@ class CtaTemplate(object):
             df.rename(columns={'datetime': 'updateTime'}, inplace=True)
             df['TradingDay'] = self.ctaEngine.tradingDay
 
-            print 'hello'
-            self.saveMySQL(df = df, tbl = 'lastInfo', over = 'replace')
+            self.saveMySQL(df = df, tbl = 'lastTickInfo', over = 'replace')
         else:
             try:
                 conn = vtFunction.dbMySQLConnect(self.ctaEngine.mainEngine.dataBase)
                 cursor = conn.cursor()
                 cursor.execute("""
-                                TRUNCATE TABLE lastInfo
+                                TRUNCATE TABLE lastTickInfo
                                """)
                 conn.commit()
                 conn.close()
             except:
-                self.writeCtaLog(u'updateLastInfo 清空 MySQL 数据库出错',
+                self.writeCtaLog(u'updateLastTickInfo 清空 MySQL 数据库出错',
                                  logLevel = ERROR)
         ## ---------------------------------------------------------------------
 
@@ -1496,31 +1505,28 @@ class BarGenerator(object):
     #----------------------------------------------------------------------
     def __init__(self, onBar, xmin=0, onXminBar=None):
         """Constructor"""
-        ## ---------------------
+        ## ------------------------------------------
         self.bar = {}           ## Bar 数据字典 
                                 ## key: tick.vtSymbol 
                                 ## value: VtBarData()
         self.tick = {}          ## Tick 数据字典,
                                 ## key: tick.vtSymbol 
                                 ## value: tick
-        self.newMinute = {}     ## 是否是新的分钟数据
+        self.newMinute = {}     ## 是否是新的分钟数据, 默认不是新的一分钟
                                 ## key: tick.vtSymbol
                                 ## value: True, False
-        ## ---------------------
+        ## ------------------------------------------
 
         self.onBar = onBar          # 1分钟K线回调函数
         
         self.xminBar = None         # X分钟K线对象
         self.xmin = xmin            # X的值
         self.onXminBar = onXminBar  # X分钟K线的回调函数
-        
 
         
     #----------------------------------------------------------------------
     def updateTick(self, tick):
         """TICK更新"""
-        newMinute = False   # 默认不是新的一分钟
-        
         id = tick.vtSymbol
 
         # 尚未创建对象
