@@ -193,10 +193,10 @@ create table fee(
 );
 
 ################################################################################
-## lastInfo
+## lastTickInfo
 ## 保存最新的 tick 级别的数据
 ################################################################################
-create table lastInfo(
+create table lastTickInfo(
     TradingDay      DATE            NOT NULL,
     updateTime      DATETIME        NOT NULL,
     ## -------------------------------------------------------------------------
