@@ -15,7 +15,7 @@ args <- commandArgs(trailingOnly = TRUE)
 ROOT_PATH <- args[1]
 accountDB <- args[2]
 # ROOT_PATH = "/home/william/Documents/myCTP/vnpy-1.7.2"
-# accountDB <- 'SimNow_FL'
+# accountDB <- 'SimNow_LXO'
 ## =============================================================================
 setwd(ROOT_PATH)
 
@@ -55,7 +55,7 @@ dtPosition <- mysqlQuery(db = accountDB,
 ## =============================================================================
 
 
-
+if (nrow(dtFailedInfo) == 0) stop("No failedInfo...")
 ## =============================================================================
 ## dtFailedInfoOpen vs dtOrdersClose
 ## =============================================================================
@@ -106,7 +106,6 @@ for (i in 1:nrow(dtFailedInfo)) {
                                   price = -1)
             dbWriteTable(mysql, 'tradingInfo',
                         rbind(tempTradingInfo1,tempTradingInfo2), row.names = FALSE, append = TRUE)
-            # print(rbind(tempTradingInfo1,tempTradingInfo2))
 
             mysql <- mysqlFetch(accountDB)
             dtPosition <- dbGetQuery(mysql,"
@@ -135,10 +134,9 @@ for (i in 1:nrow(dtFailedInfo)) {
                 dbWriteTable(mysql, 'positionInfo', tempRes, row.names = FALSE, append = TRUE)
             }
                     
-            # dtFailedInfo <- dtFailedInfo[volume != 0]
             dtOrders <- dtOrders[volume != 0]
 
-            if (diffVolume <= 0) break
+            # if (diffVolume <= 0) break
         }
         ## ---------------------------------------------------------------------
     } else {
@@ -192,9 +190,7 @@ for (i in 1:nrow(dtFailedInfo)) {
                                 TradingDay == tempTradingInfo2[,TradingDay] &
                                 InstrumentID == tempTradingInfo2[,InstrumentID] &
                                 direction == tempTradingInfo2[,direction], volume := volume + tempTradingInfo2[,volume]]
-                dbSendQuery(mysql,"
-                        truncate table positionInfo
-                    ")
+                dbSendQuery(mysql,"truncate table positionInfo")
                 dbWriteTable(mysql, 'positionInfo', dtPosition, row.names = FALSE, append = TRUE)
             } else {
                 tempRes <- tempTradingInfo2[,.(
@@ -208,24 +204,16 @@ for (i in 1:nrow(dtFailedInfo)) {
                             row.names = FALSE, append = TRUE)
             }
                     
-            # dtFailedInfo <- dtFailedInfo[volume != 0]
             dtOrders <- dtOrders[volume != 0]
-
-            if (diffVolume <= 0) break
         }
         ## ---------------------------------------------------------------------
     }
 }
 
-mysql <- mysqlFetch(dbName = accountDB)
-dbSendQuery(mysql, "
-        truncate table failedInfo
-    ")
+mysql <- mysqlFetch(db = accountDB)
+dbSendQuery(mysql, "truncate table failedInfo")
 dtFailedInfo <- dtFailedInfo[volume != 0]
 dbWriteTable(mysql, 'failedInfo', dtFailedInfo, row.names = FALSE, append = TRUE)
 
-dbSendQuery(mysql, "
-        truncate table tradingOrders
-    ")
+dbSendQuery(mysql, "truncate table tradingOrders")
 dbWriteTable(mysql, 'tradingOrders', dtOrders, row.names = FALSE, append = TRUE)
-
