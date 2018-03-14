@@ -4,16 +4,10 @@
 ## 处理不同策略的订单
 ## =============================================================================
 
-# if (! as.numeric(format(Sys.time(),'%H')) %in% c(8,9,20,21)) {
-#   stop("不是开盘时间哦！！！")
-# }
-
-rm(list = ls())
-
 ## =============================================================================
-args <- commandArgs(trailingOnly = TRUE)
-ROOT_PATH <- args[1]
-accountDB <- args[2]
+# args <- commandArgs(trailingOnly = TRUE)
+# ROOT_PATH <- args[1]
+# accountDB <- args[2]
 # ROOT_PATH = "/home/william/Documents/myCTP/vnpy-1.7.2"
 # accountDB <- 'SimNow_LXO'
 ## =============================================================================
@@ -55,7 +49,7 @@ dtPosition <- mysqlQuery(db = accountDB,
 ## =============================================================================
 
 
-if (nrow(dtFailedInfo) == 0) stop("No failedInfo...")
+if (nrow(dtFailedInfo) == 0) stop("[failedInfo] :==> 昨日没有未成交订单...")
 ## =============================================================================
 ## dtFailedInfoOpen vs dtOrdersClose
 ## =============================================================================
