@@ -8,7 +8,7 @@
 #   stop("不是开盘时间哦！！！")
 # }
 
-rm(list = ls())
+# rm(list = ls())
 
 ## =============================================================================
 args <- commandArgs(trailingOnly = TRUE)
@@ -115,7 +115,7 @@ OIopenInfo <- dbGetQuery(mysql, paste("
     .[, TradingDay := ymd(currTradingDay[1,days])] %>%
     .[, strategyID := 'OIStrategy']
 
-## 止盈已成交淡定
+## 止盈已成交订单
 ## 包括 涨跌停平仓单
 OIWinnerInfo <- dbGetQuery(mysql, paste0("
         select * from tradingInfo
@@ -547,3 +547,11 @@ mysql <- mysqlFetch(accountDB)
 sql <- "delete from tradingOrders
         where volume = 0;"
 dbSendQuery(mysql, sql)
+
+## =============================================================================
+## 处理未成交订单
+suppressWarnings(
+  suppressMessages(
+    source("./vnpy/trader/app/ctaStrategy/Rscripts/fail.R")
+))
+## =============================================================================
