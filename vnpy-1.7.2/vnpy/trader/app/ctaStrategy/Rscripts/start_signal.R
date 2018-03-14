@@ -115,7 +115,9 @@ OIopenInfo <- dbGetQuery(mysql, paste("
     .[, TradingDay := ymd(currTradingDay[1,days])] %>%
     .[, strategyID := 'OIStrategy']
 
-OIUpperLowerInfo <- dbGetQuery(mysql, paste0("
+## 止盈已成交淡定
+## 包括 涨跌停平仓单
+OIWinnerInfo <- dbGetQuery(mysql, paste0("
         select * from tradingInfo
         where strategyID = 'OIStrategy'
         and offset != '开仓'
@@ -123,13 +125,13 @@ OIUpperLowerInfo <- dbGetQuery(mysql, paste0("
 
 if (nrow(OIopenInfo) != 0) {
   ## --------------------------------------------------------------------------
-  if (nrow(OIUpperLowerInfo) != 0) {
-    for (i in 1:nrow(OIUpperLowerInfo)) {
-      tempDirection <- ifelse(OIUpperLowerInfo[i, direction == 'long'], 
+  if (nrow(OIWinnerInfo) != 0) {
+    for (i in 1:nrow(OIWinnerInfo)) {
+      tempDirection <- ifelse(OIWinnerInfo[i, direction == 'long'], 
                              'short', 'long')
-      OIopenInfo[InstrumentID == OIUpperLowerInfo[i, InstrumentID] &
+      OIopenInfo[InstrumentID == OIWinnerInfo[i, InstrumentID] &
                  direction == tempDirection, 
-                 volume := volume - OIUpperLowerInfo[i, volume]]
+                 volume := volume - OIWinnerInfo[i, volume]]
     }
     OIopenInfo <- OIopenInfo[volume != 0]
   }
