@@ -365,7 +365,7 @@ class CtaTemplate(object):
     #----------------------------------------------------------------------
     def writeCtaLog(self, content, logLevel = INFO):
         """记录CTA日志"""
-        content = self.name + ':' + content
+        content = u'策略' + self.name + ':' + content
         self.ctaEngine.writeCtaLog(content, logLevel = logLevel)
         
     #----------------------------------------------------------------------
@@ -1429,9 +1429,11 @@ class CtaTemplate(object):
         ## ---------------------------------------------------------------------
 
         ## ---------------------------------------------------------------------
+        if stratTrade['offset'] in [u'平仓', u'平昨', u'平今']:
+            tempOffset = u'平仓'
         tempPosInfo = mysqlFailedInfo.loc[mysqlFailedInfo.InstrumentID == stratTrade['InstrumentID']][\
                                           mysqlFailedInfo.direction == stratTrade['direction']][\
-                                          mysqlFailedInfo.offset == stratTrade['offset']]
+                                          mysqlFailedInfo.offset == tempOffset]
 
         mysqlFailedInfo.at[tempPosInfo.index[0], 'volume'] -= stratTrade['volume']
         mysqlFailedInfo = mysqlFailedInfo.loc[mysqlFailedInfo.volume != 0]
@@ -1531,6 +1533,7 @@ class BarGenerator(object):
     def updateTick(self, tick):
         """TICK更新"""
         id = tick.vtSymbol
+        self.newMinute[id] = False  # 默认不是新的一分钟
 
         # 尚未创建对象
         if id not in self.bar.keys():
@@ -1568,7 +1571,7 @@ class BarGenerator(object):
         # 通用更新部分
         self.bar[id].close = tick.lastPrice        
         self.bar[id].datetime = tick.datetime  
-        self.bar[id].openInterest = tick.openInterest
+        # self.bar[id].openInterest = tick.openInterest
         
         if id in self.tick.keys():
             self.bar[id].volume += (tick.volume - self.tick[id].volume) 
