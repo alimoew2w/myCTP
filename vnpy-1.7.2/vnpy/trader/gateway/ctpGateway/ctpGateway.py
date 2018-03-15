@@ -142,11 +142,13 @@ class CtpGateway(VtGateway):
             # 如果json文件提供了验证码
             if 'authCode' in setting: 
                 authCode = str(setting['authCode'])
-                userProductInfo = str(setting['userProductInfo'])
+                # userProductInfo = str(setting['userProductInfo'])
+                userProductInfo = u'CTP'
                 self.tdApi.requireAuthentication = True
             else:
                 authCode = None
-                userProductInfo = None
+                # userProductInfo = None
+                userProductInfo = u'CTP'
 
         except KeyError:
             log = VtLogData()
@@ -367,7 +369,9 @@ class CtpMdApi(MdApi):
         """行情推送"""
         ## ---------------------------------------------------------------------
         # 忽略无效的报价单
-        if data['LastPrice'] > 1.70e+100:
+        if (data['LastPrice'] > 1.70e+100 or 
+            data['BidPrice1'] > 1.70e+100 or
+            data['Volume'] <= 0):
             return
         # 过滤尚未获取合约交易所时的行情推送
         symbol = data['InstrumentID']
